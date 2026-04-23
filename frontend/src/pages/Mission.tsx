@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Upload, Play, Loader2, Zap, Check } from "lucide-react";
+import { Upload, Play, Loader2, Zap, Check, X, Eye } from "lucide-react";
 import { DEFAULT_AOI, api } from "../lib/api";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
@@ -45,11 +45,17 @@ export default function Mission() {
   const [result, setResult] = useState<PredictResponse | null>(null);
   const [saveToDb, setSaveToDb] = useState(true);
   const [savedMissionId, setSavedMissionId] = useState<number | null>(null);
+  const [explainUrl, setExplainUrl] = useState<string | null>(null);
+  const [explainLoading, setExplainLoading] = useState(false);
+  const [explainedClass, setExplainedClass] = useState<string | null>(null);
 
   const onPick = () => fileRef.current?.click();
 
   const onFile = (f: File | null) => {
     if (!f) return;
+    if (explainUrl) URL.revokeObjectURL(explainUrl);
+    setExplainUrl(null);
+    setExplainedClass(null);
     setError(null);
     setResult(null);
     setSavedMissionId(null);
@@ -68,6 +74,53 @@ export default function Mission() {
       // don't interrupt the live preview — just log
       console.warn("ingest failed:", e);
     }
+  }
+
+  // Click-to-explain: find which box was clicked, fetch heatmap, show it.
+  async function onCanvasClick(e: React.MouseEvent<HTMLCanvasElement>) {
+    if (!result || !currentFile) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    // Click coords in canvas-display space
+    const cx = e.clientX - rect.left;
+    const cy = e.clientY - rect.top;
+    // Convert to original-image coords (inverse of the box-draw scale)
+    const scaleX = result.image.width / rect.width;
+    const scaleY = result.image.height / rect.height;
+    const ix = cx * scaleX;
+    const iy = cy * scaleY;
+    // Find the first detection that contains this point
+    const hit = result.detections.find(
+      (d) => ix >= d.x1 && ix <= d.x2 && iy >= d.y1 && iy <= d.y2
+    );
+    if (!hit) return;
+    setExplainLoading(true);
+    setExplainedClass(hit.class_name);
+    try {
+      const fd = new FormData();
+      fd.append("file", currentFile);
+      fd.append("x1", String(hit.x1));
+      fd.append("y1", String(hit.y1));
+      fd.append("x2", String(hit.x2));
+      fd.append("y2", String(hit.y2));
+      const res = await fetch(`${API_BASE}/api/v1/explain`, { method: "POST", body: fd });
+      if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+      const blob = await res.blob();
+      // Revoke old URL if any
+      if (explainUrl) URL.revokeObjectURL(explainUrl);
+      setExplainUrl(URL.createObjectURL(blob));
+    } catch (err) {
+      setError(`explain failed: ${(err as Error).message}`);
+    } finally {
+      setExplainLoading(false);
+    }
+  }
+
+  function closeExplanation() {
+    if (explainUrl) URL.revokeObjectURL(explainUrl);
+    setExplainUrl(null);
+    setExplainedClass(null);
   }
 
   async function runPredict(blob: Blob, filename: string) {
@@ -229,14 +282,49 @@ export default function Mission() {
                   className="max-h-full max-w-full"
                 />
               )}
+              {/* Heatmap overlay (shown when an explanation is active) */}
+              {explainUrl && (
+                <img
+                  src={explainUrl}
+                  alt="Grad-CAM heatmap"
+                  className="absolute inset-0 m-auto max-h-full max-w-full"
+                />
+              )}
               <canvas
                 ref={canvasRef}
-                className="absolute inset-0 pointer-events-none m-auto"
+                onClick={onCanvasClick}
+                className={`absolute inset-0 m-auto ${
+                  explainUrl ? "pointer-events-none opacity-0" : "cursor-pointer"
+                }`}
                 style={{ width: "auto", height: "auto" }}
+                title="Click any detection to see why the model chose it"
               />
               {busy && (
                 <div className="absolute top-3 right-3 bg-bg/80 border border-border px-3 py-1.5 rounded flex items-center gap-2 text-xs">
                   <Loader2 size={12} className="animate-spin" /> Running inference...
+                </div>
+              )}
+              {explainLoading && (
+                <div className="absolute top-3 right-3 bg-bg/80 border border-border px-3 py-1.5 rounded flex items-center gap-2 text-xs">
+                  <Loader2 size={12} className="animate-spin" /> Computing heatmap for {explainedClass}...
+                </div>
+              )}
+              {explainUrl && !explainLoading && (
+                <div className="absolute top-3 left-3 bg-bg/90 border border-border px-3 py-1.5 rounded flex items-center gap-2 text-xs">
+                  <Eye size={12} className="text-accent" />
+                  <span className="font-mono">{explainedClass} — model attention</span>
+                  <button
+                    onClick={closeExplanation}
+                    className="ml-2 p-0.5 rounded hover:bg-panel2 text-muted"
+                    title="Close heatmap"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              )}
+              {result && !explainUrl && !busy && (
+                <div className="absolute bottom-3 left-3 bg-bg/80 border border-border px-2.5 py-1 rounded text-[11px] text-muted">
+                  💡 Click a box to see why the model chose it (Grad-CAM)
                 </div>
               )}
             </>
