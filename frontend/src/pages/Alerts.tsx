@@ -1,90 +1,319 @@
-import { useState } from "react";
-import { threatColor } from "../lib/api";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Check, X, ArrowUpCircle, Loader2, RefreshCw } from "lucide-react";
+import { api, threatColor, type Alert, type Mission } from "../lib/api";
 
-type Row = {
-  id: number;
-  cls: string;
-  confidence: number;
-  distance_km: number;
-  score: number;
-  status: "pending" | "confirmed" | "rejected" | "escalated";
+// Must match backend DEFAULT_WEIGHTS in scoring.py
+const DEFAULT_W = { w_class: 0.35, w_prox: 0.25, w_motion: 0.20, w_count: 0.10, w_conf: 0.10 };
+
+// Class colors (kept in sync with Mission/MapView)
+const CLASS_COLORS: Record<string, string> = {
+  "small-vehicle":       "#4ade80",
+  "large-vehicle":       "#facc15",
+  "aircraft-fixed-wing": "#60a5fa",
+  "aircraft-rotor":      "#a78bfa",
+  "ship":                "#22d3ee",
+  "storage-depot":       "#fb923c",
+  "harbor":              "#f472b6",
+  "bridge":              "#94a3b8",
 };
 
-const DEMO_ROWS: Row[] = [
-  { id: 1, cls: "tank",              confidence: 0.91, distance_km: 2.1, score: 0.87, status: "pending" },
-  { id: 2, cls: "artillery",         confidence: 0.84, distance_km: 3.6, score: 0.74, status: "pending" },
-  { id: 3, cls: "aircraft-rotor",    confidence: 0.78, distance_km: 6.0, score: 0.63, status: "pending" },
-  { id: 4, cls: "large-vehicle",     confidence: 0.66, distance_km: 1.4, score: 0.57, status: "confirmed" },
-  { id: 5, cls: "ship",              confidence: 0.71, distance_km: 8.1, score: 0.44, status: "pending" },
-  { id: 6, cls: "small-vehicle",     confidence: 0.58, distance_km: 0.9, score: 0.33, status: "rejected" },
-];
+type Weights = typeof DEFAULT_W;
 
-const DEFAULTS = { w_class: 0.35, w_prox: 0.25, w_motion: 0.20, w_count: 0.10, w_conf: 0.10 };
+// Recompute a threat score from its breakdown with new weights.
+// The backend produced each term as (raw_term * default_weight). We recover
+// the raw term by dividing out the default, then multiply by the user's.
+function rerankScore(a: Alert, w: Weights): number {
+  const b = a.score_breakdown;
+  const raw = {
+    c:   DEFAULT_W.w_class  ? b.class_term      / DEFAULT_W.w_class  : 0,
+    p:   DEFAULT_W.w_prox   ? b.proximity_term  / DEFAULT_W.w_prox   : 0,
+    m:   DEFAULT_W.w_motion ? b.motion_term     / DEFAULT_W.w_motion : 0,
+    n:   DEFAULT_W.w_count  ? b.count_term      / DEFAULT_W.w_count  : 0,
+    cf:  DEFAULT_W.w_conf   ? b.confidence_term / DEFAULT_W.w_conf   : 0,
+  };
+  const sum =
+    w.w_class  * raw.c  +
+    w.w_prox   * raw.p  +
+    w.w_motion * raw.m  +
+    w.w_count  * raw.n  +
+    w.w_conf   * raw.cf;
+  return Math.max(0, Math.min(1, sum));
+}
+
+// Resolve a detection's class via detection_id — we hold a map indexed by id
+type DetClass = { class_id: number; class_name: string; confidence: number };
 
 export default function Alerts() {
-  const [weights, setWeights] = useState(DEFAULTS);
-  const [rows] = useState<Row[]>([...DEMO_ROWS].sort((a, b) => b.score - a.score));
+  const [missions, setMissions] = useState<Mission[]>([]);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [detMap, setDetMap] = useState<Map<number, DetClass>>(new Map());
+  const [weights, setWeights] = useState<Weights>(DEFAULT_W);
+  const [operatorId, setOperatorId] = useState("cmdr-01");
+  const [busyId, setBusyId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const pollRef = useRef<number | null>(null);
+
+  // Load missions and default-select newest
+  useEffect(() => {
+    api.listMissions(50)
+      .then((m) => {
+        setMissions(m);
+        if (m.length > 0) {
+          const stored = Number(localStorage.getItem("astra:lastMissionId") ?? "");
+          const preferred = m.find((x) => x.id === stored) ?? m[0];
+          setSelectedId(preferred.id);
+        }
+      })
+      .catch((e) => setError(`missions: ${(e as Error).message}`));
+  }, []);
+
+  // Poll alerts + detections for the selected mission
+  useEffect(() => {
+    if (selectedId == null) return;
+    let cancelled = false;
+    const fetchAll = async () => {
+      try {
+        setLoading(true);
+        const [a, dets] = await Promise.all([
+          api.listAlerts({ mission_id: selectedId }),
+          api.listDetections({ mission_id: selectedId, limit: 500 }),
+        ]);
+        if (cancelled) return;
+        setAlerts(a);
+        const m = new Map<number, DetClass>();
+        for (const d of dets) m.set(d.id, { class_id: d.class_id, class_name: d.class_name, confidence: d.confidence });
+        setDetMap(m);
+      } catch (e) {
+        if (!cancelled) setError(`alerts: ${(e as Error).message}`);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    fetchAll();
+    pollRef.current = window.setInterval(fetchAll, 5000);
+    return () => {
+      cancelled = true;
+      if (pollRef.current) window.clearInterval(pollRef.current);
+    };
+  }, [selectedId]);
+
+  // Client-side reranking
+  const ranked = useMemo(() => {
+    return alerts
+      .map((a) => ({ alert: a, live: rerankScore(a, weights) }))
+      .sort((x, y) => y.live - x.live);
+  }, [alerts, weights]);
+
+  async function act(alertId: number, action: "confirm" | "reject" | "escalate") {
+    setBusyId(alertId);
+    try {
+      const updated = await api.actOnAlert(alertId, { action, operator_id: operatorId });
+      // optimistic update
+      setAlerts((prev) => prev.map((a) => (a.id === alertId ? updated : a)));
+    } catch (e) {
+      setError(`${action} failed: ${(e as Error).message}`);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  function resetWeights() {
+    setWeights(DEFAULT_W);
+  }
+
+  const counts = {
+    pending: alerts.filter((a) => a.status === "pending").length,
+    confirmed: alerts.filter((a) => a.status === "confirmed").length,
+    rejected: alerts.filter((a) => a.status === "rejected").length,
+    escalated: alerts.filter((a) => a.status === "escalated").length,
+  };
 
   return (
     <div className="h-full flex flex-col">
-      <header className="px-6 py-4 border-b border-border">
-        <h1 className="text-lg font-semibold">Ranked Threat Queue</h1>
-        <p className="text-xs text-muted">Priority = class × proximity × motion × density × confidence</p>
+      <header className="px-6 py-4 border-b border-border flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-lg font-semibold">Ranked Threat Queue</h1>
+          <p className="text-xs text-muted">
+            {alerts.length} alerts · {counts.pending} pending, {counts.confirmed} confirmed,{" "}
+            {counts.rejected} rejected, {counts.escalated} escalated
+            {loading && " · refreshing..."}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <label className="text-xs text-muted">Mission:</label>
+          <select
+            className="bg-panel border border-border rounded px-3 py-1.5 text-sm font-mono min-w-[200px]"
+            value={selectedId ?? ""}
+            onChange={(e) => setSelectedId(Number(e.target.value))}
+          >
+            {missions.length === 0 && <option>(no missions)</option>}
+            {missions.map((m) => (
+              <option key={m.id} value={m.id}>
+                #{m.id} · {m.name}
+              </option>
+            ))}
+          </select>
+          <label className="text-xs text-muted">Operator:</label>
+          <input
+            className="bg-panel border border-border rounded px-3 py-1.5 text-sm font-mono w-28"
+            value={operatorId}
+            onChange={(e) => setOperatorId(e.target.value)}
+          />
+        </div>
       </header>
 
-      <div className="flex-1 p-6 grid grid-cols-[1fr_280px] gap-6 overflow-hidden">
+      {error && (
+        <div className="mx-6 mt-3 bg-threat-crit/20 border border-threat-crit/40 text-threat-crit p-2 rounded text-xs">
+          {error}
+        </div>
+      )}
+
+      <div className="flex-1 p-6 grid grid-cols-[1fr_300px] gap-6 overflow-hidden">
         <div className="bg-panel border border-border rounded overflow-auto">
           <table className="w-full text-sm">
-            <thead className="bg-panel2 text-muted text-xs uppercase tracking-wider sticky top-0">
+            <thead className="bg-panel2 text-muted text-xs uppercase tracking-wider sticky top-0 z-10">
               <tr>
-                <th className="text-left px-4 py-3">#</th>
-                <th className="text-left px-4 py-3">Class</th>
-                <th className="text-left px-4 py-3">Conf</th>
-                <th className="text-left px-4 py-3">Distance</th>
-                <th className="text-left px-4 py-3">Score</th>
-                <th className="text-left px-4 py-3">Status</th>
-                <th className="text-left px-4 py-3">Actions</th>
+                <th className="text-left px-3 py-3 w-8">#</th>
+                <th className="text-left px-3 py-3">Class</th>
+                <th className="text-left px-3 py-3">Conf</th>
+                <th className="text-left px-3 py-3">Distance</th>
+                <th className="text-left px-3 py-3">Nearest</th>
+                <th className="text-left px-3 py-3">Live Score</th>
+                <th className="text-left px-3 py-3">Orig</th>
+                <th className="text-left px-3 py-3">Status</th>
+                <th className="text-left px-3 py-3">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((r, i) => (
-                <tr key={r.id} className="border-t border-border hover:bg-panel2">
-                  <td className="px-4 py-3 font-mono text-muted">{i + 1}</td>
-                  <td className="px-4 py-3 font-mono">{r.cls}</td>
-                  <td className="px-4 py-3 font-mono">{r.confidence.toFixed(2)}</td>
-                  <td className="px-4 py-3 font-mono">{r.distance_km.toFixed(1)} km</td>
-                  <td className={`px-4 py-3 font-mono font-semibold ${threatColor(r.score)}`}>
-                    {r.score.toFixed(2)}
-                  </td>
-                  <td className="px-4 py-3 text-xs uppercase text-muted">{r.status}</td>
-                  <td className="px-4 py-3 space-x-2">
-                    <button className="text-xs px-2 py-1 rounded bg-threat-low/20 text-threat-low hover:bg-threat-low/30">Confirm</button>
-                    <button className="text-xs px-2 py-1 rounded bg-threat-crit/20 text-threat-crit hover:bg-threat-crit/30">Reject</button>
+              {ranked.length === 0 && (
+                <tr>
+                  <td colSpan={9} className="px-4 py-8 text-center text-muted text-sm">
+                    No alerts. Upload an image in Mission to generate some.
                   </td>
                 </tr>
-              ))}
+              )}
+              {ranked.map(({ alert: a, live }, i) => {
+                const det = detMap.get(a.detection_id);
+                const clsName = det?.class_name ?? "?";
+                const clsColor = CLASS_COLORS[clsName] ?? "#ff7a1a";
+                const dist = a.score_breakdown.distance_km;
+                const nearest = a.score_breakdown.nearest_asset;
+                const isBusy = busyId === a.id;
+                return (
+                  <tr
+                    key={a.id}
+                    className="border-t border-border hover:bg-panel2 transition-colors"
+                  >
+                    <td className="px-3 py-2 font-mono text-muted">{i + 1}</td>
+                    <td className="px-3 py-2">
+                      <div className="flex items-center gap-2 font-mono text-xs">
+                        <span
+                          className="w-2 h-2 rounded-full flex-shrink-0"
+                          style={{ background: clsColor }}
+                        />
+                        {clsName}
+                      </div>
+                    </td>
+                    <td className="px-3 py-2 font-mono text-xs">
+                      {det ? det.confidence.toFixed(2) : "—"}
+                    </td>
+                    <td className="px-3 py-2 font-mono text-xs">
+                      {dist != null ? `${dist.toFixed(2)} km` : "—"}
+                    </td>
+                    <td className="px-3 py-2 font-mono text-xs text-muted">{nearest ?? "—"}</td>
+                    <td
+                      className={`px-3 py-2 font-mono font-semibold text-base ${threatColor(live)}`}
+                    >
+                      {live.toFixed(3)}
+                    </td>
+                    <td className="px-3 py-2 font-mono text-xs text-muted">
+                      {a.threat_score.toFixed(3)}
+                    </td>
+                    <td className="px-3 py-2 text-[11px] uppercase font-mono">
+                      {a.status === "pending" && <span className="text-muted">pending</span>}
+                      {a.status === "confirmed" && <span className="text-threat-low">confirmed</span>}
+                      {a.status === "rejected" && <span className="text-threat-crit">rejected</span>}
+                      {a.status === "escalated" && <span className="text-threat-high">escalated</span>}
+                    </td>
+                    <td className="px-3 py-2">
+                      {a.status === "pending" ? (
+                        <div className="flex items-center gap-1">
+                          <button
+                            disabled={isBusy}
+                            onClick={() => act(a.id, "confirm")}
+                            className="p-1 rounded bg-threat-low/20 text-threat-low hover:bg-threat-low/30 disabled:opacity-30"
+                            title="Confirm"
+                          >
+                            {isBusy ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
+                          </button>
+                          <button
+                            disabled={isBusy}
+                            onClick={() => act(a.id, "reject")}
+                            className="p-1 rounded bg-threat-crit/20 text-threat-crit hover:bg-threat-crit/30 disabled:opacity-30"
+                            title="Reject"
+                          >
+                            <X size={12} />
+                          </button>
+                          <button
+                            disabled={isBusy}
+                            onClick={() => act(a.id, "escalate")}
+                            className="p-1 rounded bg-threat-high/20 text-threat-high hover:bg-threat-high/30 disabled:opacity-30"
+                            title="Escalate"
+                          >
+                            <ArrowUpCircle size={12} />
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-[11px] text-muted font-mono">
+                          {a.operator_id ?? "system"}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
 
-        <aside className="bg-panel border border-border rounded p-4 space-y-4">
-          <div className="text-xs text-muted uppercase tracking-wider">Score Weights</div>
-          {(Object.keys(DEFAULTS) as Array<keyof typeof DEFAULTS>).map((k) => (
+        <aside className="bg-panel border border-border rounded p-4 space-y-4 overflow-auto">
+          <div className="flex items-center justify-between">
+            <div className="text-xs text-muted uppercase tracking-wider">Score Weights</div>
+            <button
+              onClick={resetWeights}
+              className="text-xs text-muted hover:text-accent flex items-center gap-1"
+            >
+              <RefreshCw size={10} /> reset
+            </button>
+          </div>
+          {(Object.keys(DEFAULT_W) as Array<keyof Weights>).map((k) => (
             <div key={k} className="space-y-1">
               <div className="flex justify-between text-xs">
-                <span className="text-muted">{k}</span>
-                <span className="font-mono">{weights[k].toFixed(2)}</span>
+                <span className="text-muted font-mono">{k}</span>
+                <span className="font-mono">
+                  {weights[k].toFixed(2)}
+                  {weights[k] !== DEFAULT_W[k] && (
+                    <span className="text-muted ml-1">(def {DEFAULT_W[k].toFixed(2)})</span>
+                  )}
+                </span>
               </div>
               <input
-                type="range" min={0} max={1} step={0.05}
+                type="range"
+                min={0}
+                max={1}
+                step={0.05}
                 value={weights[k]}
                 onChange={(e) => setWeights({ ...weights, [k]: Number(e.target.value) })}
                 className="w-full accent-accent"
               />
             </div>
           ))}
-          <div className="text-[11px] text-muted pt-2 border-t border-border">
-            Adjusting weights re-ranks the queue live. Every change is logged in the audit trail with your operator ID.
+          <div className="text-[11px] text-muted pt-2 border-t border-border leading-snug">
+            Sliders re-rank the queue client-side. The original server-computed score stays
+            in the "Orig" column — drag a slider and watch rows reorder live. Weights reset
+            on page reload; the backend default is the starting position.
           </div>
         </aside>
       </div>
