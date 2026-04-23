@@ -4,7 +4,8 @@ import json
 import shutil
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -12,6 +13,7 @@ from app.db.models import AuditEventType, Mission
 from app.db.session import get_db
 from app.schemas import AoiCorners, MissionOut
 from app.services.audit import log_event
+from app.services.pipeline import process_mission
 
 router = APIRouter(prefix="/ingest", tags=["ingest"])
 
@@ -20,6 +22,7 @@ ALLOWED_SUFFIXES = {".mp4", ".avi", ".mov", ".mkv", ".jpg", ".jpeg", ".png"}
 
 @router.post("", response_model=MissionOut)
 async def create_mission(
+    background: BackgroundTasks,
     name: str = Form(..., min_length=1, max_length=128),
     aoi_corners: str | None = Form(None, description="JSON-encoded AoiCorners"),
     file: UploadFile = File(...),
@@ -58,7 +61,9 @@ async def create_mission(
     db.commit()
     db.refresh(mission)
 
-    # TODO: enqueue inference job via Redis — wired up in Day 3 of PROJECT_SPEC.md §13
+    # Fire-and-forget inference pipeline. Runs in-process after the response
+    # is sent — see backend/app/services/pipeline.py.
+    background.add_task(process_mission, mission.id)
 
     return MissionOut.model_validate(mission)
 

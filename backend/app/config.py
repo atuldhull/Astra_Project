@@ -37,6 +37,23 @@ class Settings(BaseSettings):
     redis_host: str = Field(default="127.0.0.1", alias="REDIS_HOST")
     redis_port: int = Field(default=6379, alias="REDIS_PORT")
 
+    # Demo "friendly force" locations used by threat scoring for proximity term.
+    # Ordered by importance. Each entry: (name, lat, lon).
+    # These anchor the map — if your AOI is elsewhere, override via .env FRIENDLY_ASSETS.
+    friendly_assets_json: str = Field(
+        default='[["FOB Delta", 12.9716, 77.5946], ["Outpost Bravo", 12.9750, 77.5900]]',
+        alias="ASTRA_FRIENDLY_ASSETS",
+    )
+
+    @property
+    def friendly_assets(self) -> list[tuple[str, float, float]]:
+        import json
+        try:
+            data = json.loads(self.friendly_assets_json)
+            return [(str(n), float(la), float(lo)) for n, la, lo in data]
+        except Exception:
+            return []
+
     @property
     def database_url(self) -> str:
         return (
