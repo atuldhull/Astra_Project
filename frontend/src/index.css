@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root { height: 100%; }
+
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: #0a0f14;
+  color: #e5edf4;
+}
+
+/* Leaflet tiles look right on dark theme */
+.leaflet-tile-pane { filter: brightness(0.75) saturate(0.6); }
+.leaflet-container { background: #0a0f14; }

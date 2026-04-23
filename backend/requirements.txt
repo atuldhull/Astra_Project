@@ -1,0 +1,41 @@
+# Core ML / CV — versions left to torch's resolver where a conflict would occur
+ultralytics>=8.3.40,<9.0
+onnx>=1.17.0
+onnxruntime-gpu>=1.20.0
+opencv-python>=4.10.0
+# numpy and pillow are pulled by torch 2.6.0+cu124 (numpy 2.x, pillow 12.x) — do not pin
+
+# Tracking — Ultralytics will use scipy.optimize.linear_sum_assignment as fallback.
+# (The `lap` package has no prebuilt wheel for Python 3.13 on Windows and its
+#  source build requires pkg_resources in a build-isolated env.)
+scipy>=1.14.0
+
+# Geo / math
+shapely==2.0.6
+pyproj==3.7.0
+rasterio==1.4.3
+
+# API
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20
+pydantic==2.10.4
+pydantic-settings==2.7.1
+websockets==14.1
+
+# Database
+sqlalchemy==2.0.36
+alembic==1.14.0
+psycopg2-binary==2.9.10
+redis==5.2.1
+
+# Utils
+python-dotenv==1.0.1
+httpx==0.28.1
+tenacity==9.0.0
+rich==13.9.4
+
+# Dev
+pytest==8.3.4
+pytest-asyncio==0.25.0
+ruff==0.8.4

@@ -1,0 +1,41 @@
+# Infra containers only: Postgres + Redis.
+# Backend runs natively so it can access the RTX 4050 via CUDA.
+# (GPU passthrough to Docker on Windows is possible with WSL2 + NVIDIA Container
+# Toolkit, but adds debugging surface we don't need for a 5-day hackathon.)
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: astra-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-astra}
+      POSTGRES_USER: ${POSTGRES_USER:-astra}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-astra_dev}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - astra_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-astra}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: astra-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - astra_redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  astra_pgdata:
+  astra_redisdata:

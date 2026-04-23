@@ -1,0 +1,19 @@
+# ASTRA v1 dataset definition (Ultralytics format)
+# Paths are RELATIVE to `path` below. `prepare_dota.py` writes images/ and labels/
+# under this root, with train/val/test splits.
+
+path: D:/astra-data/datasets/astra-v1
+train: images/train
+val: images/val
+test: images/test
+
+# 8-class DOTA-native subset — see PROJECT_SPEC.md §6
+names:
+  0: small-vehicle
+  1: large-vehicle
+  2: aircraft-fixed-wing
+  3: aircraft-rotor
+  4: ship
+  5: storage-depot
+  6: harbor
+  7: bridge

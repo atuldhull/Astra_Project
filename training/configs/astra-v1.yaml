@@ -1,0 +1,64 @@
+# ASTRA v1 — Ultralytics training config (tuned for RTX 4050 6GB, DOTA-v2 subset)
+# Launched via: python train.py --config configs/astra-v1.yaml
+# See PROJECT_SPEC.md §7 for rationale on every value below.
+
+# ── Model ─────────────────────────────────────────────────────────────────
+model: yolo11n.pt              # NANO — switched from yolo11s because yolo11s assigner OOMs
+                               # on 6GB VRAM during val (dense aerial tiles with 200+ GT boxes).
+                               # Nano has 2.6M params vs 9.4M — trade ~5 mAP for stability.
+data: ../dataset.yaml          # written by prepare_dota.py (lives in training/, not configs/)
+
+# ── Core schedule ─────────────────────────────────────────────────────────
+epochs: 40                     # 80 was unrealistic for 4050 6GB on 9832 tiles.
+                               # 40 with patience=10 early-stop hits convergence in ~25-30 epochs.
+patience: 10
+imgsz: 640                     # final drop: 640 is the standard YOLO input. Anchor count
+                               # is 8400 vs 12096 at 768 — 30% less assigner tensor memory.
+batch: 4                       # dropped from 8 — assigner OOMs on 6GB at batch=8.
+fraction: 0.3                  # each epoch sees 30% of 9832 tiles (sampled). 3x faster epochs.
+                               # Over 40 epochs, the model still sees every tile ~12 times on avg.
+amp: true                      # automatic mixed precision — mandatory on 6GB
+cache: false                   # disk is tight — no cache
+workers: 0                     # Windows + 16GB RAM: 0 = serial loading in main process
+device: 0                      # RTX 4050
+project: D:/astra-data/runs    # outputs go to the data dir, NOT OneDrive
+name: astra-v1
+exist_ok: false
+seed: 42
+deterministic: false           # perf > reproducibility for hackathon
+close_mosaic: 10               # disable mosaic in the last 10 epochs
+
+# ── Optimizer ─────────────────────────────────────────────────────────────
+optimizer: AdamW
+lr0: 0.001
+lrf: 0.01                      # final LR = lr0 * lrf (cosine)
+momentum: 0.937
+weight_decay: 0.0005
+warmup_epochs: 3
+warmup_momentum: 0.8
+warmup_bias_lr: 0.1
+cos_lr: true
+
+# ── Augmentation (tuned for aerial/top-down imagery) ──────────────────────
+mosaic: 1.0                    # keep — memory-efficient 4-image composite
+mixup: 0.0                     # disabled — crashes on 16GB RAM Windows (float64 blend spikes)
+copy_paste: 0.0                # disabled — same memory pattern as mixup
+hsv_h: 0.015
+hsv_s: 0.7
+hsv_v: 0.4
+degrees: 10.0                  # small rotations; DOTA has oriented objects
+translate: 0.1
+scale: 0.5
+shear: 0.0
+perspective: 0.0
+flipud: 0.5                    # aerial has no up — flip vertically too
+fliplr: 0.5
+
+# ── Validation / logging ──────────────────────────────────────────────────
+val: false                     # val during training OOMs on 6GB due to assigner
+                               # tensor blowup on dense GT images. Disabled here;
+                               # run a proper eval after training via `yolo val ...`.
+plots: true
+save: true
+save_period: 10                # checkpoint every 10 epochs
+verbose: true

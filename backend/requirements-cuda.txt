@@ -1,0 +1,6 @@
+# Install BEFORE requirements.txt so the CUDA wheels take precedence.
+# These pull PyTorch built against CUDA 12.4 (compatible with driver 550+).
+# Our driver is 581.83 (CUDA runtime 13.0 exposed) — fully backward-compatible.
+--index-url https://download.pytorch.org/whl/cu124
+torch==2.6.0+cu124
+torchvision==0.21.0+cu124
