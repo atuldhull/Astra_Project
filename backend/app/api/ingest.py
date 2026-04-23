@@ -74,3 +74,13 @@ def get_mission(mission_id: int, db: Session = Depends(get_db)) -> MissionOut:
     if not mission:
         raise HTTPException(404, "Mission not found")
     return MissionOut.model_validate(mission)
+
+
+@router.get("", response_model=list[MissionOut])
+def list_missions(
+    limit: int = 50,
+    db: Session = Depends(get_db),
+) -> list[MissionOut]:
+    """Recent missions, newest first. Used by the Map page's mission selector."""
+    stmt = select(Mission).order_by(Mission.created_at.desc()).limit(limit)
+    return [MissionOut.model_validate(m) for m in db.execute(stmt).scalars().all()]

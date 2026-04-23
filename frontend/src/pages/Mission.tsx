@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Upload, Play, Loader2, Zap } from "lucide-react";
+import { Upload, Play, Loader2, Zap, Check } from "lucide-react";
+import { DEFAULT_AOI, api } from "../lib/api";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -35,12 +36,15 @@ export default function Mission() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const [missionName, setMissionName] = useState("MISSION-001");
+  const [missionName, setMissionName] = useState(`MISSION-${new Date().toISOString().slice(0,16).replace(/[-T:]/g,"")}`);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [fileType, setFileType] = useState<"image" | "video" | null>(null);
+  const [currentFile, setCurrentFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<PredictResponse | null>(null);
+  const [saveToDb, setSaveToDb] = useState(true);
+  const [savedMissionId, setSavedMissionId] = useState<number | null>(null);
 
   const onPick = () => fileRef.current?.click();
 
@@ -48,9 +52,23 @@ export default function Mission() {
     if (!f) return;
     setError(null);
     setResult(null);
+    setSavedMissionId(null);
     setFileUrl(URL.createObjectURL(f));
     setFileType(f.type.startsWith("video/") ? "video" : "image");
+    setCurrentFile(f);
   };
+
+  // Fire-and-forget ingest to DB so Map/Alerts/Audit pages populate.
+  async function saveMission(f: File) {
+    try {
+      const m = await api.ingest(f, missionName, DEFAULT_AOI);
+      setSavedMissionId(m.id);
+      localStorage.setItem("astra:lastMissionId", String(m.id));
+    } catch (e) {
+      // don't interrupt the live preview — just log
+      console.warn("ingest failed:", e);
+    }
+  }
 
   async function runPredict(blob: Blob, filename: string) {
     setBusy(true);
@@ -71,9 +89,10 @@ export default function Mission() {
 
   // Auto-predict when an image loads
   useEffect(() => {
-    if (!fileUrl || fileType !== "image") return;
+    if (!fileUrl || fileType !== "image" || !currentFile) return;
     fetch(fileUrl).then(r => r.blob()).then(b => runPredict(b, "upload.jpg"));
-  }, [fileUrl, fileType]);
+    if (saveToDb) saveMission(currentFile);
+  }, [fileUrl, fileType, currentFile]);
 
   // Analyze current frame from video
   async function analyzeVideoFrame() {
@@ -142,8 +161,22 @@ export default function Mission() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <label className="flex items-center gap-2 text-xs text-muted cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={saveToDb}
+              onChange={(e) => setSaveToDb(e.target.checked)}
+              className="accent-accent"
+            />
+            Save to DB
+          </label>
+          {savedMissionId != null && (
+            <span className="flex items-center gap-1 text-xs text-threat-low">
+              <Check size={12} /> Mission #{savedMissionId}
+            </span>
+          )}
           <input
-            className="bg-panel border border-border rounded px-3 py-1.5 text-sm w-48"
+            className="bg-panel border border-border rounded px-3 py-1.5 text-sm w-48 font-mono"
             value={missionName}
             onChange={(e) => setMissionName(e.target.value)}
           />

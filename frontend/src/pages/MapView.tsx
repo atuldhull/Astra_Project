@@ -1,45 +1,242 @@
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { MapContainer, TileLayer, CircleMarker, Popup, Polygon, Marker, useMap } from "react-leaflet";
 import L from "leaflet";
+import { Loader2, RefreshCw } from "lucide-react";
+import { api, type Detection, type Mission, DEFAULT_AOI } from "../lib/api";
 
-// Fix default marker icon path (Vite doesn't bundle leaflet images)
-delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-});
-
-const DEMO_CENTER: [number, number] = [12.9716, 77.5946]; // Bengaluru
-const DEMO_PINS = [
-  { lat: 12.972, lon: 77.590, cls: "tank", score: 0.82 },
-  { lat: 12.968, lon: 77.598, cls: "large-vehicle", score: 0.54 },
-  { lat: 12.974, lon: 77.593, cls: "aircraft-rotor", score: 0.71 },
+// Friendly asset locations (must match backend config.py defaults)
+const FRIENDLY_ASSETS: { name: string; lat: number; lon: number }[] = [
+  { name: "FOB Delta",     lat: 12.9716, lon: 77.5946 },
+  { name: "Outpost Bravo", lat: 12.9750, lon: 77.5900 },
 ];
 
+// Same class colors as Mission page
+const CLASS_COLORS: Record<string, string> = {
+  "small-vehicle":       "#4ade80",
+  "large-vehicle":       "#facc15",
+  "aircraft-fixed-wing": "#60a5fa",
+  "aircraft-rotor":      "#a78bfa",
+  "ship":                "#22d3ee",
+  "storage-depot":       "#fb923c",
+  "harbor":              "#f472b6",
+  "bridge":              "#94a3b8",
+};
+
+// AOI corner polygon (TL, TR, BR, BL) — closed polygon needs TL at end too
+const AOI_POLYGON: [number, number][] = [
+  DEFAULT_AOI.top_left,
+  DEFAULT_AOI.top_right,
+  DEFAULT_AOI.bottom_right,
+  DEFAULT_AOI.bottom_left,
+  DEFAULT_AOI.top_left,
+];
+
+// Asset marker icon (distinct from detection pins)
+const assetIcon = L.divIcon({
+  className: "",
+  html: `<div style="
+    width:16px;height:16px;background:#22d3ee;border:2px solid #fff;
+    border-radius:50%;box-shadow:0 0 8px #22d3ee;
+  "></div>`,
+  iconSize: [16, 16],
+  iconAnchor: [8, 8],
+});
+
+function FitToBounds({ bounds }: { bounds: L.LatLngBoundsExpression | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (bounds) map.fitBounds(bounds, { padding: [30, 30] });
+  }, [bounds, map]);
+  return null;
+}
+
 export default function MapView() {
+  const [missions, setMissions] = useState<Mission[]>([]);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [detections, setDetections] = useState<Detection[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const pollRef = useRef<number | null>(null);
+
+  // Load missions list on mount + auto-select latest
+  useEffect(() => {
+    api.listMissions(50)
+      .then((m) => {
+        setMissions(m);
+        if (m.length > 0) {
+          // Prefer the one Mission page just saved (stored in localStorage)
+          const stored = Number(localStorage.getItem("astra:lastMissionId") ?? "");
+          const preferred = m.find((x) => x.id === stored) ?? m[0];
+          setSelectedId(preferred.id);
+        }
+      })
+      .catch((e) => setError(`missions: ${(e as Error).message}`));
+  }, []);
+
+  // Load detections when mission changes + set up polling
+  useEffect(() => {
+    if (selectedId == null) return;
+    let cancelled = false;
+    const fetchDets = async () => {
+      try {
+        setLoading(true);
+        const d = await api.listDetections({ mission_id: selectedId, limit: 500 });
+        if (!cancelled) setDetections(d);
+      } catch (e) {
+        if (!cancelled) setError(`detections: ${(e as Error).message}`);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    fetchDets();
+    pollRef.current = window.setInterval(fetchDets, 5000);
+    return () => {
+      cancelled = true;
+      if (pollRef.current) window.clearInterval(pollRef.current);
+    };
+  }, [selectedId]);
+
+  const geoDetections = detections.filter((d) => d.lat != null && d.lon != null);
+
+  const bounds: L.LatLngBoundsExpression | null = useMemo(() => {
+    if (geoDetections.length === 0) {
+      return [
+        [DEFAULT_AOI.bottom_left[0], DEFAULT_AOI.bottom_left[1]],
+        [DEFAULT_AOI.top_right[0], DEFAULT_AOI.top_right[1]],
+      ];
+    }
+    const lats = geoDetections.map((d) => d.lat!);
+    const lons = geoDetections.map((d) => d.lon!);
+    return [
+      [Math.min(...lats), Math.min(...lons)],
+      [Math.max(...lats), Math.max(...lons)],
+    ];
+  }, [geoDetections]);
+
+  // Class counts for legend
+  const counts: Record<string, number> = {};
+  for (const d of geoDetections) counts[d.class_name] = (counts[d.class_name] ?? 0) + 1;
+
   return (
     <div className="h-full flex flex-col">
-      <header className="px-6 py-4 border-b border-border">
-        <h1 className="text-lg font-semibold">Tactical Map</h1>
-        <p className="text-xs text-muted">Geo-referenced detections over the current AOI</p>
+      <header className="px-6 py-4 border-b border-border flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-lg font-semibold">Tactical Map</h1>
+          <p className="text-xs text-muted">
+            Geo-referenced detections · {geoDetections.length} pins{loading ? " · refreshing..." : ""}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <label className="text-xs text-muted">Mission:</label>
+          <select
+            className="bg-panel border border-border rounded px-3 py-1.5 text-sm font-mono min-w-[220px]"
+            value={selectedId ?? ""}
+            onChange={(e) => setSelectedId(Number(e.target.value))}
+          >
+            {missions.length === 0 && <option>(no missions yet)</option>}
+            {missions.map((m) => (
+              <option key={m.id} value={m.id}>
+                #{m.id} · {m.name}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={() => selectedId != null && setSelectedId(selectedId)}
+            className="p-1.5 rounded hover:bg-panel2 text-muted"
+            title="Refresh"
+          >
+            {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+          </button>
+        </div>
       </header>
-      <div className="flex-1">
-        <MapContainer center={DEMO_CENTER} zoom={14} style={{ height: "100%", width: "100%" }}>
+
+      {error && (
+        <div className="mx-6 mt-3 bg-threat-crit/20 border border-threat-crit/40 text-threat-crit p-2 rounded text-xs">
+          {error}
+        </div>
+      )}
+
+      <div className="flex-1 relative">
+        <MapContainer
+          center={[12.9716, 77.5946]}
+          zoom={15}
+          style={{ height: "100%", width: "100%" }}
+          preferCanvas
+        >
           <TileLayer
-            attribution='&copy; OpenStreetMap'
+            attribution="&copy; OpenStreetMap"
             url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          {DEMO_PINS.map((p, i) => (
-            <Marker key={i} position={[p.lat, p.lon]}>
+
+          <Polygon
+            positions={AOI_POLYGON}
+            pathOptions={{ color: "#ff7a1a", weight: 2, fillOpacity: 0.04, dashArray: "6 4" }}
+          />
+
+          {FRIENDLY_ASSETS.map((a) => (
+            <Marker key={a.name} position={[a.lat, a.lon]} icon={assetIcon}>
               <Popup>
                 <div className="font-mono text-xs">
-                  <div><b>{p.cls}</b></div>
-                  <div>threat: {p.score.toFixed(2)}</div>
+                  <div><b>{a.name}</b></div>
+                  <div>Friendly asset</div>
                 </div>
               </Popup>
             </Marker>
           ))}
+
+          {geoDetections.map((d) => {
+            const color = CLASS_COLORS[d.class_name] ?? "#ff7a1a";
+            return (
+              <CircleMarker
+                key={d.id}
+                center={[d.lat!, d.lon!]}
+                radius={5}
+                pathOptions={{ color, fillColor: color, fillOpacity: 0.8, weight: 1 }}
+              >
+                <Popup>
+                  <div className="font-mono text-xs leading-tight">
+                    <div><b>{d.class_name}</b></div>
+                    <div>conf: {d.confidence.toFixed(2)}</div>
+                    <div>lat: {d.lat!.toFixed(5)}</div>
+                    <div>lon: {d.lon!.toFixed(5)}</div>
+                    {d.track_id != null && <div>track: #{d.track_id}</div>}
+                  </div>
+                </Popup>
+              </CircleMarker>
+            );
+          })}
+
+          <FitToBounds bounds={bounds} />
         </MapContainer>
+
+        {/* Legend */}
+        <div className="absolute bottom-4 left-4 bg-panel/90 backdrop-blur border border-border rounded p-3 text-xs z-[1000] min-w-[180px]">
+          <div className="text-muted uppercase tracking-wider mb-2">Legend</div>
+          {Object.entries(counts).length === 0 ? (
+            <div className="text-muted">No detections — upload via Mission page</div>
+          ) : (
+            <div className="space-y-1">
+              {Object.entries(counts)
+                .sort(([, a], [, b]) => b - a)
+                .map(([name, n]) => (
+                  <div key={name} className="flex items-center justify-between gap-2 font-mono">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="w-2.5 h-2.5 rounded-full"
+                        style={{ background: CLASS_COLORS[name] ?? "#ff7a1a" }}
+                      />
+                      <span>{name}</span>
+                    </div>
+                    <span className="text-accent">{n}</span>
+                  </div>
+                ))}
+              <div className="pt-2 mt-2 border-t border-border flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#22d3ee] shadow-[0_0_6px_#22d3ee]" />
+                <span>Friendly assets</span>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

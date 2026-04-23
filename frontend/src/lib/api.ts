@@ -56,12 +56,28 @@ export type AuditEvent = {
   created_at: string;
 };
 
+export type Mission = {
+  id: number;
+  name: string;
+  source_path: string;
+  created_at: string;
+};
+
+export type AoiCorners = {
+  top_left: [number, number];
+  top_right: [number, number];
+  bottom_right: [number, number];
+  bottom_left: [number, number];
+};
+
 export const api = {
   health: () => json<{ status: string; device: string; model_loaded: boolean }>("/health"),
-  listDetections: (params?: { mission_id?: number; class_id?: number }) => {
+  listMissions: (limit = 50) => json<Mission[]>(`/api/v1/ingest?limit=${limit}`),
+  listDetections: (params?: { mission_id?: number; class_id?: number; limit?: number }) => {
     const q = new URLSearchParams();
     if (params?.mission_id != null) q.set("mission_id", String(params.mission_id));
     if (params?.class_id != null) q.set("class_id", String(params.class_id));
+    if (params?.limit != null) q.set("limit", String(params.limit));
     return json<Detection[]>(`/api/v1/detections?${q}`);
   },
   listAlerts: (params?: { mission_id?: number; status?: AlertStatus; min_score?: number }) => {
@@ -78,6 +94,24 @@ export const api = {
     reason?: string;
   }) => json<Alert>(`/api/v1/alerts/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
   listAudit: () => json<AuditEvent[]>("/api/v1/audit"),
+  ingest: async (file: File, name: string, aoi: AoiCorners) => {
+    const fd = new FormData();
+    fd.append("name", name);
+    fd.append("file", file);
+    fd.append("aoi_corners", JSON.stringify(aoi));
+    const res = await fetch(`${BASE}/api/v1/ingest`, { method: "POST", body: fd });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    return res.json() as Promise<Mission>;
+  },
+};
+
+// Default demo AOI — same as friendly_assets range in backend config.py.
+// Small ~1.2 km² box over Bengaluru centered near FOB Delta (12.9716, 77.5946).
+export const DEFAULT_AOI: AoiCorners = {
+  top_left:     [12.9750, 77.5900],
+  top_right:    [12.9750, 77.6000],
+  bottom_right: [12.9650, 77.6000],
+  bottom_left:  [12.9650, 77.5900],
 };
 
 export function openLiveSocket(onMessage: (data: unknown) => void): WebSocket {
