@@ -122,17 +122,21 @@ def process_mission(mission_id: int) -> dict:
 
         aoi = _aoi_from_mission(mission)
 
-        # Gather frames (single-element list for images).
+        # Gather frame-level detections.
+        # For images: single-frame detect() (no tracker needed).
+        # For videos: model.track() — stable track_id across frames via ByteTrack.
         suffix = src.suffix.lower()
-        frames: list[tuple[int, int, np.ndarray]] = []
+        frames_iter: list[tuple[int, int, np.ndarray, list]] = []
         if suffix in IMAGE_SUFFIXES:
             img = cv2.imread(str(src), cv2.IMREAD_COLOR)
             if img is None:
                 return {"ok": False, "reason": "image_decode_failed"}
-            frames = [(0, 0, img)]
+            frames_iter = [(0, 0, img, detector.detect(img))]
         elif suffix in VIDEO_SUFFIXES:
-            frames = _extract_frames(src)
-            if not frames:
+            frames_iter = list(
+                detector.detect_and_track_video(str(src), max_frames=MAX_VIDEO_FRAMES)
+            )
+            if not frames_iter:
                 return {"ok": False, "reason": "no_frames_extracted"}
         else:
             return {"ok": False, "reason": f"unsupported_suffix: {suffix}"}
@@ -140,9 +144,8 @@ def process_mission(mission_id: int) -> dict:
         detection_count = 0
         alert_count = 0
 
-        for frame_idx, ts_ms, img in frames:
+        for frame_idx, ts_ms, img, records in frames_iter:
             h, w = img.shape[:2]
-            records = detector.detect(img)
 
             # Cluster class counts for "density" term in scoring.
             cls_counts: dict[str, int] = {}
@@ -169,7 +172,7 @@ def process_mission(mission_id: int) -> dict:
                     confidence=r.confidence,
                     x1=r.x1, y1=r.y1, x2=r.x2, y2=r.y2,
                     lat=lat, lon=lon,
-                    track_id=None,
+                    track_id=r.track_id,
                 )
                 db.add(det)
                 db.flush()
@@ -216,6 +219,10 @@ def process_mission(mission_id: int) -> dict:
                 db.add(alert)
                 alert_count += 1
 
+        # Track count for audit payload (videos have multiple unique track_ids)
+        track_ids_seen = {r.track_id for _, _, _, recs in frames_iter for r in recs if r.track_id is not None}
+        frame_count = len(frames_iter)
+
         log_event(
             db,
             AuditEventType.INGEST_COMPLETED,
@@ -223,21 +230,23 @@ def process_mission(mission_id: int) -> dict:
             payload={
                 "detection_count": detection_count,
                 "alert_count": alert_count,
-                "frame_count": len(frames),
+                "frame_count": frame_count,
+                "track_count": len(track_ids_seen),
                 "aoi_present": aoi is not None,
             },
         )
         db.commit()
 
         log.info(
-            "pipeline ok: mission=%d frames=%d detections=%d alerts=%d aoi=%s",
-            mission.id, len(frames), detection_count, alert_count, aoi is not None,
+            "pipeline ok: mission=%d frames=%d detections=%d tracks=%d alerts=%d aoi=%s",
+            mission.id, frame_count, detection_count, len(track_ids_seen), alert_count, aoi is not None,
         )
         return {
             "ok": True,
             "mission_id": mission.id,
-            "frames": len(frames),
+            "frames": frame_count,
             "detections": detection_count,
+            "tracks": len(track_ids_seen),
             "alerts": alert_count,
         }
 

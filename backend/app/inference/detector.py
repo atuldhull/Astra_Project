@@ -36,6 +36,7 @@ class DetectionRecord:
     y1: float
     x2: float
     y2: float
+    track_id: int | None = None  # populated for video tracking, None for single-image detect()
 
 
 def _load_model():
@@ -90,3 +91,85 @@ def detect(image_bgr, imgsz: int | None = None, conf: float | None = None) -> li
         name = CLASS_NAMES[k] if 0 <= k < len(CLASS_NAMES) else str(k)
         out.append(DetectionRecord(int(k), name, float(c), float(x1), float(y1), float(x2), float(y2)))
     return out
+
+
+def detect_and_track_video(
+    video_path: str,
+    max_frames: int = 30,
+    vid_stride: int = 1,
+):
+    """For video paths: stream frames through YOLO+ByteTrack and yield
+    (frame_index, timestamp_ms, frame_bgr, detections_with_track_ids).
+
+    Uses Ultralytics' built-in tracking (persist=True maintains tracker state
+    across frames within a single call). track_id is stable across frames for
+    the same object. Stops after max_frames yields to cap demo latency.
+
+    Yields:
+        frame_index: 0-based index into the INPUT video (accounts for stride)
+        timestamp_ms: milliseconds into the video
+        frame_bgr: numpy H×W×3 BGR image (the original frame)
+        records: list[DetectionRecord] with track_id populated
+    """
+    if not is_ready():
+        return
+    model = _load_model()
+
+    # Probe FPS so we can report real timestamps back to callers
+    import cv2  # local import keeps import-time footprint small
+    cap = cv2.VideoCapture(video_path)
+    fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) or 0
+    cap.release()
+
+    # Auto-stride: if video has too many frames, skip to keep within max_frames
+    if total_frames > 0 and vid_stride == 1:
+        vid_stride = max(1, total_frames // max_frames)
+
+    results_gen = model.track(
+        source=video_path,
+        stream=True,
+        persist=True,
+        tracker="bytetrack.yaml",
+        conf=settings.conf_threshold,
+        iou=settings.iou_threshold,
+        imgsz=settings.imgsz,
+        device=settings.inference_device,
+        vid_stride=vid_stride,
+        verbose=False,
+    )
+
+    yielded = 0
+    for i, result in enumerate(results_gen):
+        if yielded >= max_frames:
+            break
+        frame = result.orig_img
+        if frame is None:
+            continue
+        actual_frame_idx = i * vid_stride
+        ts_ms = int(round(actual_frame_idx / fps * 1000))
+
+        records: list[DetectionRecord] = []
+        if result.boxes is not None and len(result.boxes) > 0:
+            xyxy = result.boxes.xyxy.cpu().numpy()
+            conf_arr = result.boxes.conf.cpu().numpy()
+            cls_arr = result.boxes.cls.cpu().numpy().astype(int)
+            # .id is None on the first frame (tracker initializes) and when 0 detections
+            ids = (
+                result.boxes.id.cpu().numpy().astype(int)
+                if result.boxes.id is not None
+                else [None] * len(xyxy)
+            )
+            for (x1, y1, x2, y2), c, k, tid in zip(xyxy, conf_arr, cls_arr, ids, strict=True):
+                name = CLASS_NAMES[k] if 0 <= k < len(CLASS_NAMES) else str(k)
+                records.append(DetectionRecord(
+                    class_id=int(k),
+                    class_name=name,
+                    confidence=float(c),
+                    x1=float(x1), y1=float(y1),
+                    x2=float(x2), y2=float(y2),
+                    track_id=int(tid) if tid is not None else None,
+                ))
+
+        yield actual_frame_idx, ts_ms, frame, records
+        yielded += 1

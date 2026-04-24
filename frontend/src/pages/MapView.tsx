@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { MapContainer, TileLayer, CircleMarker, Popup, Polygon, Marker, useMap } from "react-leaflet";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { MapContainer, TileLayer, CircleMarker, Popup, Polygon, Polyline, Marker, useMap } from "react-leaflet";
 import L from "leaflet";
-import { Loader2, RefreshCw } from "lucide-react";
-import { api, type Detection, type Mission, DEFAULT_AOI } from "../lib/api";
+import { Loader2, RefreshCw, Route } from "lucide-react";
+import { api, type Detection, type Mission, type Track, DEFAULT_AOI } from "../lib/api";
 
 // Friendly asset locations (must match backend config.py defaults)
 const FRIENDLY_ASSETS: { name: string; lat: number; lon: number }[] = [
@@ -54,6 +54,8 @@ export default function MapView() {
   const [missions, setMissions] = useState<Mission[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [detections, setDetections] = useState<Detection[]>([]);
+  const [tracks, setTracks] = useState<Track[]>([]);
+  const [showTracks, setShowTracks] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const pollRef = useRef<number | null>(null);
@@ -73,23 +75,29 @@ export default function MapView() {
       .catch((e) => setError(`missions: ${(e as Error).message}`));
   }, []);
 
-  // Load detections when mission changes + set up polling
+  // Load detections + tracks when mission changes + set up polling
   useEffect(() => {
     if (selectedId == null) return;
     let cancelled = false;
-    const fetchDets = async () => {
+    const fetchAll = async () => {
       try {
         setLoading(true);
-        const d = await api.listDetections({ mission_id: selectedId, limit: 500 });
-        if (!cancelled) setDetections(d);
+        const [d, t] = await Promise.all([
+          api.listDetections({ mission_id: selectedId, limit: 500 }),
+          api.listTracks(selectedId).catch(() => [] as Track[]),
+        ]);
+        if (!cancelled) {
+          setDetections(d);
+          setTracks(t);
+        }
       } catch (e) {
-        if (!cancelled) setError(`detections: ${(e as Error).message}`);
+        if (!cancelled) setError(`fetch: ${(e as Error).message}`);
       } finally {
         if (!cancelled) setLoading(false);
       }
     };
-    fetchDets();
-    pollRef.current = window.setInterval(fetchDets, 5000);
+    fetchAll();
+    pollRef.current = window.setInterval(fetchAll, 5000);
     return () => {
       cancelled = true;
       if (pollRef.current) window.clearInterval(pollRef.current);
@@ -123,10 +131,23 @@ export default function MapView() {
         <div>
           <h1 className="text-lg font-semibold">Tactical Map</h1>
           <p className="text-xs text-muted">
-            Geo-referenced detections · {geoDetections.length} pins{loading ? " · refreshing..." : ""}
+            {geoDetections.length} geo-pins
+            {tracks.length > 0 && ` · ${tracks.length} tracks`}
+            {loading && " · refreshing..."}
           </p>
         </div>
         <div className="flex items-center gap-3">
+          {tracks.length > 0 && (
+            <label className="flex items-center gap-1.5 text-xs text-muted cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={showTracks}
+                onChange={(e) => setShowTracks(e.target.checked)}
+                className="accent-accent"
+              />
+              <Route size={12} /> Tracks
+            </label>
+          )}
           <label className="text-xs text-muted">Mission:</label>
           <select
             className="bg-panel border border-border rounded px-3 py-1.5 text-sm font-mono min-w-[220px]"
@@ -184,27 +205,62 @@ export default function MapView() {
             </Marker>
           ))}
 
-          {geoDetections.map((d) => {
-            const color = CLASS_COLORS[d.class_name] ?? "#ff7a1a";
+          {/* Track trails: draw polylines for each track with >=2 geo-points */}
+          {showTracks && tracks.map((t) => {
+            const color = CLASS_COLORS[t.class_name] ?? "#ff7a1a";
+            const geoPoints = t.points.filter((p) => p.lat != null && p.lon != null);
+            if (geoPoints.length < 2) return null;
+            const latlngs: [number, number][] = geoPoints.map((p) => [p.lat!, p.lon!]);
+            const last = geoPoints[geoPoints.length - 1];
             return (
-              <CircleMarker
-                key={d.id}
-                center={[d.lat!, d.lon!]}
-                radius={5}
-                pathOptions={{ color, fillColor: color, fillOpacity: 0.8, weight: 1 }}
-              >
-                <Popup>
-                  <div className="font-mono text-xs leading-tight">
-                    <div><b>{d.class_name}</b></div>
-                    <div>conf: {d.confidence.toFixed(2)}</div>
-                    <div>lat: {d.lat!.toFixed(5)}</div>
-                    <div>lon: {d.lon!.toFixed(5)}</div>
-                    {d.track_id != null && <div>track: #{d.track_id}</div>}
-                  </div>
-                </Popup>
-              </CircleMarker>
+              <Fragment key={`track-${t.track_id}`}>
+                <Polyline
+                  positions={latlngs}
+                  pathOptions={{ color, weight: 3, opacity: 0.75, dashArray: "4 2" }}
+                />
+                {/* Head marker at the latest position, slightly bigger */}
+                <CircleMarker
+                  center={[last.lat!, last.lon!]}
+                  radius={7}
+                  pathOptions={{ color: "#fff", fillColor: color, fillOpacity: 1, weight: 2 }}
+                >
+                  <Popup>
+                    <div className="font-mono text-xs leading-tight">
+                      <div><b>Track #{t.track_id}</b> · {t.class_name}</div>
+                      <div>points: {t.point_count}</div>
+                      <div>avg conf: {t.avg_confidence.toFixed(3)}</div>
+                      <div>latest: frame {last.frame_index} ({last.frame_timestamp_ms}ms)</div>
+                    </div>
+                  </Popup>
+                </CircleMarker>
+              </Fragment>
             );
           })}
+
+          {/* Individual detections: only show ones NOT already in a visible track */}
+          {geoDetections
+            .filter((d) => !(showTracks && d.track_id != null && tracks.some((t) => t.track_id === d.track_id && t.point_count >= 2)))
+            .map((d) => {
+              const color = CLASS_COLORS[d.class_name] ?? "#ff7a1a";
+              return (
+                <CircleMarker
+                  key={d.id}
+                  center={[d.lat!, d.lon!]}
+                  radius={5}
+                  pathOptions={{ color, fillColor: color, fillOpacity: 0.8, weight: 1 }}
+                >
+                  <Popup>
+                    <div className="font-mono text-xs leading-tight">
+                      <div><b>{d.class_name}</b></div>
+                      <div>conf: {d.confidence.toFixed(2)}</div>
+                      <div>lat: {d.lat!.toFixed(5)}</div>
+                      <div>lon: {d.lon!.toFixed(5)}</div>
+                      {d.track_id != null && <div>track: #{d.track_id}</div>}
+                    </div>
+                  </Popup>
+                </CircleMarker>
+              );
+            })}
 
           <FitToBounds bounds={bounds} />
         </MapContainer>

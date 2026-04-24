@@ -63,6 +63,24 @@ export type Mission = {
   created_at: string;
 };
 
+export type TrackPoint = {
+  frame_index: number;
+  frame_timestamp_ms: number;
+  lat: number | null;
+  lon: number | null;
+  x1: number; y1: number; x2: number; y2: number;
+  confidence: number;
+};
+
+export type Track = {
+  track_id: number;
+  class_id: number;
+  class_name: string;
+  point_count: number;
+  avg_confidence: number;
+  points: TrackPoint[];
+};
+
 export type AoiCorners = {
   top_left: [number, number];
   top_right: [number, number];
@@ -80,6 +98,8 @@ export const api = {
     if (params?.limit != null) q.set("limit", String(params.limit));
     return json<Detection[]>(`/api/v1/detections?${q}`);
   },
+  listTracks: (mission_id: number) =>
+    json<Track[]>(`/api/v1/tracks?mission_id=${mission_id}`),
   listAlerts: (params?: { mission_id?: number; status?: AlertStatus; min_score?: number }) => {
     const q = new URLSearchParams();
     if (params?.mission_id != null) q.set("mission_id", String(params.mission_id));
