@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Upload, Play, Loader2, Zap, Check, X, Eye, Radio } from "lucide-react";
-import { DEFAULT_AOI, api, type Detection as DbDetection } from "../lib/api";
+import { Upload, Play, Loader2, Zap, Check, X, Eye, Radio, MapPin } from "lucide-react";
+import { DEFAULT_AOI, api, type Detection as DbDetection, type Mission as DbMission } from "../lib/api";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -45,6 +45,7 @@ export default function Mission() {
   const [result, setResult] = useState<PredictResponse | null>(null);
   const [saveToDb, setSaveToDb] = useState(true);
   const [savedMissionId, setSavedMissionId] = useState<number | null>(null);
+  const [savedMission, setSavedMission] = useState<DbMission | null>(null);
   const [explainUrl, setExplainUrl] = useState<string | null>(null);
   const [explainLoading, setExplainLoading] = useState(false);
   const [explainedClass, setExplainedClass] = useState<string | null>(null);
@@ -65,6 +66,7 @@ export default function Mission() {
     setError(null);
     setResult(null);
     setSavedMissionId(null);
+    setSavedMission(null);
     setVideoDets([]);
     setVideoCurrentTime(0);
     setFileUrl(URL.createObjectURL(f));
@@ -73,13 +75,22 @@ export default function Mission() {
   };
 
   // Fire-and-forget ingest to DB so Map/Alerts/Audit pages populate.
+  // Note: we only pass DEFAULT_AOI for videos. For images we leave aoi empty
+  // so the backend can try EXIF-GPS extraction first, falling back to the
+  // default only if no GPS is present.
   async function saveMission(f: File) {
     try {
-      const m = await api.ingest(f, missionName, DEFAULT_AOI);
+      let m: DbMission;
+      if (f.type.startsWith("video/")) {
+        m = await api.ingest(f, missionName, DEFAULT_AOI);
+      } else {
+        // Let backend auto-detect GPS or use its default
+        m = await api.ingestAuto(f, missionName);
+      }
       setSavedMissionId(m.id);
+      setSavedMission(m);
       localStorage.setItem("astra:lastMissionId", String(m.id));
     } catch (e) {
-      // don't interrupt the live preview — just log
       console.warn("ingest failed:", e);
     }
   }
@@ -411,6 +422,23 @@ export default function Mission() {
           {savedMissionId != null && (
             <span className="flex items-center gap-1 text-xs text-threat-low">
               <Check size={12} /> Mission #{savedMissionId}
+            </span>
+          )}
+          {savedMission?.aoi_source === "gps-exif" && savedMission.gps_point && (
+            <span
+              className="flex items-center gap-1 text-xs text-blue-400 font-mono"
+              title="GPS coordinates extracted from image EXIF metadata"
+            >
+              <MapPin size={12} />
+              {savedMission.gps_point[0].toFixed(4)}, {savedMission.gps_point[1].toFixed(4)}
+            </span>
+          )}
+          {savedMission?.aoi_source === "default" && (
+            <span
+              className="flex items-center gap-1 text-xs text-muted font-mono"
+              title="No GPS in image — using default AOI (Bangalore)"
+            >
+              <MapPin size={12} /> default AOI
             </span>
           )}
           <input

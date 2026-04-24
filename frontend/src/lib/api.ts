@@ -61,6 +61,8 @@ export type Mission = {
   name: string;
   source_path: string;
   created_at: string;
+  aoi_source?: "default" | "explicit" | "gps-exif" | null;
+  gps_point?: [number, number] | null;
 };
 
 export type TrackPoint = {
@@ -119,6 +121,16 @@ export const api = {
     fd.append("name", name);
     fd.append("file", file);
     fd.append("aoi_corners", JSON.stringify(aoi));
+    const res = await fetch(`${BASE}/api/v1/ingest`, { method: "POST", body: fd });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    return res.json() as Promise<Mission>;
+  },
+  // Upload without explicit AOI — backend will try EXIF-GPS extraction and
+  // fall back to a default AOI only if no GPS is found.
+  ingestAuto: async (file: File, name: string) => {
+    const fd = new FormData();
+    fd.append("name", name);
+    fd.append("file", file);
     const res = await fetch(`${BASE}/api/v1/ingest`, { method: "POST", body: fd });
     if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
     return res.json() as Promise<Mission>;

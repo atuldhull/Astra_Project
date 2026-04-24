@@ -89,6 +89,9 @@ class MissionOut(BaseModel):
     name: str
     source_path: str
     created_at: datetime
+    # Populated only on POST responses (how the AOI was determined)
+    aoi_source: Literal["default", "explicit", "gps-exif"] | None = None
+    gps_point: tuple[float, float] | None = None
 
 
 # ── Audit ─────────────────────────────────────────────────────────────────
