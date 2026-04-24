@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Upload, Play, Loader2, Zap, Check, X, Eye } from "lucide-react";
+import { Upload, Play, Loader2, Zap, Check, X, Eye, Radio } from "lucide-react";
 import { DEFAULT_AOI, api } from "../lib/api";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
@@ -48,6 +48,9 @@ export default function Mission() {
   const [explainUrl, setExplainUrl] = useState<string | null>(null);
   const [explainLoading, setExplainLoading] = useState(false);
   const [explainedClass, setExplainedClass] = useState<string | null>(null);
+  const [streamUrl, setStreamUrl] = useState("");
+  const [streamDialogOpen, setStreamDialogOpen] = useState(false);
+  const [streamBusy, setStreamBusy] = useState(false);
 
   const onPick = () => fileRef.current?.click();
 
@@ -121,6 +124,27 @@ export default function Mission() {
     if (explainUrl) URL.revokeObjectURL(explainUrl);
     setExplainUrl(null);
     setExplainedClass(null);
+  }
+
+  // Ingest from a live URL / RTSP stream
+  async function submitStreamUrl() {
+    if (!streamUrl.trim()) return;
+    setStreamBusy(true);
+    setError(null);
+    try {
+      const m = await api.ingestUrl(streamUrl.trim(), missionName, DEFAULT_AOI, {
+        max_frames: 30, duration_s: 5,
+      });
+      setSavedMissionId(m.id);
+      localStorage.setItem("astra:lastMissionId", String(m.id));
+      setStreamDialogOpen(false);
+      // Show a friendly message via error banner acting as a toast
+      setError(`✓ Stream captured · Mission #${m.id}. Switch to Map/Alerts to see results.`);
+    } catch (e) {
+      setError(`stream: ${(e as Error).message}`);
+    } finally {
+      setStreamBusy(false);
+    }
   }
 
   async function runPredict(blob: Blob, filename: string) {
@@ -245,6 +269,13 @@ export default function Mission() {
             className="flex items-center gap-2 bg-accent text-bg px-4 py-1.5 rounded text-sm font-medium hover:brightness-110"
           >
             <Upload size={14} /> Ingest
+          </button>
+          <button
+            onClick={() => setStreamDialogOpen(true)}
+            className="flex items-center gap-2 bg-panel2 border border-border px-4 py-1.5 rounded text-sm hover:bg-panel"
+            title="Ingest from RTSP or HTTP video URL"
+          >
+            <Radio size={14} /> Stream
           </button>
           {fileType === "video" && (
             <button
@@ -422,6 +453,60 @@ export default function Mission() {
           )}
         </aside>
       </div>
+
+      {/* Stream URL dialog */}
+      {streamDialogOpen && (
+        <div
+          className="fixed inset-0 bg-bg/70 backdrop-blur-sm z-50 flex items-center justify-center"
+          onClick={() => !streamBusy && setStreamDialogOpen(false)}
+        >
+          <div
+            className="bg-panel border border-border rounded-lg p-6 w-[520px] max-w-full mx-4 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <Radio size={18} className="text-accent" />
+              <h2 className="text-lg font-semibold">Live Stream Ingest</h2>
+            </div>
+            <p className="text-xs text-muted mb-3 leading-relaxed">
+              Enter an <code className="text-accent">rtsp://</code>, <code className="text-accent">http://</code>, or <code className="text-accent">https://</code> URL.
+              ASTRA will capture ~30 frames over 5 seconds, run detection, and populate Map + Alerts
+              just like a file upload.
+            </p>
+            <input
+              type="text"
+              placeholder="rtsp://192.168.1.10:554/drone-feed  or  https://example.com/clip.mp4"
+              value={streamUrl}
+              onChange={(e) => setStreamUrl(e.target.value)}
+              disabled={streamBusy}
+              className="w-full bg-bg border border-border rounded px-3 py-2 text-sm font-mono disabled:opacity-50"
+              autoFocus
+            />
+            <div className="flex items-center justify-between mt-4">
+              <div className="text-[11px] text-muted">
+                Cap: 30 frames / 5 seconds · timeout 8s
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => !streamBusy && setStreamDialogOpen(false)}
+                  disabled={streamBusy}
+                  className="px-3 py-1.5 rounded text-sm text-muted hover:text-text disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={submitStreamUrl}
+                  disabled={streamBusy || !streamUrl.trim()}
+                  className="flex items-center gap-2 bg-accent text-bg px-4 py-1.5 rounded text-sm font-medium hover:brightness-110 disabled:opacity-50"
+                >
+                  {streamBusy ? <Loader2 size={14} className="animate-spin" /> : <Radio size={14} />}
+                  {streamBusy ? "Capturing…" : "Capture + detect"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

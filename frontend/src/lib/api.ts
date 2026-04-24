@@ -103,6 +103,22 @@ export const api = {
     if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
     return res.json() as Promise<Mission>;
   },
+  ingestUrl: async (
+    url: string,
+    name: string,
+    aoi: AoiCorners,
+    opts?: { max_frames?: number; duration_s?: number },
+  ) => {
+    const fd = new FormData();
+    fd.append("name", name);
+    fd.append("url", url);
+    fd.append("aoi_corners", JSON.stringify(aoi));
+    if (opts?.max_frames != null) fd.append("max_frames", String(opts.max_frames));
+    if (opts?.duration_s != null) fd.append("duration_s", String(opts.duration_s));
+    const res = await fetch(`${BASE}/api/v1/ingest/url`, { method: "POST", body: fd });
+    if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+    return res.json() as Promise<Mission>;
+  },
 };
 
 // Default demo AOI — same as friendly_assets range in backend config.py.

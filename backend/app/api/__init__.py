@@ -1,9 +1,10 @@
 from fastapi import APIRouter
 
-from app.api import alerts, audit, detections, explain, ingest, predict, reports, ws
+from app.api import alerts, audit, detections, explain, ingest, predict, reports, stream, ws
 
 router = APIRouter(prefix="/api/v1")
 router.include_router(ingest.router)
+router.include_router(stream.router)
 router.include_router(detections.router)
 router.include_router(alerts.router)
 router.include_router(audit.router)
