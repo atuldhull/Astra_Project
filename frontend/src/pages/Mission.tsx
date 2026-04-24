@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Upload, Play, Loader2, Zap, Check, X, Eye, Radio } from "lucide-react";
-import { DEFAULT_AOI, api } from "../lib/api";
+import { DEFAULT_AOI, api, type Detection as DbDetection } from "../lib/api";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -51,6 +51,9 @@ export default function Mission() {
   const [streamUrl, setStreamUrl] = useState("");
   const [streamDialogOpen, setStreamDialogOpen] = useState(false);
   const [streamBusy, setStreamBusy] = useState(false);
+  const [videoDets, setVideoDets] = useState<DbDetection[]>([]);
+  const [videoPolling, setVideoPolling] = useState(false);
+  const [videoCurrentTime, setVideoCurrentTime] = useState(0);
 
   const onPick = () => fileRef.current?.click();
 
@@ -62,6 +65,8 @@ export default function Mission() {
     setError(null);
     setResult(null);
     setSavedMissionId(null);
+    setVideoDets([]);
+    setVideoCurrentTime(0);
     setFileUrl(URL.createObjectURL(f));
     setFileType(f.type.startsWith("video/") ? "video" : "image");
     setCurrentFile(f);
@@ -166,10 +171,72 @@ export default function Mission() {
 
   // Auto-predict when an image loads
   useEffect(() => {
-    if (!fileUrl || fileType !== "image" || !currentFile) return;
-    fetch(fileUrl).then(r => r.blob()).then(b => runPredict(b, "upload.jpg"));
-    if (saveToDb) saveMission(currentFile);
+    if (!fileUrl || !currentFile) return;
+    if (fileType === "image") {
+      fetch(fileUrl).then(r => r.blob()).then(b => runPredict(b, "upload.jpg"));
+      if (saveToDb) saveMission(currentFile);
+    } else if (fileType === "video" && saveToDb) {
+      // Videos can't run /predict on a single frame reliably — we ingest,
+      // wait for the pipeline to produce tracked detections, then overlay
+      // them on playback.
+      saveMission(currentFile);
+    }
   }, [fileUrl, fileType, currentFile]);
+
+  // Poll detections for video missions until we have results
+  useEffect(() => {
+    if (fileType !== "video" || savedMissionId == null) return;
+    let cancelled = false;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 15;  // ~30 seconds of polling
+    setVideoPolling(true);
+
+    const poll = async () => {
+      attempts++;
+      try {
+        const dets = await api.listDetections({ mission_id: savedMissionId, limit: 1000 });
+        if (cancelled) return;
+        if (dets.length > 0) {
+          setVideoDets(dets);
+          setVideoPolling(false);
+          return true;  // stop polling
+        }
+      } catch {}
+      return false;
+    };
+
+    const interval = window.setInterval(async () => {
+      const done = await poll();
+      if (done || attempts >= MAX_ATTEMPTS || cancelled) {
+        window.clearInterval(interval);
+        if (!cancelled) setVideoPolling(false);
+      }
+    }, 2000);
+
+    // Initial probe
+    poll().then((done) => {
+      if (done) window.clearInterval(interval);
+    });
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+      setVideoPolling(false);
+    };
+  }, [fileType, savedMissionId]);
+
+  // Track the video's current time so the canvas redraw effect re-fires
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || fileType !== "video") return;
+    const onTime = () => setVideoCurrentTime(video.currentTime);
+    video.addEventListener("timeupdate", onTime);
+    video.addEventListener("seeked", onTime);
+    return () => {
+      video.removeEventListener("timeupdate", onTime);
+      video.removeEventListener("seeked", onTime);
+    };
+  }, [fileType, fileUrl]);
 
   // Analyze current frame from video
   async function analyzeVideoFrame() {
@@ -185,48 +252,142 @@ export default function Mission() {
     await runPredict(blob, "frame.jpg");
   }
 
-  // Draw boxes whenever result or image changes
+  // Draw boxes whenever result/time/detections change
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !result) return;
-    const base = fileType === "video" ? videoRef.current : imgRef.current;
-    if (!base) return;
+    if (!canvas) return;
 
-    const rect = base.getBoundingClientRect();
-    canvas.width = rect.width;
-    canvas.height = rect.height;
+    // ── IMAGE MODE ────────────────────────────────────────────────────
+    if (fileType === "image" && result) {
+      const base = imgRef.current;
+      if (!base) return;
+      const rect = base.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
 
+      const ctx = canvas.getContext("2d")!;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const scaleX = canvas.width / result.image.width;
+      const scaleY = canvas.height / result.image.height;
+
+      ctx.font = "12px ui-monospace, Consolas, monospace";
+      ctx.lineWidth = 2;
+
+      for (const d of result.detections) {
+        const color = CLASS_COLORS[d.class_name] ?? "#ff7a1a";
+        const x = d.x1 * scaleX;
+        const y = d.y1 * scaleY;
+        const w = (d.x2 - d.x1) * scaleX;
+        const h = (d.y2 - d.y1) * scaleY;
+        ctx.strokeStyle = color;
+        ctx.strokeRect(x, y, w, h);
+
+        const label = `${d.class_name} ${d.confidence.toFixed(2)}`;
+        const textW = ctx.measureText(label).width + 8;
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y - 16, textW, 16);
+        ctx.fillStyle = "#0a0f14";
+        ctx.fillText(label, x + 4, y - 4);
+      }
+      return;
+    }
+
+    // ── VIDEO MODE ────────────────────────────────────────────────────
+    if (fileType === "video" && videoDets.length > 0) {
+      const video = videoRef.current;
+      if (!video || !video.videoWidth || !video.videoHeight) return;
+      const rect = video.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+
+      const ctx = canvas.getContext("2d")!;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Scale from original video pixels -> rendered display
+      const scaleX = rect.width / video.videoWidth;
+      const scaleY = rect.height / video.videoHeight;
+
+      // Find detections near current video time (±200ms window)
+      const currentMs = videoCurrentTime * 1000;
+      const WINDOW_MS = 250;
+      const current = videoDets.filter(
+        (d) => Math.abs(d.frame_timestamp_ms - currentMs) <= WINDOW_MS
+      );
+
+      // Draw trails for tracked detections (all past points up to now, per track)
+      const trackGroups: Record<number, DbDetection[]> = {};
+      for (const d of videoDets) {
+        if (d.track_id == null) continue;
+        if (d.frame_timestamp_ms > currentMs) continue;  // future, skip
+        (trackGroups[d.track_id] ??= []).push(d);
+      }
+
+      ctx.lineWidth = 1.5;
+      for (const tid of Object.keys(trackGroups)) {
+        const group = trackGroups[Number(tid)].sort(
+          (a, b) => a.frame_timestamp_ms - b.frame_timestamp_ms
+        );
+        if (group.length < 2) continue;
+        const color = CLASS_COLORS[group[0].class_name] ?? "#ff7a1a";
+        ctx.strokeStyle = color;
+        ctx.globalAlpha = 0.35;
+        ctx.beginPath();
+        for (let i = 0; i < group.length; i++) {
+          const d = group[i];
+          const cx = ((d.x1 + d.x2) / 2) * scaleX;
+          const cy = ((d.y1 + d.y2) / 2) * scaleY;
+          if (i === 0) ctx.moveTo(cx, cy);
+          else ctx.lineTo(cx, cy);
+        }
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+
+      // Draw current boxes
+      ctx.font = "12px ui-monospace, Consolas, monospace";
+      ctx.lineWidth = 2;
+      for (const d of current) {
+        const color = CLASS_COLORS[d.class_name] ?? "#ff7a1a";
+        const x = d.x1 * scaleX;
+        const y = d.y1 * scaleY;
+        const w = (d.x2 - d.x1) * scaleX;
+        const h = (d.y2 - d.y1) * scaleY;
+        ctx.strokeStyle = color;
+        ctx.strokeRect(x, y, w, h);
+
+        const label = d.track_id != null
+          ? `#${d.track_id} · ${d.class_name} ${d.confidence.toFixed(2)}`
+          : `${d.class_name} ${d.confidence.toFixed(2)}`;
+        const textW = ctx.measureText(label).width + 8;
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y - 16, textW, 16);
+        ctx.fillStyle = "#0a0f14";
+        ctx.fillText(label, x + 4, y - 4);
+      }
+      return;
+    }
+
+    // Fallback: no data — clear
     const ctx = canvas.getContext("2d")!;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    const scaleX = canvas.width / result.image.width;
-    const scaleY = canvas.height / result.image.height;
-
-    ctx.font = "12px ui-monospace, Consolas, monospace";
-    ctx.lineWidth = 2;
-
-    for (const d of result.detections) {
-      const color = CLASS_COLORS[d.class_name] ?? "#ff7a1a";
-      const x = d.x1 * scaleX;
-      const y = d.y1 * scaleY;
-      const w = (d.x2 - d.x1) * scaleX;
-      const h = (d.y2 - d.y1) * scaleY;
-      ctx.strokeStyle = color;
-      ctx.strokeRect(x, y, w, h);
-
-      const label = `${d.class_name} ${d.confidence.toFixed(2)}`;
-      const textW = ctx.measureText(label).width + 8;
-      ctx.fillStyle = color;
-      ctx.fillRect(x, y - 16, textW, 16);
-      ctx.fillStyle = "#0a0f14";
-      ctx.fillText(label, x + 4, y - 4);
-    }
-  }, [result, fileUrl, fileType]);
+  }, [result, fileUrl, fileType, videoDets, videoCurrentTime]);
 
   const classCounts: Record<string, number> = {};
   for (const d of result?.detections ?? []) {
     classCounts[d.class_name] = (classCounts[d.class_name] ?? 0) + 1;
   }
+
+  // Video-mode aggregates
+  const currentMs = videoCurrentTime * 1000;
+  const videoCurrentDets = fileType === "video"
+    ? videoDets.filter((d) => Math.abs(d.frame_timestamp_ms - currentMs) <= 250)
+    : [];
+  const videoClassCounts: Record<string, number> = {};
+  for (const d of videoCurrentDets) {
+    videoClassCounts[d.class_name] = (videoClassCounts[d.class_name] ?? 0) + 1;
+  }
+  const videoTracks = new Set(videoDets.map((d) => d.track_id).filter((t) => t != null));
 
   return (
     <div className="h-full flex flex-col">
@@ -323,12 +484,14 @@ export default function Mission() {
               )}
               <canvas
                 ref={canvasRef}
-                onClick={onCanvasClick}
+                onClick={fileType === "image" ? onCanvasClick : undefined}
                 className={`absolute inset-0 m-auto ${
-                  explainUrl ? "pointer-events-none opacity-0" : "cursor-pointer"
+                  explainUrl ? "pointer-events-none opacity-0"
+                  : fileType === "video" ? "pointer-events-none"
+                  : "cursor-pointer"
                 }`}
                 style={{ width: "auto", height: "auto" }}
-                title="Click any detection to see why the model chose it"
+                title={fileType === "image" ? "Click any detection to see why the model chose it" : undefined}
               />
               {busy && (
                 <div className="absolute top-3 right-3 bg-bg/80 border border-border px-3 py-1.5 rounded flex items-center gap-2 text-xs">
@@ -353,9 +516,14 @@ export default function Mission() {
                   </button>
                 </div>
               )}
-              {result && !explainUrl && !busy && (
+              {result && !explainUrl && !busy && fileType === "image" && (
                 <div className="absolute bottom-3 left-3 bg-bg/80 border border-border px-2.5 py-1 rounded text-[11px] text-muted">
                   💡 Click a box to see why the model chose it (Grad-CAM)
+                </div>
+              )}
+              {fileType === "video" && videoDets.length > 0 && !videoPolling && (
+                <div className="absolute bottom-3 left-3 bg-bg/80 border border-border px-2.5 py-1 rounded text-[11px] text-muted">
+                  ▶ Play — boxes sync to playback, tracks leave movement trails
                 </div>
               )}
             </>
@@ -444,12 +612,73 @@ export default function Mission() {
             </>
           )}
 
-          {!result && !busy && fileUrl && (
-            <div className="text-xs text-muted">
-              {fileType === "video"
-                ? "Click \"Analyze frame\" to run detection"
-                : "Running first inference..."}
-            </div>
+          {!result && !busy && fileUrl && fileType === "image" && (
+            <div className="text-xs text-muted">Running first inference...</div>
+          )}
+
+          {/* Video-mode panel */}
+          {fileType === "video" && (
+            <>
+              {videoPolling && (
+                <div className="flex items-center gap-2 bg-panel2 border border-border rounded px-3 py-2 text-xs">
+                  <Loader2 size={12} className="animate-spin text-accent" />
+                  <span>Processing video through pipeline...</span>
+                </div>
+              )}
+              {videoDets.length > 0 && (
+                <>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="bg-panel2 rounded px-2 py-2">
+                      <div className="text-muted text-[10px] uppercase">Frames</div>
+                      <div className="text-lg font-mono">{new Set(videoDets.map(d => d.frame_index)).size}</div>
+                    </div>
+                    <div className="bg-panel2 rounded px-2 py-2">
+                      <div className="text-muted text-[10px] uppercase">Tracks</div>
+                      <div className="text-lg font-mono">{videoTracks.size}</div>
+                    </div>
+                    <div className="bg-panel2 rounded px-2 py-2">
+                      <div className="text-muted text-[10px] uppercase">Total dets</div>
+                      <div className="text-lg font-mono">{videoDets.length}</div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs text-muted uppercase tracking-wider mb-2">
+                      At current frame ({videoCurrentTime.toFixed(1)}s)
+                    </div>
+                    {videoCurrentDets.length === 0 ? (
+                      <div className="text-xs text-muted">No detections in this frame.</div>
+                    ) : (
+                      <div className="space-y-1">
+                        {Object.entries(videoClassCounts)
+                          .sort(([, a], [, b]) => b - a)
+                          .map(([name, n]) => (
+                            <div key={name} className="flex items-center justify-between text-xs font-mono">
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className="w-2 h-2 rounded-sm"
+                                  style={{ background: CLASS_COLORS[name] ?? "#ff7a1a" }}
+                                />
+                                <span>{name}</span>
+                              </div>
+                              <span className="text-accent">{n}</span>
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="text-[11px] text-muted leading-snug pt-2 border-t border-border">
+                    ⟶ Play the video — boxes move in sync with detections, tracks leave fading trails showing movement paths.
+                  </div>
+                </>
+              )}
+              {!videoPolling && videoDets.length === 0 && fileUrl && (
+                <div className="text-xs text-muted">
+                  No detections yet. Toggle "Save to DB" if not already on, or click "Analyze frame" for a one-shot preview.
+                </div>
+              )}
+            </>
           )}
         </aside>
       </div>
