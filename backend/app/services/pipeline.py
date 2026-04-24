@@ -32,6 +32,7 @@ from app.config import settings
 from app.db.models import Alert, AuditEventType, Detection, Mission
 from app.db.session import SessionLocal
 from app.fusion.georef import AoiCorners, haversine_km, pixel_to_latlon
+from app.fusion.narrator import NarratorContext, narrate
 from app.fusion.scoring import ScoreInputs, compute_threat_score
 from app.inference import detector
 from app.services.audit import log_event
@@ -194,12 +195,23 @@ def process_mission(mission_id: int) -> dict:
                     "nearest_asset": nearest_name,
                 }
 
+                narrative_text = narrate(
+                    NarratorContext(
+                        class_name=r.class_name,
+                        confidence=r.confidence,
+                        threat_score=score.score,
+                        distance_km=dist_km,
+                        nearest_asset=nearest_name,
+                        same_class_count=cls_counts.get(r.class_name, 1),
+                    )
+                )
+
                 alert = Alert(
                     mission_id=mission.id,
                     detection_id=det.id,
                     threat_score=score.score,
                     score_breakdown_json=json.dumps(breakdown),
-                    narrative=None,
+                    narrative=narrative_text,
                 )
                 db.add(alert)
                 alert_count += 1

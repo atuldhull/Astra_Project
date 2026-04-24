@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Check, X, ArrowUpCircle, Loader2, RefreshCw } from "lucide-react";
 import { api, threatColor, type Alert, type Mission } from "../lib/api";
 
@@ -202,11 +202,11 @@ export default function Alerts() {
                 const nearest = a.score_breakdown.nearest_asset;
                 const isBusy = busyId === a.id;
                 return (
+                  <Fragment key={a.id}>
                   <tr
-                    key={a.id}
                     className="border-t border-border hover:bg-panel2 transition-colors"
                   >
-                    <td className="px-3 py-2 font-mono text-muted">{i + 1}</td>
+                    <td className="px-3 py-2 font-mono text-muted" rowSpan={a.narrative ? 2 : 1}>{i + 1}</td>
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-2 font-mono text-xs">
                         <span
@@ -272,6 +272,15 @@ export default function Alerts() {
                       )}
                     </td>
                   </tr>
+                  {a.narrative && (
+                    <tr className="hover:bg-panel2 transition-colors">
+                      <td colSpan={8} className="px-3 pb-2 pt-0 text-[11px] italic text-accent/80 leading-snug">
+                        <span className="text-muted mr-2">⟶</span>
+                        {a.narrative}
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 );
               })}
             </tbody>
