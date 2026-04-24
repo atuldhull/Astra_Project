@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, RefreshCw, Search } from "lucide-react";
-import { api, type AuditEvent } from "../lib/api";
+import { Loader2, RefreshCw, Search, FileDown } from "lucide-react";
+import { api, type AuditEvent, type Mission } from "../lib/api";
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
 const EVENT_COLORS: Record<string, string> = {
   ingest_started:     "#60a5fa",
@@ -43,6 +45,9 @@ function describe(e: AuditEvent): string {
 
 export default function Audit() {
   const [events, setEvents] = useState<AuditEvent[]>([]);
+  const [missions, setMissions] = useState<Mission[]>([]);
+  const [exportMissionId, setExportMissionId] = useState<number | null>(null);
+  const [exporting, setExporting] = useState(false);
   const [filter, setFilter] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,9 +67,41 @@ export default function Audit() {
 
   useEffect(() => {
     load();
+    api.listMissions(50)
+      .then((m) => {
+        setMissions(m);
+        if (m.length > 0) {
+          const stored = Number(localStorage.getItem("astra:lastMissionId") ?? "");
+          const pref = m.find((x) => x.id === stored) ?? m[0];
+          setExportMissionId(pref.id);
+        }
+      })
+      .catch(() => {});
     pollRef.current = window.setInterval(load, 4000);
     return () => { if (pollRef.current) window.clearInterval(pollRef.current); };
   }, []);
+
+  async function exportReport() {
+    if (exportMissionId == null) return;
+    setExporting(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/reports/mission/${exportMissionId}.pdf`);
+      if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `astra-mission-${exportMissionId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) {
+      setError(`export: ${(e as Error).message}`);
+    } finally {
+      setExporting(false);
+    }
+  }
 
   const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase();
@@ -95,8 +132,30 @@ export default function Audit() {
               placeholder="filter events..."
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="bg-panel border border-border rounded pl-8 pr-3 py-1.5 text-sm w-60"
+              className="bg-panel border border-border rounded pl-8 pr-3 py-1.5 text-sm w-52"
             />
+          </div>
+          <div className="flex items-center gap-2 border-l border-border pl-3">
+            <label className="text-xs text-muted">Export:</label>
+            <select
+              className="bg-panel border border-border rounded px-2 py-1.5 text-xs font-mono min-w-[180px]"
+              value={exportMissionId ?? ""}
+              onChange={(e) => setExportMissionId(Number(e.target.value))}
+            >
+              {missions.length === 0 && <option>(no missions)</option>}
+              {missions.map((m) => (
+                <option key={m.id} value={m.id}>#{m.id} · {m.name}</option>
+              ))}
+            </select>
+            <button
+              onClick={exportReport}
+              disabled={exporting || exportMissionId == null}
+              className="flex items-center gap-1 bg-accent text-bg px-3 py-1.5 rounded text-xs font-medium hover:brightness-110 disabled:opacity-50"
+              title="Generate signed PDF mission report"
+            >
+              {exporting ? <Loader2 size={12} className="animate-spin" /> : <FileDown size={12} />}
+              PDF
+            </button>
           </div>
           <button
             onClick={load}
