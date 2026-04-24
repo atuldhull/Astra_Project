@@ -98,29 +98,40 @@ OBS Studio (free, 5-min install). Download from https://obsproject.com. Create a
 - Dwell 2 seconds showing the popup with lat/lon/conf
 - Close popup
 
-### Shot 5 — Switch to Alerts *(0:45-1:10)*
+### Shot 5 — Click a box → Grad-CAM heatmap *(0:30-0:48)* ← NEW HERO SHOT
+- **Click** any detection box on the image
+- Small loader shows briefly
+- **Heatmap overlays the image** — red/yellow where the model looked
+- **Dwell 4 seconds** — this is your single strongest moment
+- Click the × close button to return to boxes
+
+### Shot 6 — Switch to Alerts *(0:48-1:08)*
 - Click **Alerts** in sidebar
 - Wait for table to render
-- **Slowly move cursor down the top 5 rows** (1 sec)
-- **Drag the `w_class` slider from 0.35 up to 0.80** — rows reorder live. This is the wow moment, **dwell on it for 3 full seconds**.
-- Drag `w_prox` down to 0.10 — rows reorder again
+- **Hover over the italic narrative line** under the first alert row — point at it (the narrator output: *"CRITICAL THREAT: 41 heavy vehicle units..."*)
+- **Drag the `w_class` slider from 0.35 up to 0.80** — rows reorder live
 - **Click the green ✓ on the top pending alert** → status flips to "confirmed", operator "cmdr-01" shows up
 
-### Shot 6 — Switch to Audit *(1:10-1:25)*
-- Click **Audit** in sidebar
-- Event log populates — your `alert_confirmed` event is at the top
-- **Hover over the top row** for 2s (shows operator + event type + payload description)
-- Right sidebar shows event counts by type — dwell 2 seconds
+### Shot 7 — Switch to Map *(1:08-1:18)*
+- Click **Map** in sidebar
+- Map fits to AOI polygon + geo-pins appear
+- **Pan cursor** across the pin cluster
+- Click one pin → popup shows class + confidence + lat/lon
 
-### Shot 7 — Benchmark page close *(1:25-1:32)*
+### Shot 8 — Adversarial page *(1:18-1:30)* ← ATTACK DEMO
+- Click **Adversarial** in sidebar
+- Pre-loaded result from rehearsal already shown (original left, perturbed right)
+- **Drag the epsilon slider from 0.00 upward** — watch the perturbed-side box count collapse
+- **Hover over the per-class delta** — dwell 2 seconds on the visible `vehicle 5→0` drops
+
+### Shot 9 — Benchmark page close *(1:30-1:35)*
 - Click **Benchmark** in sidebar
-- The 4 stat cards show mAP / GPU latency / CPU latency / Model size
-- Per-class chart underneath
+- 4 stat cards visible: 0.515 mAP / 22.3ms / 36ms / 5.5MB
 - **Hold final shot for 3 seconds**, then stop recording
 
 ### Final length target
-- Aim for 85-90 seconds. If your first take is 110s, trim the dwell shots.
-- If your first take is 70s, add an extra 3-second dwell on Shot 5 (the slider drag).
+- Aim for 90-100 seconds. Mode A (silent, no voiceover) can run slightly longer to absorb the Grad-CAM and Adversarial dwells.
+- If first take >110s, trim Shot 2 (upload) and Shot 7 (map) to 1-second cursor moves.
 
 ---
 
@@ -131,24 +142,27 @@ Same shots as Mode A, **plus these voiceover lines**. Record in a quiet room, wi
 ### Voiceover script — read slowly
 
 **[Shot 2 — upload]** *(at 0:07)*
-> "This is ASTRA running live. Uploading a drone tile the model has never seen."
+> "ASTRA running live. Uploading a DOTA tile the model has never seen."
 
-**[Shot 3 — detections]** *(at 0:17)*
-> "Forty-one milliseconds per frame on a 6-gig consumer GPU. Fifty-four objects detected across eight classes. Every box is color-coded, every class is real."
+**[Shot 3 — detections]** *(at 0:15)*
+> "Three hundred detections in forty-one milliseconds. Eight classes, color-coded."
 
-**[Shot 4 — map]** *(at 0:32)*
-> "Those same detections plotted geographically. Cyan pins mark friendly force positions. The dashed outline is the area of interest."
+**[Shot 5 — Grad-CAM heatmap]** *(at 0:33)*
+> "Click any detection — Grad-CAM heatmap shows the exact pixels that drove the classification. Pixel-level explainability, not a black box."
 
-**[Shot 5 — alerts / slider]** *(at 0:50)*
-> "The commander tunes the threat score live. Watch the rows reorder. Every alert shows exactly how it got its score — no black box. Click to confirm — operator, timestamp, everything logged."
+**[Shot 6 — alerts / narrator / slider]** *(at 0:53)*
+> "The threat queue. Under each alert, a natural-language narrative in commander language. The commander tunes the scoring function live — every change logged. Click confirm — operator, timestamp, audit trail."
 
-**[Shot 6 — audit]** *(at 1:12)*
-> "Immutable audit trail. Every action. Tamper-evident."
+**[Shot 7 — map]** *(at 1:10)*
+> "Detections geo-referenced. For video, these become movement trails — ByteTrack tracking across frames."
 
-**[Shot 7 — benchmark]** *(at 1:27)*
-> "Sovereign. Explainable. Edge-deployable. Ready."
+**[Shot 8 — Adversarial]** *(at 1:20)*
+> "FGSM adversarial attack. Imperceptible noise — epsilon point zero five — collapses detection by fifty-four percent. We MEASURE model weakness, we don't hide it."
 
-Total speaking time: ~60 seconds out of 90.
+**[Shot 9 — Benchmark]** *(at 1:32)*
+> "Sovereign. Explainable. Measured. Ready."
+
+Total speaking time: ~65 seconds across 95 seconds of video.
 
 ### Recording tip
 - Record voiceover in a **separate audio file** (Voice Recorder app on Windows, free)
@@ -274,8 +288,17 @@ That's the demo video done.
 
 ## APPENDIX — screen order in case you forget
 
+**Updated sequence (reflects all shipped features):**
+
 ```
-Mission → (upload) → Mission (with boxes) → Map → Alerts → (slider, confirm) → Audit → Benchmark
+Mission → (upload) → boxes appear → (click box) → Grad-CAM heatmap → (close)
+       → Alerts → (point at narrative) → (drag slider) → (confirm)
+       → Map → (click pin)
+       → Adversarial → (drag epsilon) → watch boxes collapse
+       → Benchmark → (hold 3s, done)
 ```
 
-Memorize this sequence. If you're ever mid-recording and forget what's next, just follow the sidebar **top to bottom** — that's the order.
+**Critical pre-flight:**
+1. Pre-run the adversarial attack on `02-airfield-hero.jpg` at ε=0.05 during rehearsal — the perturbed image + stats will be cached and ready for the recording. You don't want to wait 15 seconds of cold-CUDA inference on camera.
+2. Warm the detection model with ONE dry image upload before hitting record.
+3. Have `01-vehicle-convoy.jpg` pre-copied to Desktop as the hero image.
