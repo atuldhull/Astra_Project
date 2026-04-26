@@ -1,8 +1,8 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, TileLayer, CircleMarker, Popup, Polygon, Polyline, Marker, useMap } from "react-leaflet";
 import L from "leaflet";
-import { Loader2, RefreshCw, Route } from "lucide-react";
-import { api, type Detection, type Mission, type Track, DEFAULT_AOI } from "../lib/api";
+import { Loader2, RefreshCw, Route, Radio } from "lucide-react";
+import { api, openLiveSocket, type Detection, type Mission, type Track, DEFAULT_AOI } from "../lib/api";
 
 // Friendly asset locations (must match backend config.py defaults)
 const FRIENDLY_ASSETS: { name: string; lat: number; lon: number }[] = [
@@ -58,7 +58,13 @@ export default function MapView() {
   const [showTracks, setShowTracks] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [liveConnected, setLiveConnected] = useState(false);
+  const [livePulse, setLivePulse] = useState(0);     // increments on each WS detection — used for radio-icon flash
   const pollRef = useRef<number | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  // Triggers a refetch when an in-flight WS detection arrives. Decoupled
+  // from `selectedId` so the effect that owns the polling can honor both.
+  const [refetchTick, setRefetchTick] = useState(0);
 
   // Load missions list on mount + auto-select latest
   useEffect(() => {
@@ -102,6 +108,44 @@ export default function MapView() {
       cancelled = true;
       if (pollRef.current) window.clearInterval(pollRef.current);
     };
+  }, [selectedId, refetchTick]);
+
+  // Live push: subscribe to /ws/live for the lifetime of the page. Each
+  // 'detection' event for the currently-selected mission triggers a refetch
+  // (cheap — list is capped at 500 rows) and pulses the LIVE indicator.
+  // Polling stays as a safety net in case the WS drops.
+  useEffect(() => {
+    let closed = false;
+    let reconnectTimer: number | null = null;
+
+    const connect = () => {
+      try {
+        const ws = openLiveSocket((msg) => {
+          if (closed) return;
+          const m = msg as { type?: string; mission_id?: number };
+          if (m?.type === "detection" && (selectedId == null || m.mission_id === selectedId)) {
+            setLivePulse((p) => p + 1);
+            setRefetchTick((t) => t + 1);
+          }
+        });
+        ws.onopen = () => setLiveConnected(true);
+        ws.onclose = () => {
+          setLiveConnected(false);
+          if (!closed) reconnectTimer = window.setTimeout(connect, 2000);
+        };
+        ws.onerror = () => { /* onclose handles reconnect */ };
+        wsRef.current = ws;
+      } catch {
+        // WS URL invalid or browser blocked — silent fail, polling still works
+      }
+    };
+
+    connect();
+    return () => {
+      closed = true;
+      if (reconnectTimer) window.clearTimeout(reconnectTimer);
+      try { wsRef.current?.close(); } catch { /* noop */ }
+    };
   }, [selectedId]);
 
   const geoDetections = detections.filter((d) => d.lat != null && d.lon != null);
@@ -129,7 +173,24 @@ export default function MapView() {
     <div className="h-full flex flex-col">
       <header className="px-6 py-4 border-b border-border flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-lg font-semibold">Tactical Map</h1>
+          <h1 className="text-lg font-semibold flex items-center gap-2">
+            Tactical Map
+            <span
+              className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider transition-colors ${
+                liveConnected
+                  ? "bg-threat-low/20 text-threat-low border border-threat-low/40"
+                  : "bg-panel2 text-muted border border-border"
+              }`}
+              title={liveConnected ? "WebSocket connected — pins pop in real time" : "WebSocket disconnected — falling back to 5s polling"}
+            >
+              <Radio
+                size={9}
+                className={liveConnected && livePulse > 0 ? "animate-pulse" : ""}
+                key={livePulse /* re-key to retrigger animation on each event */}
+              />
+              {liveConnected ? "live" : "offline"}
+            </span>
+          </h1>
           <p className="text-xs text-muted">
             {geoDetections.length} geo-pins
             {tracks.length > 0 && ` · ${tracks.length} tracks`}
@@ -252,6 +313,11 @@ export default function MapView() {
                   <Popup>
                     <div className="font-mono text-xs leading-tight">
                       <div><b>{d.class_name}</b></div>
+                      {d.extras?.airframe && (
+                        <div className="text-blue-600">
+                          ⤷ <b>{d.extras.airframe}</b> ({((d.extras.airframe_confidence ?? 0) * 100).toFixed(0)}%)
+                        </div>
+                      )}
                       <div>conf: {d.confidence.toFixed(2)}</div>
                       <div>lat: {d.lat!.toFixed(5)}</div>
                       <div>lon: {d.lon!.toFixed(5)}</div>

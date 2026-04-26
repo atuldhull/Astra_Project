@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Upload, Play, Loader2, Zap, Check, X, Eye, Radio, MapPin } from "lucide-react";
-import { DEFAULT_AOI, api, type Detection as DbDetection, type Mission as DbMission } from "../lib/api";
+import { DEFAULT_AOI, api, detectionLabel, type Detection as DbDetection, type Mission as DbMission } from "../lib/api";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -367,9 +367,15 @@ export default function Mission() {
         ctx.strokeStyle = color;
         ctx.strokeRect(x, y, w, h);
 
+        // Prefer the MAR20 cascade airframe ID when available
+        const lbl = detectionLabel(d);
+        const showSub = d.extras?.airframe != null;
+        const conf = showSub && d.extras?.airframe_confidence != null
+          ? d.extras.airframe_confidence
+          : d.confidence;
         const label = d.track_id != null
-          ? `#${d.track_id} · ${d.class_name} ${d.confidence.toFixed(2)}`
-          : `${d.class_name} ${d.confidence.toFixed(2)}`;
+          ? `#${d.track_id} · ${lbl} ${conf.toFixed(2)}`
+          : `${lbl} ${conf.toFixed(2)}`;
         const textW = ctx.measureText(label).width + 8;
         ctx.fillStyle = color;
         ctx.fillRect(x, y - 16, textW, 16);
@@ -695,6 +701,30 @@ export default function Mission() {
                       </div>
                     )}
                   </div>
+
+                  {/* MAR20 cascade — show specific airframes ID'd in current frame */}
+                  {(() => {
+                    const ided = videoCurrentDets.filter((d) => d.extras?.airframe);
+                    if (ided.length === 0) return null;
+                    return (
+                      <div className="border-t border-border pt-2">
+                        <div className="text-xs text-muted uppercase tracking-wider mb-2">
+                          Airframes ID'd <span className="text-accent">·</span>
+                          <span className="text-[10px] normal-case ml-1">MAR20 cascade</span>
+                        </div>
+                        <div className="space-y-1 font-mono text-xs">
+                          {ided.map((d) => (
+                            <div key={d.id} className="flex items-center justify-between">
+                              <span className="text-blue-300">{d.extras!.airframe}</span>
+                              <span className="text-muted">
+                                {((d.extras!.airframe_confidence ?? 0) * 100).toFixed(0)}%
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   <div className="text-[11px] text-muted leading-snug pt-2 border-t border-border">
                     ⟶ Play the video — boxes move in sync with detections, tracks leave fading trails showing movement paths.

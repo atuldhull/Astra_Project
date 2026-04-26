@@ -9,6 +9,13 @@ async function json<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json();
 }
 
+export type AirframeExtra = {
+  airframe?: string;                   // e.g. "F-22"
+  airframe_confidence?: number;        // 0..1
+  airframe_top3?: { name: string; conf: number }[];
+  ood_score?: number;                  // populated later by SAM gatekeeper
+};
+
 export type Detection = {
   id: number;
   mission_id: number;
@@ -20,8 +27,16 @@ export type Detection = {
   x1: number; y1: number; x2: number; y2: number;
   lat: number | null; lon: number | null;
   track_id: number | null;
+  extras?: AirframeExtra | null;
   created_at: string;
 };
+
+/** Render the most specific label we have: airframe sub-class if MAR20
+ *  cascade fired, otherwise the generic stage-1 class name. */
+export function detectionLabel(d: Pick<Detection, "class_name" | "extras">): string {
+  if (d.extras?.airframe) return d.extras.airframe;
+  return d.class_name;
+}
 
 export type AlertStatus = "pending" | "confirmed" | "rejected" | "escalated";
 

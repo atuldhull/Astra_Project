@@ -28,13 +28,14 @@ import cv2
 import numpy as np
 from sqlalchemy.orm import Session
 
+from app.api.ws import pool as ws_pool
 from app.config import settings
 from app.db.models import Alert, AuditEventType, Detection, Mission
 from app.db.session import SessionLocal
 from app.fusion.georef import AoiCorners, haversine_km, pixel_to_latlon
 from app.fusion.narrator import NarratorContext, narrate
 from app.fusion.scoring import ScoreInputs, compute_threat_score
-from app.inference import detector
+from app.inference import aircraft_classifier, detector
 from app.services.audit import log_event
 
 log = logging.getLogger("astra.pipeline")
@@ -84,6 +85,48 @@ def _aoi_from_mission(mission: Mission) -> AoiCorners | None:
     except Exception as exc:
         log.warning("bad aoi_corners_json on mission %d: %s", mission.id, exc)
         return None
+
+
+def _broadcast_detection(
+    mission_id: int,
+    det_id: int,
+    alert_id: int,
+    class_name: str,
+    confidence: float,
+    lat: float | None,
+    lon: float | None,
+    threat_score: float,
+    track_id: int | None,
+    frame_index: int,
+    extras: dict,
+) -> None:
+    """Fire-and-forget broadcast onto /ws/live. Pipeline runs in a sync
+    BackgroundTask, so we schedule the async send onto the running loop and
+    swallow any exception — websockets must never break ingest."""
+    payload = {
+        "type": "detection",
+        "mission_id": mission_id,
+        "detection_id": det_id,
+        "alert_id": alert_id,
+        "class_name": class_name,
+        "confidence": round(confidence, 4),
+        "threat_score": round(threat_score, 4),
+        "lat": lat,
+        "lon": lon,
+        "track_id": track_id,
+        "frame_index": frame_index,
+        "extras": extras or None,
+    }
+    try:
+        import asyncio
+        try:
+            loop = asyncio.get_running_loop()
+            loop.create_task(ws_pool.broadcast(payload))
+        except RuntimeError:
+            # No running loop (e.g. invoked from a sync test) — best-effort run
+            asyncio.run(ws_pool.broadcast(payload))
+    except Exception as exc:
+        log.debug("ws broadcast skipped: %s", exc)
 
 
 def _nearest_friendly(lat: float, lon: float) -> tuple[str | None, float | None]:
@@ -163,6 +206,23 @@ def process_mission(mission_id: int) -> dict:
                     lat, lon = pixel_to_latlon(cx, cy, w, h, aoi)
                     nearest_name, dist_km = _nearest_friendly(lat, lon)
 
+                # Stage-2 cascade: if this detection is an aircraft AND the
+                # MAR20 classifier weights are available, get the airframe ID.
+                # Failures here are non-fatal — the generic stage-1 label still
+                # appears, the cascade is best-effort.
+                extras: dict = {}
+                if aircraft_classifier.should_cascade(r.class_name) and aircraft_classifier.is_ready():
+                    try:
+                        af = aircraft_classifier.classify_crop(img, r.x1, r.y1, r.x2, r.y2)
+                        if af is not None:
+                            extras["airframe"] = af.airframe
+                            extras["airframe_confidence"] = round(af.confidence, 4)
+                            extras["airframe_top3"] = [
+                                {"name": n, "conf": round(c, 4)} for n, c in af.top3
+                            ]
+                    except Exception as exc:
+                        log.warning("aircraft cascade failed for det in mission %d: %s", mission.id, exc)
+
                 det = Detection(
                     mission_id=mission.id,
                     frame_index=frame_idx,
@@ -173,6 +233,7 @@ def process_mission(mission_id: int) -> dict:
                     x1=r.x1, y1=r.y1, x2=r.x2, y2=r.y2,
                     lat=lat, lon=lon,
                     track_id=r.track_id,
+                    extras_json=json.dumps(extras) if extras else None,
                 )
                 db.add(det)
                 db.flush()
@@ -217,7 +278,24 @@ def process_mission(mission_id: int) -> dict:
                     narrative=narrative_text,
                 )
                 db.add(alert)
+                db.flush()
                 alert_count += 1
+
+                # Live push: notify any /ws/live subscribers (e.g. the Map page)
+                # that a new detection landed. Best-effort — never block or
+                # crash the pipeline if the websocket fan-out fails.
+                _broadcast_detection(
+                    mission_id=mission.id,
+                    det_id=det.id,
+                    alert_id=alert.id,
+                    class_name=r.class_name,
+                    confidence=r.confidence,
+                    lat=lat, lon=lon,
+                    threat_score=score.score,
+                    track_id=r.track_id,
+                    frame_index=frame_idx,
+                    extras=extras,
+                )
 
         # Track count for audit payload (videos have multiple unique track_ids)
         track_ids_seen = {r.track_id for _, _, _, recs in frames_iter for r in recs if r.track_id is not None}

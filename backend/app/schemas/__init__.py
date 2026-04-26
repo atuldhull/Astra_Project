@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import json
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 # ── Detections ────────────────────────────────────────────────────────────
@@ -25,7 +26,24 @@ class DetectionOut(BaseModel):
     lat: float | None = None
     lon: float | None = None
     track_id: int | None = None
+    # Round-2: cascade output, OOD score, etc. Parsed from extras_json TEXT
+    # column on the way out so the frontend gets a real object, not a string.
+    extras: dict[str, Any] | None = Field(default=None, validation_alias="extras_json")
     created_at: datetime
+
+    @field_validator("extras", mode="before")
+    @classmethod
+    def _parse_extras(cls, v: Any) -> Any:
+        if v is None or v == "":
+            return None
+        if isinstance(v, dict):
+            return v
+        if isinstance(v, (str, bytes)):
+            try:
+                return json.loads(v)
+            except (ValueError, TypeError):
+                return None
+        return None
 
 
 # ── Alerts ────────────────────────────────────────────────────────────────

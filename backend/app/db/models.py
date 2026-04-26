@@ -71,6 +71,10 @@ class Detection(Base):
     lon: Mapped[float | None] = mapped_column(Float, nullable=True)
     # track membership (nullable — set by tracker)
     track_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    # Round-2 extras: JSON-encoded auxiliary inference output. Today this carries
+    # the MAR20 cascade result ({"airframe": "F-22", "airframe_confidence": 0.84})
+    # and SAM OOD score; new producers can add keys without further migrations.
+    extras_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     mission: Mapped[Mission] = relationship(back_populates="detections")
