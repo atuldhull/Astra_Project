@@ -1,11 +1,12 @@
 import { NavLink, Navigate, Route, Routes } from "react-router-dom";
-import { Activity, AlertTriangle, Map, ScrollText, Shield, Target } from "lucide-react";
+import { Activity, AlertTriangle, Map, Network, ScrollText, Shield, Target } from "lucide-react";
 import Mission from "./pages/Mission";
 import MapView from "./pages/MapView";
 import Alerts from "./pages/Alerts";
 import Audit from "./pages/Audit";
 import Benchmark from "./pages/Benchmark";
 import Adversarial from "./pages/Adversarial";
+import Federated from "./pages/Federated";
 
 const nav = [
   { to: "/mission", label: "Mission", icon: Target },
@@ -14,6 +15,7 @@ const nav = [
   { to: "/audit", label: "Audit", icon: ScrollText },
   { to: "/benchmark", label: "Benchmark", icon: Activity },
   { to: "/adversarial", label: "Adversarial", icon: Shield },
+  { to: "/federated", label: "Federated", icon: Network },
 ];
 
 export default function App() {
@@ -56,6 +58,7 @@ export default function App() {
           <Route path="/audit" element={<Audit />} />
           <Route path="/benchmark" element={<Benchmark />} />
           <Route path="/adversarial" element={<Adversarial />} />
+          <Route path="/federated" element={<Federated />} />
         </Routes>
       </main>
     </div>
