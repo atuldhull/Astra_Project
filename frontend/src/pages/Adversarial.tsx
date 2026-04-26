@@ -1,7 +1,10 @@
-import { useRef, useState } from "react";
-import { Upload, Loader2, Shield, Zap, Play, Skull } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Upload, Loader2, Shield, Zap, Play, Skull, ShieldCheck } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
+
+type ModelVariant = "v1" | "v1-hardened";
+type VariantInfo = { variant: ModelVariant; path: string; loaded: boolean };
 
 const CLASS_COLORS: Record<string, string> = {
   "small-vehicle":       "#4ade80",
@@ -26,9 +29,11 @@ type AdvResponse = {
   method_used: string;
   latency_ms: number;
   image_size: { width: number; height: number };
+  model_variant: ModelVariant;
   original:  { detection_count: number; class_counts: Record<string, number>; detections: BriefDet[] };
   perturbed: { detection_count: number; class_counts: Record<string, number>; detections: BriefDet[] };
   perturbed_image_base64: string;
+  retention: number;
 };
 
 export default function Adversarial() {
@@ -42,9 +47,23 @@ export default function Adversarial() {
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [epsilon, setEpsilon] = useState(0.05);
   const [method, setMethod] = useState<"fgsm" | "noise">("fgsm");
+  const [variant, setVariant] = useState<ModelVariant>("v1");
+  const [variantInfo, setVariantInfo] = useState<VariantInfo[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AdvResponse | null>(null);
+  // A/B history: most recent result per variant. Lets us show side-by-side
+  // retention percentages so the demo lands without re-running everything.
+  const [abHistory, setAbHistory] = useState<Partial<Record<ModelVariant, AdvResponse>>>({});
+
+  // On mount: probe which model variants are on disk so we can grey out
+  // v1-hardened until adversarial training has produced its weights.
+  useEffect(() => {
+    fetch(`${API_BASE}/api/v1/adversarial/variants`)
+      .then((r) => r.json())
+      .then((d: { variants: VariantInfo[] }) => setVariantInfo(d.variants ?? []))
+      .catch(() => { /* leave empty — picker still works, just no greying */ });
+  }, []);
 
   const onPick = () => fileRef.current?.click();
 
@@ -65,10 +84,13 @@ export default function Adversarial() {
       fd.append("file", file);
       fd.append("epsilon", String(epsilon));
       fd.append("method", method);
+      fd.append("model_variant", variant);
       const res = await fetch(`${API_BASE}/api/v1/adversarial`, { method: "POST", body: fd });
       if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
       const json = await res.json() as AdvResponse;
       setResult(json);
+      // Stash this run by variant so the A/B comparison strip can show both.
+      setAbHistory((h) => ({ ...h, [json.model_variant]: json }));
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -244,6 +266,40 @@ export default function Adversarial() {
 
         {/* Control + stats panel */}
         <aside className="bg-panel border border-border rounded p-4 space-y-4 overflow-auto">
+          {/* Model A/B picker */}
+          <div>
+            <div className="text-xs text-muted font-mono mb-1.5">model variant (A/B)</div>
+            <div className="grid grid-cols-2 gap-2">
+              {(["v1", "v1-hardened"] as const).map((v) => {
+                const info = variantInfo.find((x) => x.variant === v);
+                const loaded = info?.loaded ?? (v === "v1");
+                return (
+                  <button
+                    key={v}
+                    onClick={() => loaded && setVariant(v)}
+                    disabled={!loaded}
+                    className={`py-1.5 rounded text-xs font-mono border ${
+                      variant === v
+                        ? "bg-accent text-bg border-accent"
+                        : loaded
+                          ? "bg-panel2 border-border text-muted hover:text-text"
+                          : "bg-panel2 border-border text-muted opacity-40 cursor-not-allowed"
+                    }`}
+                    title={loaded ? `Use ${v}` : "Weights not on disk yet — train first"}
+                  >
+                    {v}
+                    {!loaded && " ⚠"}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[10px] text-muted mt-2 leading-snug">
+              {variant === "v1"
+                ? "Round-1 baseline weights. Expected to drop sharply under FGSM at ε≥0.05."
+                : "Adversarially fine-tuned variant. Should retain detections at the same ε."}
+            </p>
+          </div>
+
           <div>
             <div className="flex items-center justify-between mb-1">
               <span className="text-xs text-muted font-mono">epsilon (ε)</span>
@@ -341,12 +397,50 @@ export default function Adversarial() {
             </>
           )}
 
+          {/* A/B retention strip — appears after attacks have been run on each variant */}
+          {(abHistory.v1 || abHistory["v1-hardened"]) && (
+            <div className="border-t border-border pt-3">
+              <div className="text-xs text-muted uppercase tracking-wider mb-2 flex items-center gap-1">
+                <ShieldCheck size={11} className="text-accent" /> A/B retention @ ε={epsilon.toFixed(2)}
+              </div>
+              <div className="space-y-1.5 text-xs">
+                {(["v1", "v1-hardened"] as const).map((v) => {
+                  const r = abHistory[v];
+                  if (!r) return (
+                    <div key={v} className="flex justify-between font-mono opacity-50">
+                      <span>{v}</span>
+                      <span className="text-muted">— not run yet —</span>
+                    </div>
+                  );
+                  const ret = r.retention;
+                  const colour = ret >= 0.75 ? "text-threat-low" : ret >= 0.45 ? "text-threat-high" : "text-threat-crit";
+                  return (
+                    <div key={v} className="flex justify-between font-mono">
+                      <span>{v}{r === result ? " *" : ""}</span>
+                      <span className={colour}>
+                        {(ret * 100).toFixed(0)}% retained
+                        <span className="text-muted ml-1">({r.original.detection_count}→{r.perturbed.detection_count})</span>
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+              {abHistory.v1 && abHistory["v1-hardened"] && (
+                <div className="mt-2 text-[10px] text-muted leading-snug">
+                  Δ retention: <b className="text-accent">
+                    {((abHistory["v1-hardened"]!.retention - abHistory.v1.retention) * 100).toFixed(0)} pp
+                  </b> in favour of hardened.
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="border-t border-border pt-3 text-[11px] text-muted leading-snug">
             <div className="flex items-center gap-1 mb-1 text-accent">
               <Zap size={10} /> Pitch framing
             </div>
             <p>
-              Judges will ask about camouflage / adversarial patches. This page shows the answer: <b>current baseline has measurable adversarial weakness</b>. Roadmap v2 adds adversarial training + randomized smoothing as the mitigation.
+              <b>v1</b>: measurable adversarial weakness. <b>v1-hardened</b>: same model fine-tuned on FGSM-augmented data — retention should hold at ε levels where v1 collapses. Demos contribution #1: adversarial-aware ISR pipeline.
             </p>
           </div>
         </aside>

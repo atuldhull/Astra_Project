@@ -36,9 +36,17 @@ def perturb_fgsm(yolo_model, image_bgr: np.ndarray, epsilon: float) -> np.ndarra
     """Fast Gradient Sign Method attack against the YOLO model.
 
     Preprocesses to 640² RGB [0,1], enables input gradient, computes loss as
-    the negative mean of max-class-probability across predictions (so higher
-    loss = LOWER confidence), then perturbs x along sign(∂loss/∂x) by ε.
+    the mean of top-K most-confident class scores across anchors (we subtract
+    the gradient to LOWER confidence), then perturbs x along -ε·sign(grad).
     Returns a perturbed BGR image at the ORIGINAL resolution.
+
+    Newer Ultralytics versions wrap the Detect head's `_inference` postprocess
+    in `torch.inference_mode()`, which marks output tensors as non-backwardable
+    (`Inference tensors cannot be saved for backward`). To work around that we
+    put the model in TRAIN mode before the forward pass — train-mode head
+    returns the raw per-level [cls, box] tensors with no inference_mode taint
+    — then concatenate class outputs across the 3 FPN levels and compute the
+    same top-K confidence proxy on those.
     """
     if epsilon <= 0:
         return image_bgr.copy()
@@ -47,55 +55,83 @@ def perturb_fgsm(yolo_model, image_bgr: np.ndarray, epsilon: float) -> np.ndarra
     import torch
 
     inner = yolo_model.model
-    inner.eval()
+    was_training = inner.training
+    # Crucial: train() mode skips the inference_mode-wrapped decode path.
+    # We're not actually back-propping through training-loss; we just need
+    # the gradient w.r.t. the input image, and train-mode outputs are
+    # exactly the raw class/box tensors we want.
+    inner.train()
     device = next(inner.parameters()).device
 
-    h, w = image_bgr.shape[:2]
-    imgsz = 640
-    r = min(imgsz / h, imgsz / w)
-    new_w, new_h = max(1, int(round(w * r))), max(1, int(round(h * r)))
-    pad_w = (imgsz - new_w) // 2
-    pad_h = (imgsz - new_h) // 2
+    try:
+        h, w = image_bgr.shape[:2]
+        imgsz = 640
+        r = min(imgsz / h, imgsz / w)
+        new_w, new_h = max(1, int(round(w * r))), max(1, int(round(h * r)))
+        pad_w = (imgsz - new_w) // 2
+        pad_h = (imgsz - new_h) // 2
 
-    resized = cv2.resize(image_bgr, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
-    padded = np.full((imgsz, imgsz, 3), 114, dtype=np.uint8)
-    padded[pad_h:pad_h + new_h, pad_w:pad_w + new_w] = resized
-    rgb = cv2.cvtColor(padded, cv2.COLOR_BGR2RGB).astype(np.float32) / 255.0
+        resized = cv2.resize(image_bgr, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
+        padded = np.full((imgsz, imgsz, 3), 114, dtype=np.uint8)
+        padded[pad_h:pad_h + new_h, pad_w:pad_w + new_w] = resized
+        rgb = cv2.cvtColor(padded, cv2.COLOR_BGR2RGB).astype(np.float32) / 255.0
 
-    x = torch.from_numpy(rgb).permute(2, 0, 1).unsqueeze(0).contiguous().to(device)
-    x.requires_grad_(True)
+        x = torch.from_numpy(rgb).permute(2, 0, 1).unsqueeze(0).contiguous().to(device)
+        x.requires_grad_(True)
 
-    # Forward pass (inner is the raw nn.Module; outputs vary in shape by
-    # Ultralytics version, so try multiple structures)
-    out = inner(x)
-    if isinstance(out, (tuple, list)):
-        pred = out[0]
-    else:
-        pred = out
+        with torch.enable_grad():
+            out = inner(x)
 
-    # YOLOv11 Detect head (inference mode) outputs [B, 4+nc, num_anchors]
-    # where nc=8 for us. Class logits are at [4:4+nc].
-    # After sigmoid, class_scores[b, c, i] is P(class c | anchor i).
-    # "Maximum confidence across all anchors" is a strong proxy objective.
-    if pred.dim() == 3 and pred.shape[1] >= 5:
-        class_scores = pred[:, 4:, :].sigmoid()           # [B, nc, N]
-        max_per_anchor = class_scores.max(dim=1).values   # [B, N]
-        # Loss = mean of top-K most confident predictions. FGSM ascends in
-        # sign(grad) direction → here we want to REDUCE confidence so we
-        # subtract the gradient.
+        # YOLOv11 train-mode Detect head returns ONE of:
+        #   (a) dict {"boxes": [B,reg*4,N], "scores": [B,nc,N], "feats": [...]} (most current Ultralytics)
+        #   (b) list of 3 tensors [B, reg_max*4 + nc, H, W] (one per FPN level, older versions)
+        # Fall back to extracting class logits from each.
+        all_cls: torch.Tensor | None = None
+
+        if isinstance(out, dict):
+            if "scores" in out and hasattr(out["scores"], "dim"):
+                # Already [B, nc, total_anchors] — perfect, no work needed.
+                all_cls = out["scores"]
+            elif "cls" in out and hasattr(out["cls"], "dim"):
+                all_cls = out["cls"]
+
+        if all_cls is None:
+            # Fallback: list-of-tensors per FPN level.
+            head = getattr(inner, "model", None)
+            nc, reg_max = 8, 16
+            if head is not None and len(head) > 0:
+                last = head[-1]
+                nc = int(getattr(last, "nc", nc))
+                reg_max = int(getattr(last, "reg_max", reg_max))
+            cls_chunks = []
+            seq = out if isinstance(out, (list, tuple)) else [out]
+            for level in seq:
+                if hasattr(level, "dim") and level.dim() == 4:
+                    cls = level[:, reg_max * 4 :, :, :]
+                    B, C, H, W = cls.shape
+                    cls_chunks.append(cls.reshape(B, C, H * W))
+            if not cls_chunks:
+                raise RuntimeError(f"Could not find class logits in head output: {type(out).__name__}")
+            all_cls = torch.cat(cls_chunks, dim=2)
+
+        # Confidence proxy: max class probability per anchor, mean of top-K.
+        all_cls_p = all_cls.sigmoid()
+        max_per_anchor = all_cls_p.max(dim=1).values        # [B, total_anchors]
         K = min(32, max_per_anchor.shape[1])
         topk = torch.topk(max_per_anchor, K, dim=1).values
         loss = topk.mean()
-    else:
-        loss = pred.float().mean()
 
-    inner.zero_grad()
-    loss.backward()
-    grad = x.grad.detach()
-    sign_grad = grad.sign()
+        inner.zero_grad(set_to_none=True)
+        loss.backward()
+        grad = x.grad.detach()
+        sign_grad = grad.sign()
 
-    # Perturb: SUBTRACT ε * sign(grad) to reduce class confidence
-    x_adv = (x.detach() - float(epsilon) * sign_grad).clamp(0.0, 1.0)
+        # SUBTRACT ε·sign(grad) to drive confidence DOWN.
+        x_adv = (x.detach() - float(epsilon) * sign_grad).clamp(0.0, 1.0)
+    finally:
+        # Restore original mode so subsequent inference works normally.
+        if not was_training:
+            inner.eval()
 
     # Back to BGR, un-pad, un-scale to original size
     adv_rgb = (x_adv[0].cpu().numpy().transpose(1, 2, 0) * 255.0).astype(np.uint8)
@@ -118,6 +154,12 @@ def perturb(
         return perturb_gaussian(image_bgr, epsilon), "noise"
     try:
         return perturb_fgsm(yolo_model, image_bgr, epsilon), "fgsm"
-    except Exception:
-        # Silent fallback — caller can inspect returned method
+    except Exception as exc:
+        # Log so we can debug, but don't fail the request — the demo always
+        # completes via the noise fallback even when FGSM's gradient path
+        # breaks (e.g. Ultralytics output-shape changes, CUDA OOM).
+        import logging
+        logging.getLogger("astra.adversarial").warning(
+            "FGSM failed, falling back to noise: %s", exc, exc_info=True,
+        )
         return perturb_gaussian(image_bgr, epsilon), "noise-fallback"

@@ -1,0 +1,77 @@
+# ASTRA v1-hardened — adversarially robust variant of astra-v1.
+#
+# Strategy: short fine-tune from astra-v1.pt with HEAVY input augmentation
+# (effectively "data-augmentation defense") plus the FGSM-augmented training
+# crops produced offline by training/adversarial_augment.py.
+#
+# Why not on-the-fly FGSM training inside Ultralytics' loop:
+#   Ultralytics' Trainer is a closed-source-like wrapper around train_one_epoch
+#   that we'd have to monkey-patch to inject adversarial gradients. Brittle.
+#   Instead we PRE-GENERATE adversarial copies of ~30% of training tiles, then
+#   let the standard YOLO trainer see the union — same robustness improvement,
+#   way less infrastructure surface.
+#
+# Launched via:
+#   1) python training/adversarial_augment.py    (~10-30 min, one-time)
+#   2) python training/train.py --config training/configs/astra-v1-hardened.yaml
+#   3) cp D:/astra-data/runs/astra-v1-hardened/weights/best.pt \
+#         D:/astra-data/weights/astra-v1-hardened.pt
+#
+# Then the Adversarial A/B page picker lights up the v1-hardened option.
+
+# ── Model & data ──────────────────────────────────────────────────────────
+# Resume FROM astra-v1.pt — fine-tuning, not fresh training.
+model: D:/astra-data/runs/astra-v1-2/weights/best.pt
+data: ../dataset.yaml
+
+# ── Schedule ──────────────────────────────────────────────────────────────
+epochs: 10                     # fine-tune; converges fast from a good start
+patience: 5
+imgsz: 640
+batch: 4
+fraction: 0.5                  # 50% per epoch — we want the augmented copies
+                               # to influence training, but no need to see
+                               # everything.
+amp: true
+cache: false
+workers: 0
+device: 0
+project: D:/astra-data/runs
+name: astra-v1-hardened
+exist_ok: false
+seed: 42
+deterministic: false
+close_mosaic: 5
+
+# ── Optimizer (lower LR for fine-tuning) ──────────────────────────────────
+optimizer: AdamW
+lr0: 0.0003                    # 1/3 of v1's lr0 — fine-tuning, not from scratch
+lrf: 0.05
+momentum: 0.937
+weight_decay: 0.0005
+warmup_epochs: 1
+cos_lr: true
+
+# ── Augmentation: cranked up for robustness ───────────────────────────────
+# Plus the FGSM-augmented tiles already on disk after running
+# adversarial_augment.py.
+mosaic: 1.0
+mixup: 0.0                     # still disabled (16GB RAM crash on Windows)
+copy_paste: 0.0
+hsv_h: 0.03                    # 2x of v1
+hsv_s: 0.85                    # ↑ from 0.7
+hsv_v: 0.6                     # ↑ from 0.4
+degrees: 15.0                  # ↑ from 10
+translate: 0.15                # ↑ from 0.1
+scale: 0.6                     # ↑ from 0.5
+shear: 2.0                     # was 0
+perspective: 0.0001            # tiny — DOTA is overhead, perspective doesn't help much
+flipud: 0.5
+fliplr: 0.5
+
+# ── Validation / logging ──────────────────────────────────────────────────
+val: false                     # same as v1 — assigner OOMs
+plots: true
+save: true
+save_period: 5
+verbose: true

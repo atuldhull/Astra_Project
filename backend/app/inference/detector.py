@@ -1,6 +1,10 @@
 """
 Thin wrapper around Ultralytics YOLO. Lazy-loaded so the backend can boot
 even before the trained weights exist (useful during Day 1-2 of the build).
+
+Round-2 addition: support multiple model variants (e.g. v1 baseline vs
+v1-hardened with FGSM-augmented training) cached per variant. Adversarial
+A/B testing on the frontend picks one of these per request.
 """
 
 from __future__ import annotations
@@ -11,8 +15,34 @@ from threading import Lock
 
 from app.config import settings
 
-_model = None
+# Per-variant model cache. Variants we know about:
+#   "v1"          → settings.model_path (the canonical Round-1 weights)
+#   "v1-hardened" → D:/astra-data/weights/astra-v1-hardened.pt (FGSM-augmented)
+_models: dict[str, object] = {}
 _model_lock = Lock()
+
+
+def _variant_path(variant: str) -> Path:
+    """Where each variant's weights live on disk. Operators wanting to add
+    a new variant just register its path here."""
+    if variant == "v1":
+        return Path(settings.model_path)
+    if variant == "v1-hardened":
+        return Path("D:/astra-data/weights/astra-v1-hardened.pt")
+    raise ValueError(f"Unknown model variant: {variant!r}. Known: v1, v1-hardened.")
+
+
+def available_variants() -> list[dict]:
+    """List variants and whether their weights are present. Used by /health
+    and the frontend's model picker so the UI can grey-out missing variants."""
+    out = []
+    for v in ("v1", "v1-hardened"):
+        try:
+            p = _variant_path(v)
+            out.append({"variant": v, "path": str(p), "loaded": p.exists()})
+        except ValueError:
+            continue
+    return out
 
 
 CLASS_NAMES = [
@@ -39,37 +69,40 @@ class DetectionRecord:
     track_id: int | None = None  # populated for video tracking, None for single-image detect()
 
 
-def _load_model():
-    global _model
-    if _model is not None:
-        return _model
+def _load_model(variant: str = "v1"):
+    """Lazy-load and cache the YOLO model for the given variant."""
+    if variant in _models:
+        return _models[variant]
     with _model_lock:
-        if _model is not None:
-            return _model
+        if variant in _models:
+            return _models[variant]
         from ultralytics import YOLO
 
-        path = settings.model_path
-        if not Path(path).exists():
+        path = _variant_path(variant)
+        if not path.exists():
             raise FileNotFoundError(
-                f"Model weights not found at {path}. "
+                f"Model weights for variant {variant!r} not found at {path}. "
                 "Train first: python training/train.py --config training/configs/astra-v1.yaml"
             )
-        _model = YOLO(str(path))
-    return _model
+        _models[variant] = YOLO(str(path))
+    return _models[variant]
 
 
-def is_ready() -> bool:
-    return Path(settings.model_path).exists()
+def is_ready(variant: str = "v1") -> bool:
+    try:
+        return _variant_path(variant).exists()
+    except ValueError:
+        return False
 
 
-def detect(image_bgr, imgsz: int | None = None, conf: float | None = None) -> list[DetectionRecord]:
+def detect(image_bgr, imgsz: int | None = None, conf: float | None = None, variant: str = "v1") -> list[DetectionRecord]:
     """Run detection on a single BGR image (numpy ndarray H×W×3).
     Returns an empty list if the model isn't loaded yet and is_ready() is False —
     callers can probe is_ready() first to distinguish 'no detections' from 'no model'.
     """
-    if not is_ready():
+    if not is_ready(variant):
         return []
-    model = _load_model()
+    model = _load_model(variant)
     results = model.predict(
         image_bgr,
         imgsz=imgsz or settings.imgsz,

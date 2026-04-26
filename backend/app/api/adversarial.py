@@ -51,9 +51,13 @@ class AdversarialResponse(BaseModel):
     method_used: str
     latency_ms: float
     image_size: dict
+    model_variant: str
     original: DetectionsSummary
     perturbed: DetectionsSummary
     perturbed_image_base64: str
+    # Round-2: retention metric for the A/B narrative.
+    # retention = perturbed_count / max(original_count, 1)
+    retention: float
 
 
 def _summarize(records) -> DetectionsSummary:
@@ -74,16 +78,26 @@ def _summarize(records) -> DetectionsSummary:
     )
 
 
+@router.get("/variants")
+def list_variants() -> dict:
+    """Which model variants are on disk. Frontend's A/B picker greys out
+    missing ones (e.g. v1-hardened before adv-training has run)."""
+    return {"variants": detector.available_variants()}
+
+
 @router.post("", response_model=AdversarialResponse)
 async def run_adversarial(
     file: UploadFile = File(...),
     epsilon: float = Form(0.03, ge=0.0, le=0.5),
     method: str = Form("fgsm"),
+    model_variant: str = Form("v1"),
 ) -> AdversarialResponse:
     if method not in ("fgsm", "noise"):
         raise HTTPException(400, "method must be 'fgsm' or 'noise'")
-    if not detector.is_ready():
-        raise HTTPException(503, "Model not loaded")
+    if model_variant not in {"v1", "v1-hardened"}:
+        raise HTTPException(400, f"Unknown model_variant: {model_variant}")
+    if not detector.is_ready(model_variant):
+        raise HTTPException(503, f"Model variant {model_variant!r} not loaded — weights not on disk")
 
     raw = await file.read()
     if not raw:
@@ -95,18 +109,20 @@ async def run_adversarial(
 
     t0 = time.perf_counter()
 
-    # Lazy-load once, reused by both detection calls
+    # Lazy-load the chosen variant. Reused by both detect() calls below
+    # AND by the perturb() FGSM gradient pass.
     from app.inference.detector import _load_model
-    model = _load_model()
+    model = _load_model(model_variant)
 
     # Detect on original
-    original_records = detector.detect(img)
+    original_records = detector.detect(img, variant=model_variant)
 
-    # Perturb
+    # Perturb (FGSM uses the same model's gradient — perturbation is
+    # variant-specific by design).
     perturbed_img, method_used = perturb(model, img, epsilon, method=method)
 
     # Detect on perturbed
-    perturbed_records = detector.detect(perturbed_img)
+    perturbed_records = detector.detect(perturbed_img, variant=model_variant)
 
     latency_ms = (time.perf_counter() - t0) * 1000
 
@@ -116,12 +132,18 @@ async def run_adversarial(
         raise HTTPException(500, "failed to encode perturbed image")
     b64 = base64.b64encode(buf.tobytes()).decode("ascii")
 
+    orig_count = len(original_records)
+    pert_count = len(perturbed_records)
+    retention = (pert_count / orig_count) if orig_count > 0 else 1.0
+
     return AdversarialResponse(
         epsilon=float(epsilon),
         method_used=method_used,
         latency_ms=round(latency_ms, 2),
         image_size={"width": int(w), "height": int(h)},
+        model_variant=model_variant,
         original=_summarize(original_records),
         perturbed=_summarize(perturbed_records),
         perturbed_image_base64=f"data:image/jpeg;base64,{b64}",
+        retention=round(retention, 4),
     )
