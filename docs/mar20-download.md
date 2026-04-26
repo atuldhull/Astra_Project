@@ -37,16 +37,19 @@ Approximate size: ~1.2 GB compressed.
 
 ## Where to put it
 
-Unpack so the layout is exactly:
+Unpack so the layout is exactly (this matches the upstream release as
+verified against the actual extracted contents — 3,842 JPEGs, 3,842 HBB
+XMLs, train/test split files present):
 
 ```
-D:/astra-data/datasets/mar20-raw/
-    JPEGImages/                                   *.jpg
-    Annotations/Horizontal Bounding Boxes/        *.xml   (preferred)
-    Annotations/                                   *.xml   (acceptable fallback)
+D:/astra-data/datasets/MAR20/
+    JPEGImages/                                   *.jpg     (3,842 files)
+    Annotations/
+        Horizontal Bounding Boxes/                *.xml     (preferred — 3,842)
+        Oriented Bounding Boxes/                  *.xml     (ignored)
     ImageSets/Main/
-        train.txt                                  (one stem per line)
-        test.txt
+        train.txt                                  (1,330 stems → our train)
+        test.txt                                   (2,510 stems → our val)
 ```
 
 `prepare_mar20.py` will autodetect either annotation layout. If

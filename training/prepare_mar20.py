@@ -13,15 +13,16 @@ Why classification, not detection:
 The user must download MAR20 manually (registration on the authors' page):
     https://gcheng-nwpu.github.io/#Datasets
 
-Expected input layout (the upstream tarball name varies, but the structure
-is canonical PASCAL VOC):
-    D:/astra-data/datasets/mar20-raw/
-        JPEGImages/                       *.jpg
-        Annotations/Horizontal Bounding Boxes/   *.xml   (preferred)
-        Annotations/                              *.xml   (fallback if not nested)
+Expected input layout (canonical PASCAL VOC — confirmed against the
+upstream MAR20 release):
+    D:/astra-data/datasets/MAR20/
+        JPEGImages/                                  *.jpg     (3,842 files)
+        Annotations/Horizontal Bounding Boxes/       *.xml     (preferred, 3,842)
+        Annotations/Oriented Bounding Boxes/         *.xml     (ignored — we use HBB)
+        Annotations/                                 *.xml     (fallback if flattened)
         ImageSets/Main/
-            train.txt
-            test.txt                       (used as our val)
+            train.txt                                 (1,330 stems → our train)
+            test.txt                                  (2,510 stems → our val)
 
 Output layout (Ultralytics YOLO-cls standard):
     D:/astra-data/datasets/mar20-cls/
@@ -179,7 +180,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Convert MAR20 → YOLO-cls cropped dataset")
     parser.add_argument(
         "--mar20-root", type=Path,
-        default=Path("D:/astra-data/datasets/mar20-raw"),
+        default=Path("D:/astra-data/datasets/MAR20"),
         help="Root of unpacked MAR20 (must contain JPEGImages/ and Annotations/)",
     )
     parser.add_argument(
