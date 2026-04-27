@@ -114,6 +114,9 @@ def run(
     foolsgold_confidence: float = 1.5,
     poison_client_id: str | None = None,
     device: str = "cpu",
+    *,
+    dp_sigma: float = 0.0,
+    dp_clip: float = 1.0,
 ) -> list[RoundResult]:
     """Run the federated training loop.
 
@@ -134,6 +137,8 @@ def run(
         "input_shape": list(task.input_shape),
         "n_classes": task.n_classes,
         "device": device,
+        "dp_sigma": dp_sigma,
+        "dp_clip": dp_clip,
     })
 
     # 1. Initialise the global model (everyone starts from the same weights)
@@ -174,9 +179,37 @@ def run(
 
             local_sd = local_model.state_dict()
             local_arrs = _state_dict_to_arrays(local_sd)
-            client_states[cid] = local_arrs
+
+            # ── DP-SGD-style gradient clipping + Gaussian noise (Abadi 2016) ──
+            # Apply per-client to the gradient delta (local - prev_global). When
+            # dp_sigma=0 (default) this is a no-op. With dp_sigma>0:
+            #   1. clip grad to L2 norm <= dp_clip
+            #   2. add gaussian noise sigma * dp_clip
+            # This is what protects per-client membership privacy in FedAvg.
             local_flat = foolsgold.flatten_state_dict(local_sd)
-            client_grads[cid] = local_flat - prev_global_flat
+            grad_flat = local_flat - prev_global_flat
+            if dp_sigma > 0.0:
+                norm = float(np.linalg.norm(grad_flat))
+                if norm > dp_clip and norm > 0:
+                    grad_flat = grad_flat * (dp_clip / norm)
+                noise = np.random.normal(0.0, dp_sigma * dp_clip, grad_flat.shape).astype(np.float32)
+                grad_flat = grad_flat + noise
+                # Reconstruct local_arrs at noised position
+                noised_local_flat = prev_global_flat + grad_flat
+                # We can't trivially un-flatten back to per-layer arrays without
+                # the template; for simplicity in DP mode we store the flat-
+                # reconstructed arrays by chunking per-layer using template shapes.
+                offset = 0
+                noised_arrs = []
+                for arr in local_arrs:
+                    n = arr.size
+                    chunk = noised_local_flat[offset:offset + n].reshape(arr.shape)
+                    noised_arrs.append(chunk.astype(arr.dtype, copy=False))
+                    offset += n
+                local_arrs = noised_arrs
+
+            client_states[cid] = local_arrs
+            client_grads[cid] = grad_flat
 
             log.append({
                 "kind": "client_fit",

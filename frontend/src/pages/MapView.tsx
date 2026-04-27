@@ -9,6 +9,8 @@ import { StatusPill } from "../components/StatusPill";
 import { Bezel } from "../components/Bezel";
 import { HudCornerStat } from "../components/HudOverlay";
 import { ExportMenu } from "../components/ExportMenu";
+import { HeatmapOverlay } from "../components/HeatmapOverlay";
+import { Flame } from "lucide-react";
 
 // Friendly asset locations (must match backend config.py defaults)
 const FRIENDLY_ASSETS: { name: string; lat: number; lon: number }[] = [
@@ -62,6 +64,7 @@ export default function MapView() {
   const [detections, setDetections] = useState<Detection[]>([]);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [showTracks, setShowTracks] = useState(true);
+  const [showHeatmap, setShowHeatmap] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [liveConnected, setLiveConnected] = useState(false);
@@ -214,6 +217,15 @@ export default function MapView() {
                 <Route size={12} /> Tracks
               </label>
             )}
+            <label className="flex items-center gap-1.5 text-xs text-muted cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={showHeatmap}
+                onChange={(e) => setShowHeatmap(e.target.checked)}
+                className="accent-accent"
+              />
+              <Flame size={12} /> Heatmap
+            </label>
             <label className="text-xs text-muted">Mission:</label>
             <select
               className="bg-panel border border-border rounded px-3 py-1.5 text-sm font-mono min-w-[220px]"
@@ -416,6 +428,15 @@ export default function MapView() {
                 </CircleMarker>
               );
             })}
+
+          {/* Heatmap layer — additive radial blobs sized by detection confidence */}
+          {showHeatmap && (
+            <HeatmapOverlay
+              points={geoDetections.map((d) => ({ lat: d.lat!, lon: d.lon!, weight: d.confidence }))}
+              radius={48}
+              visible={showHeatmap}
+            />
+          )}
 
           <FitToBounds bounds={bounds} />
         </MapContainer>

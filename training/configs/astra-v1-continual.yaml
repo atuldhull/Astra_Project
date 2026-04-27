@@ -1,0 +1,53 @@
+# ASTRA v1-continual — operator-curated nightly fine-tune.
+#
+# Trains for a few extra epochs from astra-v1.pt on the operator-confirmed
+# bboxes that continual_finetune.py wrote out. Result: weights that drift
+# in the direction of operator preferences.
+#
+# Run via:
+#   python training/continual_finetune.py
+#   python training/train.py --config training/configs/astra-v1-continual.yaml
+
+model: D:/astra-data/runs/astra-v1-2/weights/best.pt
+data: ../continual-dataset.yaml
+
+epochs: 5                      # tiny — we just want a nudge
+patience: 3
+imgsz: 640
+batch: 4
+fraction: 1.0                  # use everything we got, the set is small
+amp: true
+cache: false
+workers: 0
+device: 0
+project: D:/astra-data/runs
+name: astra-v1-continual
+exist_ok: false
+seed: 42
+deterministic: false
+
+optimizer: AdamW
+lr0: 0.0001                    # very gentle — don't undo what we have
+lrf: 0.05
+momentum: 0.937
+weight_decay: 0.0005
+warmup_epochs: 1
+cos_lr: true
+
+mosaic: 0.0                    # leave operator-curated images alone
+mixup: 0.0
+copy_paste: 0.0
+hsv_h: 0.005
+hsv_s: 0.3
+hsv_v: 0.2
+degrees: 5.0
+translate: 0.05
+scale: 0.3
+flipud: 0.5
+fliplr: 0.5
+
+val: false
+plots: true
+save: true
+save_period: 5
+verbose: true

@@ -69,6 +69,10 @@ def main() -> None:
     ap.add_argument("--lr", type=float, default=0.05)
     ap.add_argument("--fg-confidence", type=float, default=0.5,
                     help="FoolsGold logit offset (paper default 0.5) — higher = more aggressive Sybil punishment")
+    ap.add_argument("--dp-sigma", type=float, default=0.0,
+                    help="Differential-privacy Gaussian noise sigma (DP-SGD). 0 = no DP. Try 0.5 for visible privacy/utility trade.")
+    ap.add_argument("--dp-clip", type=float, default=1.0,
+                    help="DP-SGD per-client gradient L2 clip threshold.")
     ap.add_argument("--inject-poison", action="store_true",
                     help="Append colluding Sybil attacker clients. Synthetic task only.")
     ap.add_argument("--n-attackers", type=int, default=2,
@@ -102,6 +106,8 @@ def main() -> None:
         foolsgold_confidence=args.fg_confidence,
         poison_client_id=poison_id,
         device=device,
+        dp_sigma=args.dp_sigma,
+        dp_clip=args.dp_clip,
     )
 
     print("\n=== Per-round summary ===")
