@@ -185,7 +185,7 @@ export default function Adversarial() {
 
       <div className="flex-1 p-6 grid grid-cols-[1fr_1fr_280px] gap-4 overflow-hidden">
         {/* Original panel */}
-        <div className="bg-panel border border-border rounded overflow-hidden flex flex-col">
+        <div className="glass shadow-panel rounded overflow-hidden flex flex-col">
           <div className="px-4 py-2 bg-panel2 border-b border-border flex items-center justify-between text-xs">
             <span className="text-threat-low font-mono flex items-center gap-1">
               <Shield size={12} /> ORIGINAL
@@ -223,7 +223,7 @@ export default function Adversarial() {
         </div>
 
         {/* Perturbed panel */}
-        <div className="bg-panel border border-border rounded overflow-hidden flex flex-col">
+        <div className="glass shadow-panel rounded overflow-hidden flex flex-col">
           <div className="px-4 py-2 bg-panel2 border-b border-border flex items-center justify-between text-xs">
             <span className="text-threat-crit font-mono flex items-center gap-1">
               <Skull size={12} /> PERTURBED (ε={epsilon.toFixed(2)})
@@ -265,7 +265,7 @@ export default function Adversarial() {
         </div>
 
         {/* Control + stats panel */}
-        <aside className="bg-panel border border-border rounded p-4 space-y-4 overflow-auto">
+        <aside className="glass shadow-panel rounded p-4 space-y-4 overflow-auto">
           {/* Model A/B picker */}
           <div>
             <div className="text-xs text-muted font-mono mb-1.5">model variant (A/B)</div>

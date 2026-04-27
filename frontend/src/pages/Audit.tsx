@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, RefreshCw, Search, FileDown, ShieldCheck, ShieldAlert, Link2 } from "lucide-react";
+import { Loader2, RefreshCw, Search, FileDown, ShieldCheck, ShieldAlert, Link2, ScrollText, Database, Hash, Users } from "lucide-react";
 import { api, type AuditEvent, type Mission } from "../lib/api";
+import { PageHeader } from "../components/PageHeader";
+import { HeroStat } from "../components/HeroStat";
+import { StatusPill } from "../components/StatusPill";
+import { EmptyState } from "../components/EmptyState";
+import { toast } from "../components/Toast";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -88,9 +93,17 @@ export default function Audit() {
     try {
       const res = await fetch(`${API_BASE}/api/v1/audit/verify`);
       if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-      setChainStatus(await res.json());
+      const v = await res.json();
+      setChainStatus(v);
+      if (v.ok) {
+        toast.success("Audit chain verified", `${v.checked} rows · SHA-256 chain unbroken from genesis`);
+      } else {
+        toast.crit("Chain integrity broken", `Row #${v.broken_at_id} fails: ${v.reason}`);
+      }
     } catch (e) {
-      setError(`verify: ${(e as Error).message}`);
+      const msg = (e as Error).message;
+      setError(`verify: ${msg}`);
+      toast.crit("Verify failed", msg);
     } finally {
       setVerifying(false);
     }
@@ -131,78 +144,114 @@ export default function Audit() {
   const typeCounts: Record<string, number> = {};
   for (const e of events) typeCounts[e.event_type] = (typeCounts[e.event_type] ?? 0) + 1;
 
+  // Hero KPI inputs
+  const distinctOps = new Set(events.map((e) => e.operator_id).filter(Boolean)).size;
+
   return (
     <div className="h-full flex flex-col">
-      <header className="px-6 py-4 border-b border-border flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-lg font-semibold flex items-center gap-2">
-            Audit Log
-            {chainStatus != null && (
-              chainStatus.ok ? (
-                <span className="flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded bg-threat-low/20 text-threat-low border border-threat-low/40" title={`${chainStatus.checked} rows hash-verified`}>
-                  <ShieldCheck size={10} /> chain ok
-                </span>
-              ) : (
-                <span className="flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded bg-threat-crit/20 text-threat-crit border border-threat-crit/40" title={`Broken at id ${chainStatus.broken_at_id}: ${chainStatus.reason}`}>
-                  <ShieldAlert size={10} /> chain broken @ #{chainStatus.broken_at_id}
-                </span>
-              )
-            )}
-          </h1>
-          <p className="text-xs text-muted">
-            Append-only · SHA-256 hash-chained · {events.length} events{loading && " · refreshing..."}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
-            <input
-              placeholder="filter events..."
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="bg-panel border border-border rounded pl-8 pr-3 py-1.5 text-sm w-52"
-            />
-          </div>
-          <div className="flex items-center gap-2 border-l border-border pl-3">
-            <label className="text-xs text-muted">Export:</label>
-            <select
-              className="bg-panel border border-border rounded px-2 py-1.5 text-xs font-mono min-w-[180px]"
-              value={exportMissionId ?? ""}
-              onChange={(e) => setExportMissionId(Number(e.target.value))}
-            >
-              {missions.length === 0 && <option>(no missions)</option>}
-              {missions.map((m) => (
-                <option key={m.id} value={m.id}>#{m.id} · {m.name}</option>
-              ))}
-            </select>
+      <PageHeader
+        icon={ScrollText}
+        title="Audit Log"
+        badge={
+          chainStatus != null ? (
+            chainStatus.ok ? (
+              <StatusPill variant="ok" size="sm" title={`${chainStatus.checked} rows hash-verified`}>
+                <ShieldCheck size={10} className="mr-1" /> chain ok
+              </StatusPill>
+            ) : (
+              <StatusPill variant="err" size="sm" title={`Broken at id ${chainStatus.broken_at_id}: ${chainStatus.reason}`}>
+                <ShieldAlert size={10} className="mr-1" /> chain broken @ #{chainStatus.broken_at_id}
+              </StatusPill>
+            )
+          ) : null
+        }
+        subtitle={
+          <>Append-only · SHA-256 hash-chained · {events.length} events{loading && " · refreshing..."}</>
+        }
+        actions={
+          <>
+            <div className="relative">
+              <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+              <input
+                placeholder="filter events..."
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                className="bg-panel border border-border rounded pl-8 pr-3 py-1.5 text-sm w-52"
+              />
+            </div>
+            <div className="flex items-center gap-2 border-l border-border pl-3">
+              <label className="text-xs text-muted">Export:</label>
+              <select
+                className="bg-panel border border-border rounded px-2 py-1.5 text-xs font-mono min-w-[180px]"
+                value={exportMissionId ?? ""}
+                onChange={(e) => setExportMissionId(Number(e.target.value))}
+              >
+                {missions.length === 0 && <option>(no missions)</option>}
+                {missions.map((m) => (
+                  <option key={m.id} value={m.id}>#{m.id} · {m.name}</option>
+                ))}
+              </select>
+              <button
+                onClick={exportReport}
+                disabled={exporting || exportMissionId == null}
+                className="flex items-center gap-1 bg-accent text-bg px-3 py-1.5 rounded text-xs font-medium hover:brightness-110 disabled:opacity-50 transition-fast"
+                title="Generate signed PDF mission report"
+              >
+                {exporting ? <Loader2 size={12} className="animate-spin" /> : <FileDown size={12} />}
+                PDF
+              </button>
+            </div>
             <button
-              onClick={exportReport}
-              disabled={exporting || exportMissionId == null}
-              className="flex items-center gap-1 bg-accent text-bg px-3 py-1.5 rounded text-xs font-medium hover:brightness-110 disabled:opacity-50"
-              title="Generate signed PDF mission report"
+              onClick={verifyChain}
+              disabled={verifying}
+              className="flex items-center gap-1 glass border border-border px-3 py-1.5 rounded text-xs hover:bg-panel2 disabled:opacity-50 transition-fast"
+              title="Walk the entire audit log and verify every SHA-256 link"
             >
-              {exporting ? <Loader2 size={12} className="animate-spin" /> : <FileDown size={12} />}
-              PDF
+              {verifying ? <Loader2 size={12} className="animate-spin" /> : <Link2 size={12} />}
+              verify chain
             </button>
-          </div>
-          <button
-            onClick={verifyChain}
-            disabled={verifying}
-            className="flex items-center gap-1 bg-panel2 border border-border px-3 py-1.5 rounded text-xs hover:bg-panel disabled:opacity-50"
-            title="Walk the entire audit log and verify every SHA-256 link"
-          >
-            {verifying ? <Loader2 size={12} className="animate-spin" /> : <Link2 size={12} />}
-            verify chain
-          </button>
-          <button
-            onClick={load}
-            className="p-1.5 rounded hover:bg-panel2 text-muted"
-            title="Refresh"
-          >
-            {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
-          </button>
-        </div>
-      </header>
+            <button
+              onClick={load}
+              className="p-1.5 rounded hover:bg-panel2 text-muted transition-fast"
+              title="Refresh"
+            >
+              {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+            </button>
+          </>
+        }
+      />
+
+      {/* Hero KPI strip */}
+      <div className="px-6 pt-4 grid grid-cols-4 gap-3">
+        <HeroStat
+          label="audit events"
+          value={events.length}
+          icon={ScrollText}
+          tone="cyan"
+          sub="append-only"
+        />
+        <HeroStat
+          label="chain rows"
+          value={chainStatus?.checked ?? 0}
+          icon={Hash}
+          tone={chainStatus?.ok ? "low" : chainStatus ? "crit" : "neutral"}
+          sub={chainStatus ? (chainStatus.ok ? "verified" : "BROKEN") : "click verify"}
+        />
+        <HeroStat
+          label="distinct ops"
+          value={distinctOps}
+          icon={Users}
+          tone="neutral"
+          sub="recorded"
+        />
+        <HeroStat
+          label="missions logged"
+          value={new Set(events.map((e)=>e.mission_id).filter(Boolean)).size}
+          icon={Database}
+          tone="neutral"
+          sub="end-to-end"
+        />
+      </div>
 
       {error && (
         <div className="mx-6 mt-3 bg-threat-crit/20 border border-threat-crit/40 text-threat-crit p-2 rounded text-xs">
@@ -210,12 +259,15 @@ export default function Audit() {
         </div>
       )}
 
-      <div className="flex-1 p-6 flex gap-6 overflow-hidden">
-        <div className="flex-1 bg-panel border border-border rounded overflow-auto font-mono text-xs">
+      <div className="flex-1 p-6 pt-4 flex gap-6 overflow-hidden">
+        <div className="flex-1 glass rounded-lg overflow-auto font-mono text-xs shadow-panel">
           {filtered.length === 0 ? (
-            <div className="px-4 py-8 text-center text-muted">
-              {events.length === 0 ? "No events yet. Upload via Mission to generate some." : "No events match filter."}
-            </div>
+            <EmptyState
+              icon={ScrollText}
+              title={events.length === 0 ? "No audit events yet" : "No matches"}
+              body={events.length === 0 ? "Every ingest/confirm/reject/escalate/engage writes an immutable hash-chained row here. Run a mission to populate." : "Adjust your filter to see events."}
+              cta={events.length === 0 ? { label: "Run a mission", href: "/mission" } : undefined}
+            />
           ) : (
             filtered.map((e) => (
               <div
@@ -233,7 +285,7 @@ export default function Audit() {
           )}
         </div>
 
-        <aside className="w-60 bg-panel border border-border rounded p-4 space-y-3 text-xs">
+        <aside className="w-60 glass rounded-lg p-4 space-y-3 text-xs shadow-panel">
           <div className="text-muted uppercase tracking-wider">Event counts</div>
           {Object.entries(typeCounts).length === 0 ? (
             <div className="text-muted">—</div>

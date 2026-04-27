@@ -121,7 +121,7 @@ export default function MissionDiff() {
         </div>
         <div className="flex items-center gap-2">
           <select
-            className="bg-panel border border-border rounded px-2 py-1.5 text-sm font-mono"
+            className="glass shadow-panel rounded px-2 py-1.5 text-sm font-mono"
             value={earlierId ?? ""}
             onChange={(e) => { setEarlierId(Number(e.target.value)); setDiff(null); }}
           >
@@ -132,7 +132,7 @@ export default function MissionDiff() {
           </select>
           <span className="text-muted">→</span>
           <select
-            className="bg-panel border border-border rounded px-2 py-1.5 text-sm font-mono"
+            className="glass shadow-panel rounded px-2 py-1.5 text-sm font-mono"
             value={laterId ?? ""}
             onChange={(e) => { setLaterId(Number(e.target.value)); setDiff(null); }}
           >

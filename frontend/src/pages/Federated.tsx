@@ -59,7 +59,7 @@ function clientColor(_cid: string, idx: number, isPoison: boolean): string {
 
 function Panel({ title, children, sub }: { title: string; sub?: string; children: React.ReactNode }) {
   return (
-    <div className="bg-panel border border-border rounded p-4 flex flex-col">
+    <div className="glass rounded-lg p-4 flex flex-col shadow-panel">
       <div className="flex items-baseline justify-between mb-3">
         <div className="text-sm font-semibold">{title}</div>
         {sub && <div className="text-[11px] text-muted">{sub}</div>}

@@ -21,7 +21,7 @@ const LATENCY = [
 
 function Card({ title, value, sub }: { title: string; value: string; sub?: string }) {
   return (
-    <div className="bg-panel border border-border rounded px-4 py-3">
+    <div className="glass shadow-panel rounded px-4 py-3">
       <div className="text-xs text-muted uppercase tracking-wider">{title}</div>
       <div className="text-2xl font-semibold mt-1">{value}</div>
       {sub && <div className="text-xs text-muted mt-0.5">{sub}</div>}
@@ -46,7 +46,7 @@ export default function Benchmark() {
         </div>
 
         <div className="grid grid-cols-2 gap-6">
-          <div className="bg-panel border border-border rounded p-4">
+          <div className="glass shadow-panel rounded p-4">
             <div className="text-sm font-semibold mb-3">mAP@0.5 per class</div>
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={PER_CLASS}>
@@ -59,7 +59,7 @@ export default function Benchmark() {
             </ResponsiveContainer>
           </div>
 
-          <div className="bg-panel border border-border rounded p-4">
+          <div className="glass shadow-panel rounded p-4">
             <div className="text-sm font-semibold mb-3">Latency by target</div>
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={LATENCY}>
