@@ -1,6 +1,11 @@
-import { useEffect, useRef, useState } from "react";
-import { Upload, Play, Loader2, Zap, Check, X, Eye, Radio, MapPin } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Upload, Play, Loader2, Zap, X, Eye, Radio, MapPin, Target, Cpu, Gauge, Layers } from "lucide-react";
 import { DEFAULT_AOI, api, detectionLabel, type Detection as DbDetection, type Mission as DbMission } from "../lib/api";
+import { PageHeader } from "../components/PageHeader";
+import { HeroStat } from "../components/HeroStat";
+import { EmptyState } from "../components/EmptyState";
+import { StatusPill } from "../components/StatusPill";
+import { toast } from "../components/Toast";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -90,8 +95,11 @@ export default function Mission() {
       setSavedMissionId(m.id);
       setSavedMission(m);
       localStorage.setItem("astra:lastMissionId", String(m.id));
+      const aoiLabel = m.aoi_source === "gps-exif" ? "GPS-anchored" : m.aoi_source === "explicit" ? "AOI-anchored" : "default AOI";
+      toast.success(`Mission #${m.id} ingested`, `${m.name} · ${aoiLabel}`);
     } catch (e) {
       console.warn("ingest failed:", e);
+      toast.crit("Ingest failed", (e as Error).message);
     }
   }
 
@@ -414,87 +422,133 @@ export default function Mission() {
   }
   const videoTracks = new Set(videoDets.map((d) => d.track_id).filter((t) => t != null));
 
+  // Hero stats: 4 KPIs that update live with the current scene.
+  const heroDetections = useMemo(() => {
+    if (fileType === "video") return videoDets.length;
+    return result?.detections.length ?? 0;
+  }, [fileType, videoDets.length, result]);
+  const heroLatency = result?.latency_ms ?? null;
+  const heroTracks = videoTracks.size;
+  const heroAirframes = useMemo(() => {
+    const src = fileType === "video" ? videoDets : [];
+    return src.filter((d) => d.extras?.airframe).length;
+  }, [fileType, videoDets]);
+
   return (
     <div className="h-full flex flex-col">
-      <header className="px-6 py-4 border-b border-border flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold">Live Mission Feed</h1>
-          <p className="text-xs text-muted">
+      <PageHeader
+        icon={Target}
+        title="Live Mission Feed"
+        subtitle={
+          <>
             Upload a drone image or clip — detections run on real yolo11n model
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <label className="flex items-center gap-2 text-xs text-muted cursor-pointer select-none">
+            {savedMissionId != null && (
+              <>
+                {" · "}<span className="text-threat-low">Mission #{savedMissionId}</span>
+              </>
+            )}
+          </>
+        }
+        badge={savedMissionId != null ? <StatusPill variant="ok" size="sm">saved</StatusPill> : null}
+        actions={
+          <>
+            <label className="flex items-center gap-2 text-xs text-muted cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={saveToDb}
+                onChange={(e) => setSaveToDb(e.target.checked)}
+                className="accent-accent"
+              />
+              Save to DB
+            </label>
+            {savedMission?.aoi_source === "gps-exif" && savedMission.gps_point && (
+              <StatusPill variant="info" size="sm" title="GPS coordinates extracted from image EXIF metadata">
+                <MapPin size={10} className="mr-1" />
+                {savedMission.gps_point[0].toFixed(3)}, {savedMission.gps_point[1].toFixed(3)}
+              </StatusPill>
+            )}
+            {savedMission?.aoi_source === "default" && (
+              <StatusPill variant="neutral" size="sm" title="No GPS in image — using default AOI (Bangalore)">
+                <MapPin size={10} className="mr-1" /> default AOI
+              </StatusPill>
+            )}
             <input
-              type="checkbox"
-              checked={saveToDb}
-              onChange={(e) => setSaveToDb(e.target.checked)}
-              className="accent-accent"
+              className="bg-panel border border-border rounded px-3 py-1.5 text-sm w-44 font-mono"
+              value={missionName}
+              onChange={(e) => setMissionName(e.target.value)}
             />
-            Save to DB
-          </label>
-          {savedMissionId != null && (
-            <span className="flex items-center gap-1 text-xs text-threat-low">
-              <Check size={12} /> Mission #{savedMissionId}
-            </span>
-          )}
-          {savedMission?.aoi_source === "gps-exif" && savedMission.gps_point && (
-            <span
-              className="flex items-center gap-1 text-xs text-blue-400 font-mono"
-              title="GPS coordinates extracted from image EXIF metadata"
-            >
-              <MapPin size={12} />
-              {savedMission.gps_point[0].toFixed(4)}, {savedMission.gps_point[1].toFixed(4)}
-            </span>
-          )}
-          {savedMission?.aoi_source === "default" && (
-            <span
-              className="flex items-center gap-1 text-xs text-muted font-mono"
-              title="No GPS in image — using default AOI (Bangalore)"
-            >
-              <MapPin size={12} /> default AOI
-            </span>
-          )}
-          <input
-            className="bg-panel border border-border rounded px-3 py-1.5 text-sm w-48 font-mono"
-            value={missionName}
-            onChange={(e) => setMissionName(e.target.value)}
-          />
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*,video/*"
-            className="hidden"
-            onChange={(e) => onFile(e.target.files?.[0] ?? null)}
-          />
-          <button
-            onClick={onPick}
-            className="flex items-center gap-2 bg-accent text-bg px-4 py-1.5 rounded text-sm font-medium hover:brightness-110"
-          >
-            <Upload size={14} /> Ingest
-          </button>
-          <button
-            onClick={() => setStreamDialogOpen(true)}
-            className="flex items-center gap-2 bg-panel2 border border-border px-4 py-1.5 rounded text-sm hover:bg-panel"
-            title="Ingest from RTSP or HTTP video URL"
-          >
-            <Radio size={14} /> Stream
-          </button>
-          {fileType === "video" && (
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*,video/*"
+              className="hidden"
+              onChange={(e) => onFile(e.target.files?.[0] ?? null)}
+            />
             <button
-              onClick={analyzeVideoFrame}
-              disabled={busy}
-              className="flex items-center gap-2 bg-panel2 border border-border px-4 py-1.5 rounded text-sm hover:bg-panel disabled:opacity-50"
+              onClick={onPick}
+              className="flex items-center gap-2 bg-accent text-bg px-4 py-1.5 rounded text-sm font-medium hover:brightness-110 transition-fast shadow-glow-accent"
             >
-              {busy ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
-              Analyze frame
+              <Upload size={14} /> Ingest
             </button>
-          )}
-        </div>
-      </header>
+            <button
+              onClick={() => setStreamDialogOpen(true)}
+              className="flex items-center gap-2 glass border border-border px-4 py-1.5 rounded text-sm hover:bg-panel2 transition-fast"
+              title="Ingest from RTSP or HTTP video URL"
+            >
+              <Radio size={14} /> Stream
+            </button>
+            {fileType === "video" && (
+              <button
+                onClick={analyzeVideoFrame}
+                disabled={busy}
+                className="flex items-center gap-2 glass border border-border px-4 py-1.5 rounded text-sm hover:bg-panel2 disabled:opacity-50 transition-fast"
+              >
+                {busy ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
+                Analyze frame
+              </button>
+            )}
+          </>
+        }
+      />
 
-      <div className="flex-1 p-6 grid grid-cols-[1fr_320px] gap-6 overflow-hidden">
-        <div className="relative bg-panel border border-border rounded overflow-hidden flex items-center justify-center">
+      {/* Hero KPI strip */}
+      <div className="px-6 pt-4 grid grid-cols-4 gap-3">
+        <HeroStat
+          label="detections"
+          value={heroDetections}
+          icon={Target}
+          tone={heroDetections > 0 ? "cyan" : "neutral"}
+          sub={fileType === "video" ? `${heroTracks} unique tracks` : "single frame"}
+        />
+        <HeroStat
+          label="airframes ID'd"
+          value={heroAirframes}
+          icon={Layers}
+          tone={heroAirframes > 0 ? "low" : "neutral"}
+          sub="MAR20 cascade"
+        />
+        <HeroStat
+          label="latency"
+          value={heroLatency ?? 0}
+          unit="ms"
+          decimals={1}
+          icon={Gauge}
+          tone={heroLatency && heroLatency > 50 ? "high" : "low"}
+          sub="last inference"
+          ticker={heroLatency != null}
+        />
+        <HeroStat
+          label="model"
+          value={"v1·yolo11n"}
+          icon={Cpu}
+          tone="neutral"
+          sub="640² · cuda:0"
+          ticker={false}
+        />
+      </div>
+
+      <div className="flex-1 p-6 pt-4 grid grid-cols-[1fr_320px] gap-6 overflow-hidden">
+        <div className="relative glass rounded-lg overflow-hidden flex items-center justify-center shadow-panel">
           {fileUrl ? (
             <>
               {fileType === "image" ? (
@@ -570,19 +624,16 @@ export default function Mission() {
               )}
             </>
           ) : (
-            <div className="text-center text-muted">
-              <Play size={48} className="mx-auto mb-3 opacity-30" />
-              <p className="text-sm">
-                No feed loaded. Click <span className="text-accent">Ingest</span> to begin.
-              </p>
-              <p className="text-xs mt-1 text-muted">
-                Supports images (PNG/JPG) and videos (MP4/MOV)
-              </p>
-            </div>
+            <EmptyState
+              icon={Play}
+              title="No feed loaded"
+              body="Drag in a drone image or video, or click Ingest to choose a file. Supports PNG/JPG and MP4/MOV. EXIF-GPS images auto-anchor on the Map page."
+              cta={{ label: "Ingest a file", onClick: onPick }}
+            />
           )}
         </div>
 
-        <aside className="bg-panel border border-border rounded p-4 space-y-4 overflow-auto">
+        <aside className="glass rounded-lg p-4 space-y-4 overflow-auto shadow-panel">
           <div>
             <div className="text-xs text-muted uppercase tracking-wider mb-1">Model</div>
             <div className="font-mono text-sm">astra-v1 · yolo11n · 640²</div>
