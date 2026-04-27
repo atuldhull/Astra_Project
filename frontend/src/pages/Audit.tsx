@@ -7,6 +7,7 @@ import { StatusPill } from "../components/StatusPill";
 import { EmptyState } from "../components/EmptyState";
 import { toast } from "../components/Toast";
 import { ChainVisual } from "../components/ChainVisual";
+import { ExportMenu } from "../components/ExportMenu";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -211,6 +212,7 @@ export default function Audit() {
               {verifying ? <Loader2 size={12} className="animate-spin" /> : <Link2 size={12} />}
               verify chain
             </button>
+            <ExportMenu filename="astra-audit-log" rows={events} />
             <button
               onClick={load}
               className="p-1.5 rounded hover:bg-panel2 text-muted transition-fast"

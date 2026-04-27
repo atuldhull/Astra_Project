@@ -7,6 +7,7 @@ import { StatusPill } from "../components/StatusPill";
 import { EmptyState } from "../components/EmptyState";
 import { toast } from "../components/Toast";
 import { ThreatWaveform } from "../components/ThreatWaveform";
+import { ExportMenu } from "../components/ExportMenu";
 
 // Must match backend DEFAULT_WEIGHTS in scoring.py
 const DEFAULT_W = { w_class: 0.35, w_prox: 0.25, w_motion: 0.20, w_count: 0.10, w_conf: 0.10 };
@@ -179,6 +180,7 @@ export default function Alerts() {
               value={operatorId}
               onChange={(e) => setOperatorId(e.target.value)}
             />
+            <ExportMenu filename={`astra-alerts-mission-${selectedId ?? "all"}`} rows={alerts} />
           </>
         }
       />

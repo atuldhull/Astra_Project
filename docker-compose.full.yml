@@ -1,0 +1,59 @@
+# Full-stack docker compose — backend + frontend + infra in one command.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.full.yml up -d
+#
+# This exists IN ADDITION to docker-compose.yml (which is infra-only with
+# the backend running natively for CUDA access). Use this version when:
+#   - you don't need GPU acceleration (CPU inference works, just slower)
+#   - you want a one-command 'I just want to see ASTRA running'
+#
+# The base compose is still inherited; we just add backend + frontend
+# services here.
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: astra-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: ${POSTGRES_DB:-astra}
+      POSTGRES_USER: ${POSTGRES_USER:-astra}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-astra_dev}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      ASTRA_INFERENCE_DEVICE: ${ASTRA_INFERENCE_DEVICE:-cpu}
+      ASTRA_DATA_ROOT: /data
+      ASTRA_MODEL_PATH: /data/weights/astra-v1.pt
+    ports:
+      - "${ASTRA_BACKEND_PORT:-8000}:8000"
+    volumes:
+      - ${ASTRA_DATA_HOST:-./data}:/data
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import httpx; httpx.get(\"http://localhost:8000/health\").raise_for_status()' || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
+    container_name: astra-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_started
+    ports:
+      - "${ASTRA_FRONTEND_PORT:-5173}:80"

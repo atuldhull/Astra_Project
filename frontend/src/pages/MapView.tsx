@@ -8,6 +8,7 @@ import { HeroStat } from "../components/HeroStat";
 import { StatusPill } from "../components/StatusPill";
 import { Bezel } from "../components/Bezel";
 import { HudCornerStat } from "../components/HudOverlay";
+import { ExportMenu } from "../components/ExportMenu";
 
 // Friendly asset locations (must match backend config.py defaults)
 const FRIENDLY_ASSETS: { name: string; lat: number; lon: number }[] = [
@@ -226,6 +227,7 @@ export default function MapView() {
                 </option>
               ))}
             </select>
+            <ExportMenu filename={`astra-detections-mission-${selectedId ?? "all"}`} rows={detections} />
             <button
               onClick={() => selectedId != null && setSelectedId(selectedId)}
               className="p-1.5 rounded hover:bg-panel2 text-muted transition-fast"
