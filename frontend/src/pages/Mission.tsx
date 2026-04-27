@@ -6,6 +6,8 @@ import { HeroStat } from "../components/HeroStat";
 import { EmptyState } from "../components/EmptyState";
 import { StatusPill } from "../components/StatusPill";
 import { toast } from "../components/Toast";
+import { Bezel } from "../components/Bezel";
+import { HudCornerStat, HudRecBadge, HudCrosshair, HudThreatBar } from "../components/HudOverlay";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -548,7 +550,45 @@ export default function Mission() {
       </div>
 
       <div className="flex-1 p-6 pt-4 grid grid-cols-[1fr_320px] gap-6 overflow-hidden">
-        <div className="relative glass rounded-lg overflow-hidden flex items-center justify-center shadow-panel">
+        <Bezel
+          className="relative"
+          topBar={
+            <>
+              <span className="text-accent">ASTRA·1</span>
+              <span className="text-muted2">{fileType === "video" ? "VIDEO" : fileType === "image" ? "IMAGE" : "STDBY"}</span>
+              <span className="text-muted2">FRAME</span>
+              <span className="tabular-nums text-text">
+                {fileType === "video" && videoDets.length > 0 ? new Set(videoDets.map(d=>d.frame_index)).size : "—"}
+              </span>
+              <span className="text-muted2">DET</span>
+              <span className="tabular-nums text-text">{heroDetections}</span>
+              {savedMissionId != null && (
+                <>
+                  <span className="text-muted2">MSN</span>
+                  <span className="tabular-nums text-text">#{savedMissionId.toString().padStart(4, "0")}</span>
+                </>
+              )}
+              <span className="ml-auto text-muted2 tabular-nums">{new Date().toLocaleTimeString("en-IN", { hour12: false })}</span>
+            </>
+          }
+          bottomBar={
+            <>
+              <span className="text-muted2">MODEL</span>
+              <span className="text-text">v1·yolo11n·640²</span>
+              <span className="text-muted2">DEV</span>
+              <span className="text-text">cuda:0</span>
+              {result && (
+                <>
+                  <span className="text-muted2">LAT</span>
+                  <span className="tabular-nums text-text">{result.latency_ms.toFixed(1)}ms</span>
+                </>
+              )}
+              {fileType === "video" && videoDets.length > 0 && (
+                <span className="ml-auto"><HudThreatBar value={Math.min(1, heroDetections / 50)} label="LOAD" /></span>
+              )}
+            </>
+          }
+        ><div className="relative w-full h-full flex items-center justify-center">
           {fileUrl ? (
             <>
               {fileType === "image" ? (
@@ -631,7 +671,29 @@ export default function Mission() {
               cta={{ label: "Ingest a file", onClick: onPick }}
             />
           )}
-        </div>
+
+          {/* HUD overlays — only when content is loaded */}
+          {fileUrl && !explainUrl && (
+            <>
+              <HudRecBadge label={fileType === "video" ? "REC · LIVE" : "ANALYZE"} />
+              {savedMission?.aoi_source === "gps-exif" && savedMission.gps_point && (
+                <HudCornerStat
+                  pos="tr"
+                  label="GPS"
+                  tone="ok"
+                  value={`${savedMission.gps_point[0].toFixed(3)},${savedMission.gps_point[1].toFixed(3)}`}
+                />
+              )}
+              {fileType === "video" && videoDets.length > 0 && (
+                <HudCornerStat pos="bl" label="TRK" tone="neutral" value={videoTracks.size} />
+              )}
+              {heroAirframes > 0 && (
+                <HudCornerStat pos="br" label="ID" tone="ok" value={`${heroAirframes} airframes`} />
+              )}
+              {!result && fileType === "image" && busy && <HudCrosshair size={120} />}
+            </>
+          )}
+        </div></Bezel>
 
         <aside className="glass rounded-lg p-4 space-y-4 overflow-auto shadow-panel">
           <div>
