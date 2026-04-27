@@ -6,6 +6,7 @@ import { HeroStat } from "../components/HeroStat";
 import { StatusPill } from "../components/StatusPill";
 import { EmptyState } from "../components/EmptyState";
 import { toast } from "../components/Toast";
+import { ChainVisual } from "../components/ChainVisual";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -259,7 +260,20 @@ export default function Audit() {
         </div>
       )}
 
-      <div className="flex-1 p-6 pt-4 flex gap-6 overflow-hidden">
+      {/* Chain ribbon — animated SHA-256 link visualization above the log */}
+      <div className="px-6 pt-3">
+        <div className="glass-strong rounded-md px-3 py-2">
+          <div className="text-2xs uppercase-wide text-muted2 font-mono tracking-wider mb-0.5 flex items-center justify-between">
+            <span>SHA-256 · CHAIN VISUAL · LAST 8 ROWS</span>
+            <span className={chainStatus?.ok ? "text-threat-low" : chainStatus?.ok === false ? "text-threat-crit" : "text-muted"}>
+              {chainStatus?.ok ? "VERIFIED ✓" : chainStatus?.ok === false ? "BROKEN ✗" : "—"}
+            </span>
+          </div>
+          <ChainVisual rows={events.slice(0, 8)} ok={chainStatus?.ok ?? null} />
+        </div>
+      </div>
+
+      <div className="flex-1 p-6 pt-3 flex gap-6 overflow-hidden">
         <div className="flex-1 glass rounded-lg overflow-auto font-mono text-xs shadow-panel">
           {filtered.length === 0 ? (
             <EmptyState

@@ -6,6 +6,7 @@ import { HeroStat } from "../components/HeroStat";
 import { StatusPill } from "../components/StatusPill";
 import { EmptyState } from "../components/EmptyState";
 import { toast } from "../components/Toast";
+import { ThreatWaveform } from "../components/ThreatWaveform";
 
 // Must match backend DEFAULT_WEIGHTS in scoring.py
 const DEFAULT_W = { w_class: 0.35, w_prox: 0.25, w_motion: 0.20, w_count: 0.10, w_conf: 0.10 };
@@ -220,7 +221,22 @@ export default function Alerts() {
         </div>
       )}
 
-      <div className="flex-1 p-6 pt-4 grid grid-cols-[1fr_300px] gap-6 overflow-hidden">
+      {/* Threat waveform strip — drama-bar showing the queue as audio-style bars */}
+      <div className="px-6 pt-3">
+        <div className="glass-strong rounded-md px-3 py-2 flex items-center gap-3">
+          <span className="text-2xs uppercase-wide text-muted2 font-mono tracking-wider shrink-0">
+            THREAT&nbsp;FREQ
+          </span>
+          <div className="flex-1 min-w-0">
+            <ThreatWaveform scores={ranked.map((r) => r.live).slice(0, 80)} height={42} />
+          </div>
+          <span className="text-2xs uppercase-wide text-muted2 font-mono tracking-wider shrink-0 tabular-nums">
+            {ranked.length} pts · max {ranked[0] ? (ranked[0].live * 100).toFixed(0) : "—"}%
+          </span>
+        </div>
+      </div>
+
+      <div className="flex-1 p-6 pt-3 grid grid-cols-[1fr_300px] gap-6 overflow-hidden">
         <div className="glass rounded-lg overflow-auto shadow-panel">
           <table className="w-full text-sm">
             <thead className="bg-panel2 text-muted text-xs uppercase tracking-wider sticky top-0 z-10">

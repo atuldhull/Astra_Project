@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Upload, Loader2, Shield, Zap, Play, Skull, ShieldCheck } from "lucide-react";
+import { RetentionGauge } from "../components/RetentionGauge";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -402,6 +403,18 @@ export default function Adversarial() {
             <div className="border-t border-border pt-3">
               <div className="text-xs text-muted uppercase tracking-wider mb-2 flex items-center gap-1">
                 <ShieldCheck size={11} className="text-accent" /> A/B retention @ ε={epsilon.toFixed(2)}
+              </div>
+              {/* Gauges side-by-side */}
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                {(["v1", "v1-hardened"] as const).map((v) => {
+                  const r = abHistory[v];
+                  return (
+                    <div key={v} className="text-center">
+                      <RetentionGauge value={r?.retention ?? 0} size={120} label={v} />
+                      <div className="text-2xs uppercase-wide text-muted2 font-mono tracking-wider mt-1">{v}</div>
+                    </div>
+                  );
+                })}
               </div>
               <div className="space-y-1.5 text-xs">
                 {(["v1", "v1-hardened"] as const).map((v) => {

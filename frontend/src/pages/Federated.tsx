@@ -4,6 +4,7 @@ import {
   ResponsiveContainer, CartesianGrid, Legend, ReferenceLine,
 } from "recharts";
 import { Loader2, RefreshCw, ShieldAlert, ShieldCheck, Network } from "lucide-react";
+import { FederatedTopology } from "../components/FederatedTopology";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -189,6 +190,24 @@ export default function Federated() {
 
       {state?.available ? (
         <div className="flex-1 p-6 grid grid-cols-2 gap-6 overflow-auto">
+          {/* PANEL 0: Topology — wide hero showing the network */}
+          <Panel
+            title="Network Topology · FoolsGold weighted edges"
+            sub={`${allClientIds.length} clients · aggregator central`}
+          >
+            <div className="h-[280px] flex items-center justify-center">
+              <FederatedTopology
+                weights={lastFg?.weights ?? Object.fromEntries(allClientIds.map((c) => [c, 1 / Math.max(1, allClientIds.length)]))}
+                poisonIds={cfg.poison_client_id ? [cfg.poison_client_id] : []}
+                size={420}
+              />
+            </div>
+            <div className="text-2xs text-muted2 leading-snug mt-2">
+              Edge thickness ∝ aggregation weight. Travelling pulse dots = inbound gradient flow this round.
+              Quarantined clients render dashed-red with a strike-through.
+            </div>
+          </Panel>
+
           {/* PANEL 1: Global accuracy curve */}
           <Panel
             title="Global model accuracy"

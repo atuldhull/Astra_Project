@@ -6,6 +6,8 @@ import { api, openLiveSocket, type Detection, type Mission, type Track, DEFAULT_
 import { PageHeader } from "../components/PageHeader";
 import { HeroStat } from "../components/HeroStat";
 import { StatusPill } from "../components/StatusPill";
+import { Bezel } from "../components/Bezel";
+import { HudCornerStat } from "../components/HudOverlay";
 
 // Friendly asset locations (must match backend config.py defaults)
 const FRIENDLY_ASSETS: { name: string; lat: number; lon: number }[] = [
@@ -273,7 +275,40 @@ export default function MapView() {
         </div>
       )}
 
-      <div className="flex-1 relative px-6 pb-6 pt-3">
+      <div className="flex-1 px-6 pb-6 pt-3 relative">
+        <Bezel
+          className="h-full"
+          topBar={
+            <>
+              <span className="text-accent">TAC·MAP</span>
+              <span className="text-muted2">AOI</span>
+              <span className="text-text">FOB-DELTA</span>
+              <span className="text-muted2">PINS</span>
+              <span className="tabular-nums text-text">{geoDetections.length}</span>
+              <span className="text-muted2">TRK</span>
+              <span className="tabular-nums text-text">{tracks.length}</span>
+              {oodCount > 0 && (
+                <>
+                  <span className="text-muted2">OOD</span>
+                  <span className="tabular-nums text-threat-high">{oodCount}</span>
+                </>
+              )}
+              <span className="ml-auto text-muted2 tabular-nums">SECTOR 12.97N · 77.59E</span>
+            </>
+          }
+          bottomBar={
+            <>
+              <span className="text-muted2">PROJ</span>
+              <span className="text-text">WGS84</span>
+              <span className="text-muted2">SCALE</span>
+              <span className="text-text">~500m/grid</span>
+              <span className="text-muted2">REFRESH</span>
+              <span className="text-text">{liveConnected ? "WS·5s" : "POLL·5s"}</span>
+              <span className="ml-auto text-muted2 tabular-nums">{new Date().toLocaleTimeString("en-IN", { hour12: false })}</span>
+            </>
+          }
+        ><div className="relative w-full h-full">
+          <HudCornerStat pos="tr" label="LIVE" tone={liveConnected ? "ok" : "warn"} value={liveConnected ? "WS" : "POLL"} />
         <MapContainer
           center={[12.9716, 77.5946]}
           zoom={15}
@@ -384,7 +419,7 @@ export default function MapView() {
         </MapContainer>
 
         {/* Legend */}
-        <div className="absolute bottom-10 left-10 glass-strong rounded-lg p-3 text-xs z-[1000] min-w-[180px]">
+        <div className="absolute bottom-12 left-12 glass-strong rounded-lg p-3 text-xs z-[1000] min-w-[180px]">
           <div className="text-muted uppercase tracking-wider mb-2">Legend</div>
           {Object.entries(counts).length === 0 ? (
             <div className="text-muted">No detections — upload via Mission page</div>
@@ -410,7 +445,7 @@ export default function MapView() {
               </div>
             </div>
           )}
-        </div>
+        </div></div></Bezel>
       </div>
     </div>
   );

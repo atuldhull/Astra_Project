@@ -289,6 +289,49 @@ export default function MissionDiff() {
                 </div>
               </div>
 
+              {/* Delta histogram per class — visual heat of where the change happened */}
+              {(() => {
+                const byClass: Record<string, { added: number; removed: number; moved: number }> = {};
+                for (const p of diff.added) byClass[p.class_name] = { ...(byClass[p.class_name] ?? { added: 0, removed: 0, moved: 0 }), added: (byClass[p.class_name]?.added ?? 0) + 1 };
+                for (const p of diff.removed) byClass[p.class_name] = { ...(byClass[p.class_name] ?? { added: 0, removed: 0, moved: 0 }), removed: (byClass[p.class_name]?.removed ?? 0) + 1 };
+                for (const m of diff.moved) byClass[m.later.class_name] = { ...(byClass[m.later.class_name] ?? { added: 0, removed: 0, moved: 0 }), moved: (byClass[m.later.class_name]?.moved ?? 0) + 1 };
+                const entries = Object.entries(byClass);
+                if (entries.length === 0) return null;
+                const max = Math.max(...entries.map(([, v]) => v.added + v.removed + v.moved));
+                return (
+                  <div className="border-t border-border pt-3">
+                    <div className="text-xs uppercase tracking-wider text-muted font-mono mb-2">Δ by class</div>
+                    <div className="space-y-1.5">
+                      {entries.map(([cls, v]) => {
+                        const total = v.added + v.removed + v.moved;
+                        return (
+                          <div key={cls}>
+                            <div className="flex justify-between text-[11px] font-mono">
+                              <span className="text-text truncate">{cls}</span>
+                              <span className="text-muted2">{total}</span>
+                            </div>
+                            <div className="h-1.5 rounded-full bg-panel2 overflow-hidden flex">
+                              {v.added > 0 && (
+                                <div className="bg-threat-low transition-all duration-slow"
+                                  style={{ width: `${(v.added / max) * 100}%` }} title={`${v.added} added`} />
+                              )}
+                              {v.moved > 0 && (
+                                <div className="bg-threat-high transition-all duration-slow"
+                                  style={{ width: `${(v.moved / max) * 100}%` }} title={`${v.moved} moved`} />
+                              )}
+                              {v.removed > 0 && (
+                                <div className="bg-threat-crit transition-all duration-slow"
+                                  style={{ width: `${(v.removed / max) * 100}%` }} title={`${v.removed} removed`} />
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Lists */}
               {diff.added.length > 0 && (
                 <details open className="border-t border-border pt-3">
