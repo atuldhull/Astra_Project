@@ -49,13 +49,14 @@ type MissionCache = {
   explainUrl: string | null;
   explainedClass: string | null;
   videoDets: DbDetection[];
+  imageDbDets: DbDetection[];
   missionName: string;
 };
 const _cache: MissionCache = {
   fileUrl: null, fileType: null, currentFile: null, result: null,
   savedMissionId: null, savedMission: null,
   explainUrl: null, explainedClass: null,
-  videoDets: [], missionName: "",
+  videoDets: [], imageDbDets: [], missionName: "",
 };
 
 export default function Mission() {
@@ -84,6 +85,13 @@ export default function Mission() {
   const [videoPolling, setVideoPolling] = useState(false);
   const [videoCurrentTime, setVideoCurrentTime] = useState(0);
 
+  // Image-mode cascade results (MAR20 airframe IDs). The /predict response
+  // is stage-1 only; the cascade runs in the ingest pipeline and lands in
+  // extras_json of persisted detections. We poll listDetections for the
+  // saved mission so airframe IDs surface in the side panel + canvas.
+  const [imageDbDets, setImageDbDets] = useState<DbDetection[]>(_cache.imageDbDets);
+  const [imageDbPolling, setImageDbPolling] = useState(false);
+
   // Mirror state to module cache so re-mount restores it.
   useEffect(() => {
     _cache.fileUrl = fileUrl;
@@ -95,6 +103,7 @@ export default function Mission() {
     _cache.explainUrl = explainUrl;
     _cache.explainedClass = explainedClass;
     _cache.videoDets = videoDets;
+    _cache.imageDbDets = imageDbDets;
     _cache.missionName = missionName;
   });
 
@@ -113,6 +122,7 @@ export default function Mission() {
     setExplainedClass(null);
     setVideoDets([]);
     setVideoCurrentTime(0);
+    setImageDbDets([]);
     setError(null);
     setMissionName(`MISSION-${new Date().toISOString().slice(0,16).replace(/[-T:]/g,"")}`);
     fileRef.current?.click();
@@ -129,6 +139,7 @@ export default function Mission() {
     setSavedMission(null);
     setVideoDets([]);
     setVideoCurrentTime(0);
+    setImageDbDets([]);
     setFileUrl(URL.createObjectURL(f));
     setFileType(f.type.startsWith("video/") ? "video" : "image");
     setCurrentFile(f);
@@ -304,6 +315,46 @@ export default function Mission() {
     };
   }, [fileType, savedMissionId]);
 
+  // Image-mode: poll listDetections for the saved mission so the MAR20
+  // cascade airframe IDs (computed server-side after ingest) surface in
+  // the side panel + canvas labels. Same pattern as video polling.
+  useEffect(() => {
+    if (fileType !== "image" || savedMissionId == null) return;
+    let cancelled = false;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 10;  // ~20 seconds — image cascade is fast
+    setImageDbPolling(true);
+
+    const poll = async () => {
+      attempts++;
+      try {
+        const dets = await api.listDetections({ mission_id: savedMissionId, limit: 200 });
+        if (cancelled) return false;
+        if (dets.length > 0) {
+          setImageDbDets(dets);
+          setImageDbPolling(false);
+          return true;
+        }
+      } catch {}
+      return false;
+    };
+
+    const interval = window.setInterval(async () => {
+      const done = await poll();
+      if (done || attempts >= MAX_ATTEMPTS || cancelled) {
+        window.clearInterval(interval);
+        if (!cancelled) setImageDbPolling(false);
+      }
+    }, 1500);
+    poll().then((done) => { if (done) window.clearInterval(interval); });
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+      setImageDbPolling(false);
+    };
+  }, [fileType, savedMissionId]);
+
   // Track the video's current time so the canvas redraw effect re-fires
   useEffect(() => {
     const video = videoRef.current;
@@ -353,6 +404,19 @@ export default function Mission() {
       ctx.font = "12px ui-monospace, Consolas, monospace";
       ctx.lineWidth = 2;
 
+      // Match each /predict result box to a saved DbDetection by IoU so
+      // we can swap the generic label for the MAR20 cascade airframe ID
+      // (e.g. "F-22 0.91" instead of "aircraft-fixed-wing 0.78").
+      const iou = (a: { x1:number;y1:number;x2:number;y2:number }, b: { x1:number;y1:number;x2:number;y2:number }) => {
+        const ix1 = Math.max(a.x1, b.x1), iy1 = Math.max(a.y1, b.y1);
+        const ix2 = Math.min(a.x2, b.x2), iy2 = Math.min(a.y2, b.y2);
+        if (ix2 <= ix1 || iy2 <= iy1) return 0;
+        const inter = (ix2 - ix1) * (iy2 - iy1);
+        const ua = (a.x2 - a.x1) * (a.y2 - a.y1) + (b.x2 - b.x1) * (b.y2 - b.y1) - inter;
+        return ua > 0 ? inter / ua : 0;
+      };
+      const dbAircraft = imageDbDets.filter((d) => d.extras?.airframe);
+
       for (const d of result.detections) {
         const color = CLASS_COLORS[d.class_name] ?? "#ff7a1a";
         const x = d.x1 * scaleX;
@@ -362,7 +426,16 @@ export default function Mission() {
         ctx.strokeStyle = color;
         ctx.strokeRect(x, y, w, h);
 
-        const label = `${d.class_name} ${d.confidence.toFixed(2)}`;
+        // If we have a cascade match, prefer the airframe name + cascade conf.
+        let best: DbDetection | null = null;
+        let bestIou = 0.4;  // threshold
+        for (const dbd of dbAircraft) {
+          const j = iou(d, dbd);
+          if (j > bestIou) { bestIou = j; best = dbd; }
+        }
+        const label = best && best.extras?.airframe
+          ? `${best.extras.airframe} ${(best.extras.airframe_confidence ?? 0).toFixed(2)}`
+          : `${d.class_name} ${d.confidence.toFixed(2)}`;
         const textW = ctx.measureText(label).width + 8;
         ctx.fillStyle = color;
         ctx.fillRect(x, y - 16, textW, 16);
@@ -464,7 +537,7 @@ export default function Mission() {
     // Fallback: no data — clear
     const ctx = canvas.getContext("2d")!;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-  }, [result, fileUrl, fileType, videoDets, videoCurrentTime]);
+  }, [result, fileUrl, fileType, videoDets, videoCurrentTime, imageDbDets]);
 
   const classCounts: Record<string, number> = {};
   for (const d of result?.detections ?? []) {
@@ -490,9 +563,22 @@ export default function Mission() {
   const heroLatency = result?.latency_ms ?? null;
   const heroTracks = videoTracks.size;
   const heroAirframes = useMemo(() => {
-    const src = fileType === "video" ? videoDets : [];
+    const src = fileType === "video" ? videoDets : (fileType === "image" ? imageDbDets : []);
     return src.filter((d) => d.extras?.airframe).length;
-  }, [fileType, videoDets]);
+  }, [fileType, videoDets, imageDbDets]);
+
+  // Image-mode airframe summary — counts per type from the saved mission.
+  const imageAirframeCounts = useMemo(() => {
+    const c: Record<string, { n: number; conf: number[] }> = {};
+    for (const d of imageDbDets) {
+      const name = d.extras?.airframe;
+      if (!name) continue;
+      (c[name] ??= { n: 0, conf: [] });
+      c[name].n += 1;
+      if (d.extras?.airframe_confidence != null) c[name].conf.push(d.extras.airframe_confidence);
+    }
+    return c;
+  }, [imageDbDets]);
 
   return (
     <div className="h-full flex flex-col">
@@ -831,6 +917,49 @@ export default function Mission() {
                     ))}
                 </div>
               </div>
+
+              {/* MAR20 cascade — fine-grained airframe IDs (image mode).
+                  Surfaces server-side cascade results once the ingest
+                  pipeline finishes (~1–2s after upload). */}
+              {fileType === "image" && (
+                <div className="border-t border-border pt-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-xs text-muted uppercase tracking-wider">
+                      Airframes ID'd <span className="text-accent">·</span>
+                      <span className="text-[10px] normal-case ml-1">MAR20 cascade</span>
+                    </div>
+                    {imageDbPolling && Object.keys(imageAirframeCounts).length === 0 && (
+                      <Loader2 size={11} className="animate-spin text-muted" />
+                    )}
+                  </div>
+                  {Object.keys(imageAirframeCounts).length > 0 ? (
+                    <div className="space-y-1 font-mono text-xs">
+                      {Object.entries(imageAirframeCounts)
+                        .sort(([, a], [, b]) => b.n - a.n)
+                        .map(([name, info]) => {
+                          const avg = info.conf.length
+                            ? info.conf.reduce((s, x) => s + x, 0) / info.conf.length
+                            : 0;
+                          return (
+                            <div key={name} className="flex items-center justify-between py-1 border-b border-border last:border-0">
+                              <span className="text-blue-300">{name}</span>
+                              <div className="flex items-center gap-3">
+                                <span className="text-accent">× {info.n}</span>
+                                <span className="text-muted">{(avg * 100).toFixed(0)}%</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  ) : imageDbPolling ? (
+                    <div className="text-[11px] text-muted">Running cascade on aircraft detections...</div>
+                  ) : savedMissionId == null ? (
+                    <div className="text-[11px] text-muted">Toggle "Save to DB" to run the MAR20 cascade.</div>
+                  ) : (
+                    <div className="text-[11px] text-muted">No aircraft passed the cascade gate (cascade only fires on aircraft-fixed-wing / aircraft-rotor detections with conf ≥ 0.4).</div>
+                  )}
+                </div>
+              )}
             </>
           )}
 
