@@ -13,7 +13,10 @@ export type AirframeExtra = {
   airframe?: string;                   // e.g. "F-22"
   airframe_confidence?: number;        // 0..1
   airframe_top3?: { name: string; conf: number }[];
-  ood_score?: number;                  // populated later by SAM gatekeeper
+  // OOD gatekeeper (lightweight conf+aspect+edge-density heuristic)
+  ood_score?: number;                  // 0..1 — higher = more likely OOD
+  ood_flag?: boolean;                  // ood_score >= 0.55
+  ood_reasons?: string[];              // human-readable triggers (e.g. "low_conf(0.32)")
 };
 
 export type Detection = {
@@ -38,7 +41,12 @@ export function detectionLabel(d: Pick<Detection, "class_name" | "extras">): str
   return d.class_name;
 }
 
-export type AlertStatus = "pending" | "confirmed" | "rejected" | "escalated";
+export type AlertStatus = "pending" | "confirmed" | "rejected" | "escalated" | "engaged";
+
+export type AlertConfirmation = {
+  operator_id: string;
+  ts: string;
+};
 
 export type Alert = {
   id: number;
@@ -57,6 +65,8 @@ export type Alert = {
   status: AlertStatus;
   operator_id: string | null;
   narrative: string | null;
+  // Round-2 dual-control: who has signed off so far
+  confirmations?: AlertConfirmation[];
   created_at: string;
   updated_at: string;
 };
@@ -125,7 +135,7 @@ export const api = {
     return json<Alert[]>(`/api/v1/alerts?${q}`);
   },
   actOnAlert: (id: number, body: {
-    action: "confirm" | "reject" | "reclassify" | "escalate";
+    action: "confirm" | "reject" | "reclassify" | "escalate" | "engage";
     operator_id: string;
     new_class_id?: number;
     reason?: string;

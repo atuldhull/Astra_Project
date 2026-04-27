@@ -359,13 +359,20 @@ export default function Mission() {
       ctx.font = "12px ui-monospace, Consolas, monospace";
       ctx.lineWidth = 2;
       for (const d of current) {
-        const color = CLASS_COLORS[d.class_name] ?? "#ff7a1a";
+        // OOD-flagged detections render as dashed grey with "?" — the
+        // system showing it knew it didn't know.
+        const isOod = !!d.extras?.ood_flag;
+        const color = isOod ? "#94a3b8" : (CLASS_COLORS[d.class_name] ?? "#ff7a1a");
         const x = d.x1 * scaleX;
         const y = d.y1 * scaleY;
         const w = (d.x2 - d.x1) * scaleX;
         const h = (d.y2 - d.y1) * scaleY;
         ctx.strokeStyle = color;
+        if (isOod) {
+          ctx.setLineDash([4, 3]);
+        }
         ctx.strokeRect(x, y, w, h);
+        if (isOod) ctx.setLineDash([]);
 
         // Prefer the MAR20 cascade airframe ID when available
         const lbl = detectionLabel(d);
@@ -373,9 +380,10 @@ export default function Mission() {
         const conf = showSub && d.extras?.airframe_confidence != null
           ? d.extras.airframe_confidence
           : d.confidence;
-        const label = d.track_id != null
+        const baseLabel = d.track_id != null
           ? `#${d.track_id} · ${lbl} ${conf.toFixed(2)}`
           : `${lbl} ${conf.toFixed(2)}`;
+        const label = isOod ? `? ${baseLabel}` : baseLabel;
         const textW = ctx.measureText(label).width + 8;
         ctx.fillStyle = color;
         ctx.fillRect(x, y - 16, textW, 16);

@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { Check, X, ArrowUpCircle, Loader2, RefreshCw } from "lucide-react";
+import { Check, X, ArrowUpCircle, Loader2, RefreshCw, Crosshair, ShieldCheck } from "lucide-react";
 import { api, threatColor, type Alert, type Mission } from "../lib/api";
 
 // Must match backend DEFAULT_WEIGHTS in scoring.py
@@ -106,8 +106,9 @@ export default function Alerts() {
       .sort((x, y) => y.live - x.live);
   }, [alerts, weights]);
 
-  async function act(alertId: number, action: "confirm" | "reject" | "escalate") {
+  async function act(alertId: number, action: "confirm" | "reject" | "escalate" | "engage") {
     setBusyId(alertId);
+    setError(null);
     try {
       const updated = await api.actOnAlert(alertId, { action, operator_id: operatorId });
       // optimistic update
@@ -235,10 +236,24 @@ export default function Alerts() {
                       {a.status === "pending" && <span className="text-muted">pending</span>}
                       {a.status === "confirmed" && <span className="text-threat-low">confirmed</span>}
                       {a.status === "rejected" && <span className="text-threat-crit">rejected</span>}
-                      {a.status === "escalated" && <span className="text-threat-high">escalated</span>}
+                      {a.status === "escalated" && (
+                        <div className="flex flex-col">
+                          <span className="text-threat-high">escalated</span>
+                          {a.confirmations && a.confirmations.length > 0 && (
+                            <span className="text-[9px] text-threat-high/70 normal-case mt-0.5">
+                              {a.confirmations.length}/2 confirms
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      {a.status === "engaged" && (
+                        <div className="flex items-center gap-1 text-threat-crit">
+                          <Crosshair size={11} /> engaged
+                        </div>
+                      )}
                     </td>
                     <td className="px-3 py-2">
-                      {a.status === "pending" ? (
+                      {a.status === "pending" && (
                         <div className="flex items-center gap-1">
                           <button
                             disabled={isBusy}
@@ -265,7 +280,30 @@ export default function Alerts() {
                             <ArrowUpCircle size={12} />
                           </button>
                         </div>
-                      ) : (
+                      )}
+                      {a.status === "escalated" && (() => {
+                        const alreadyConfirmed = (a.confirmations ?? []).some(
+                          (c) => c.operator_id === operatorId,
+                        );
+                        return (
+                          <div className="flex items-center gap-1">
+                            <button
+                              disabled={isBusy || alreadyConfirmed}
+                              onClick={() => act(a.id, "engage")}
+                              className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-mono uppercase tracking-wider ${
+                                alreadyConfirmed
+                                  ? "bg-panel2 text-muted cursor-not-allowed"
+                                  : "bg-threat-crit/20 text-threat-crit hover:bg-threat-crit/30"
+                              }`}
+                              title={alreadyConfirmed ? `${operatorId} has already confirmed` : "Confirm engagement (needs 2 distinct operators)"}
+                            >
+                              {isBusy ? <Loader2 size={10} className="animate-spin" /> : <ShieldCheck size={10} />}
+                              {alreadyConfirmed ? "you ✓" : "confirm engage"}
+                            </button>
+                          </div>
+                        );
+                      })()}
+                      {(a.status === "confirmed" || a.status === "rejected" || a.status === "engaged") && (
                         <span className="text-[11px] text-muted font-mono">
                           {a.operator_id ?? "system"}
                         </span>

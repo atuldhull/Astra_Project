@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, RefreshCw, Search, FileDown } from "lucide-react";
+import { Loader2, RefreshCw, Search, FileDown, ShieldCheck, ShieldAlert, Link2 } from "lucide-react";
 import { api, type AuditEvent, type Mission } from "../lib/api";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
@@ -51,6 +51,8 @@ export default function Audit() {
   const [filter, setFilter] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [chainStatus, setChainStatus] = useState<{ ok: boolean; checked: number; broken_at_id: number | null; reason?: string } | null>(null);
+  const [verifying, setVerifying] = useState(false);
   const pollRef = useRef<number | null>(null);
 
   const load = async () => {
@@ -80,6 +82,19 @@ export default function Audit() {
     pollRef.current = window.setInterval(load, 4000);
     return () => { if (pollRef.current) window.clearInterval(pollRef.current); };
   }, []);
+
+  async function verifyChain() {
+    setVerifying(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/audit/verify`);
+      if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+      setChainStatus(await res.json());
+    } catch (e) {
+      setError(`verify: ${(e as Error).message}`);
+    } finally {
+      setVerifying(false);
+    }
+  }
 
   async function exportReport() {
     if (exportMissionId == null) return;
@@ -120,9 +135,22 @@ export default function Audit() {
     <div className="h-full flex flex-col">
       <header className="px-6 py-4 border-b border-border flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-lg font-semibold">Audit Log</h1>
+          <h1 className="text-lg font-semibold flex items-center gap-2">
+            Audit Log
+            {chainStatus != null && (
+              chainStatus.ok ? (
+                <span className="flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded bg-threat-low/20 text-threat-low border border-threat-low/40" title={`${chainStatus.checked} rows hash-verified`}>
+                  <ShieldCheck size={10} /> chain ok
+                </span>
+              ) : (
+                <span className="flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded bg-threat-crit/20 text-threat-crit border border-threat-crit/40" title={`Broken at id ${chainStatus.broken_at_id}: ${chainStatus.reason}`}>
+                  <ShieldAlert size={10} /> chain broken @ #{chainStatus.broken_at_id}
+                </span>
+              )
+            )}
+          </h1>
           <p className="text-xs text-muted">
-            Append-only · {events.length} events{loading && " · refreshing..."}
+            Append-only · SHA-256 hash-chained · {events.length} events{loading && " · refreshing..."}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -157,6 +185,15 @@ export default function Audit() {
               PDF
             </button>
           </div>
+          <button
+            onClick={verifyChain}
+            disabled={verifying}
+            className="flex items-center gap-1 bg-panel2 border border-border px-3 py-1.5 rounded text-xs hover:bg-panel disabled:opacity-50"
+            title="Walk the entire audit log and verify every SHA-256 link"
+          >
+            {verifying ? <Loader2 size={12} className="animate-spin" /> : <Link2 size={12} />}
+            verify chain
+          </button>
           <button
             onClick={load}
             className="p-1.5 rounded hover:bg-panel2 text-muted"

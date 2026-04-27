@@ -35,8 +35,9 @@ from app.db.session import SessionLocal
 from app.fusion.georef import AoiCorners, haversine_km, pixel_to_latlon
 from app.fusion.narrator import NarratorContext, narrate
 from app.fusion.scoring import ScoreInputs, compute_threat_score
-from app.inference import aircraft_classifier, detector
+from app.inference import aircraft_classifier, detector, ood_gate
 from app.services.audit import log_event
+from app.services import notifier
 
 log = logging.getLogger("astra.pipeline")
 
@@ -223,6 +224,20 @@ def process_mission(mission_id: int) -> dict:
                     except Exception as exc:
                         log.warning("aircraft cascade failed for det in mission %d: %s", mission.id, exc)
 
+                # OOD gatekeeper: confidence + aspect + edge-density heuristics.
+                # If flagged, the frontend renders this detection greyed-out
+                # with a "?" badge — the system shows it knew it didn't know.
+                try:
+                    ood = ood_gate.assess_detection(
+                        img, r.class_name, r.confidence, r.x1, r.y1, r.x2, r.y2,
+                    )
+                    extras["ood_score"] = ood.score
+                    extras["ood_flag"] = ood.flagged
+                    if ood.reasons:
+                        extras["ood_reasons"] = ood.reasons
+                except Exception as exc:
+                    log.warning("ood gate failed for det in mission %d: %s", mission.id, exc)
+
                 det = Detection(
                     mission_id=mission.id,
                     frame_index=frame_idx,
@@ -296,6 +311,24 @@ def process_mission(mission_id: int) -> dict:
                     frame_index=frame_idx,
                     extras=extras,
                 )
+
+                # Telegram fan-out for high-threat detections. Only fires if
+                # TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID env vars are set AND
+                # the score crosses TELEGRAM_ALERT_THRESHOLD. No-op otherwise.
+                if notifier.is_configured() and score.score >= notifier.threshold():
+                    try:
+                        msg = notifier.format_alert_text(
+                            mission_name=mission.name,
+                            class_name=r.class_name,
+                            threat_score=score.score,
+                            narrative=narrative_text,
+                            nearest_asset=nearest_name,
+                            distance_km=dist_km,
+                            airframe=extras.get("airframe"),
+                        )
+                        notifier.send_alert(msg, threat_score=score.score)
+                    except Exception as exc:
+                        log.debug("telegram notify skipped: %s", exc)
 
         # Track count for audit payload (videos have multiple unique track_ids)
         track_ids_seen = {r.track_id for _, _, _, recs in frames_iter for r in recs if r.track_id is not None}

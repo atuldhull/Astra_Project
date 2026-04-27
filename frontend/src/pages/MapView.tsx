@@ -302,17 +302,31 @@ export default function MapView() {
           {geoDetections
             .filter((d) => !(showTracks && d.track_id != null && tracks.some((t) => t.track_id === d.track_id && t.point_count >= 2)))
             .map((d) => {
-              const color = CLASS_COLORS[d.class_name] ?? "#ff7a1a";
+              const isOod = !!d.extras?.ood_flag;
+              const color = isOod ? "#94a3b8" : (CLASS_COLORS[d.class_name] ?? "#ff7a1a");
               return (
                 <CircleMarker
                   key={d.id}
                   center={[d.lat!, d.lon!]}
-                  radius={5}
-                  pathOptions={{ color, fillColor: color, fillOpacity: 0.8, weight: 1 }}
+                  radius={isOod ? 4 : 5}
+                  pathOptions={{
+                    color,
+                    fillColor: color,
+                    fillOpacity: isOod ? 0.4 : 0.8,
+                    weight: 1,
+                    dashArray: isOod ? "3 2" : undefined,
+                  }}
                 >
                   <Popup>
                     <div className="font-mono text-xs leading-tight">
-                      <div><b>{d.class_name}</b></div>
+                      <div>
+                        <b>{d.class_name}</b>
+                        {d.extras?.ood_flag && (
+                          <span className="ml-1 text-gray-500" title={d.extras.ood_reasons?.join(", ")}>
+                            ? unknown ({((d.extras.ood_score ?? 0) * 100).toFixed(0)}%)
+                          </span>
+                        )}
+                      </div>
                       {d.extras?.airframe && (
                         <div className="text-blue-600">
                           ⤷ <b>{d.extras.airframe}</b> ({((d.extras.airframe_confidence ?? 0) * 100).toFixed(0)}%)
@@ -322,6 +336,9 @@ export default function MapView() {
                       <div>lat: {d.lat!.toFixed(5)}</div>
                       <div>lon: {d.lon!.toFixed(5)}</div>
                       {d.track_id != null && <div>track: #{d.track_id}</div>}
+                      {d.extras?.ood_reasons && d.extras.ood_reasons.length > 0 && (
+                        <div className="text-gray-500 mt-1 italic">{d.extras.ood_reasons.join(" · ")}</div>
+                      )}
                     </div>
                   </Popup>
                 </CircleMarker>

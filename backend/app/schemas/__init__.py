@@ -58,6 +58,11 @@ class ScoreBreakdown(BaseModel):
     nearest_asset: str | None = None
 
 
+class AlertConfirmation(BaseModel):
+    operator_id: str
+    ts: str
+
+
 class AlertOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -66,15 +71,18 @@ class AlertOut(BaseModel):
     detection_id: int
     threat_score: float
     score_breakdown: ScoreBreakdown
-    status: Literal["pending", "confirmed", "rejected", "escalated"]
+    status: Literal["pending", "confirmed", "rejected", "escalated", "engaged"]
     operator_id: str | None
     narrative: str | None
+    # Round-2 dual-control: who has signed off so far. Required for ENGAGED:
+    # need 2 entries with distinct operator_id.
+    confirmations: list[AlertConfirmation] = []
     created_at: datetime
     updated_at: datetime
 
 
 class AlertActionIn(BaseModel):
-    action: Literal["confirm", "reject", "reclassify", "escalate"]
+    action: Literal["confirm", "reject", "reclassify", "escalate", "engage"]
     operator_id: str = Field(..., min_length=1, max_length=64)
     new_class_id: int | None = None
     reason: str | None = None
@@ -123,4 +131,7 @@ class AuditEventOut(BaseModel):
     mission_id: int | None
     alert_id: int | None
     payload_json: dict | None
+    # Round-2 tamper-evident hash chain
+    prev_hash: str | None = None
+    row_hash: str | None = None
     created_at: datetime

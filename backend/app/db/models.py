@@ -26,6 +26,7 @@ class AlertStatus(str, PyEnum):
     CONFIRMED = "confirmed"
     REJECTED = "rejected"
     ESCALATED = "escalated"
+    ENGAGED = "engaged"   # Round-2: escalated + 2 distinct operator confirmations
 
 
 class AuditEventType(str, PyEnum):
@@ -35,6 +36,8 @@ class AuditEventType(str, PyEnum):
     ALERT_REJECTED = "alert_rejected"
     ALERT_RECLASSIFIED = "alert_reclassified"
     ALERT_ESCALATED = "alert_escalated"
+    ALERT_CONFIRMATION = "alert_confirmation"   # Round-2: dual-control partial confirm
+    ALERT_ENGAGED = "alert_engaged"              # Round-2: dual-control complete (2 ops)
     WEIGHTS_CHANGED = "weights_changed"
 
 
@@ -95,6 +98,9 @@ class Alert(Base):
     )
     operator_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     narrative: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Round-2 dual-control: JSON list of {"operator_id": str, "ts": iso}
+    # Required: 2 distinct operator IDs to transition ESCALATED → ENGAGED.
+    confirmations_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
@@ -104,7 +110,12 @@ class Alert(Base):
 
 
 class AuditEvent(Base):
-    """Append-only log. Never UPDATE or DELETE rows here."""
+    """Append-only log. Never UPDATE or DELETE rows here.
+
+    Round-2 tamper-evident upgrade: each row carries a SHA-256 hash that
+    chains to the previous row's hash. Any retroactive edit invalidates
+    every subsequent hash — verifiable by re-walking the chain.
+    """
     __tablename__ = "audit_events"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -116,6 +127,11 @@ class AuditEvent(Base):
     mission_id: Mapped[int | None] = mapped_column(ForeignKey("missions.id", ondelete="SET NULL"), nullable=True)
     alert_id: Mapped[int | None] = mapped_column(ForeignKey("alerts.id", ondelete="SET NULL"), nullable=True)
     payload_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    # Round-2 chained hash. Computed in app.services.audit.log_event() as
+    # SHA-256 of (prev_hash || canonical_json(this row's payload)). Genesis
+    # row's prev_hash is "0"*64.
+    prev_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    row_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), index=True
     )

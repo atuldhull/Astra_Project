@@ -33,6 +33,9 @@ from app.db.session import engine
 # Round-2 column additions: (table, column, ALTER TABLE clause)
 ROUND2_COLUMNS: list[tuple[str, str, str]] = [
     ("detections", "extras_json", "ALTER TABLE detections ADD COLUMN extras_json TEXT"),
+    ("alerts", "confirmations_json", "ALTER TABLE alerts ADD COLUMN confirmations_json TEXT"),
+    ("audit_events", "prev_hash", "ALTER TABLE audit_events ADD COLUMN prev_hash VARCHAR(64)"),
+    ("audit_events", "row_hash", "ALTER TABLE audit_events ADD COLUMN row_hash VARCHAR(64)"),
 ]
 
 
