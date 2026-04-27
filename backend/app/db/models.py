@@ -109,6 +109,29 @@ class Alert(Base):
     mission: Mapped[Mission] = relationship(back_populates="alerts")
 
 
+class ChatMessage(Base):
+    """Persistent commander Q&A thread, optionally scoped to a mission.
+
+    role='user' for operator turns, 'astra' for backend replies. Free-form
+    notes posted via POST /chat/note also land here with role='user' and
+    source='note' so the briefing can surface them under "OPERATOR NOTES".
+    """
+    __tablename__ = "chat_messages"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    mission_id: Mapped[int | None] = mapped_column(
+        ForeignKey("missions.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+    role: Mapped[str] = mapped_column(String(16), index=True)        # 'user' | 'astra'
+    text: Mapped[str] = mapped_column(Text)
+    source: Mapped[str | None] = mapped_column(String(16), nullable=True)  # 'rule'|'llm'|'error'|'note'
+    citations_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    operator_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), index=True
+    )
+
+
 class AuditEvent(Base):
     """Append-only log. Never UPDATE or DELETE rows here.
 

@@ -52,6 +52,9 @@ ROUND2_ENUM_VALUES: list[tuple[str, str]] = [
 
 def main() -> None:
     print("Creating any missing tables...")
+    # Force-import any model modules that aren't in the package __init__ so
+    # SQLAlchemy registers them on Base.metadata before create_all.
+    from app.db import models as _models  # noqa: F401
     Base.metadata.create_all(engine)
     inspector = inspect(engine)
 

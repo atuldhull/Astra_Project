@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Upload, Play, Loader2, Zap, X, Eye, Radio, MapPin, Target, Cpu, Gauge, Layers } from "lucide-react";
+import { Upload, Play, Loader2, Zap, X, Eye, Radio, MapPin, Target, Cpu, Gauge, Layers, RotateCcw } from "lucide-react";
 import { DEFAULT_AOI, api, detectionLabel, type Detection as DbDetection, type Mission as DbMission } from "../lib/api";
 import { PageHeader } from "../components/PageHeader";
 import { HeroStat } from "../components/HeroStat";
@@ -37,33 +37,86 @@ type PredictResponse = {
   model: { name: string; backbone: string; imgsz: number };
 };
 
+// Module-scope cache so the loaded image, detections, and heatmap survive
+// sidebar navigation. Cleared explicitly via the "New Mission" button.
+type MissionCache = {
+  fileUrl: string | null;
+  fileType: "image" | "video" | null;
+  currentFile: File | null;
+  result: PredictResponse | null;
+  savedMissionId: number | null;
+  savedMission: DbMission | null;
+  explainUrl: string | null;
+  explainedClass: string | null;
+  videoDets: DbDetection[];
+  missionName: string;
+};
+const _cache: MissionCache = {
+  fileUrl: null, fileType: null, currentFile: null, result: null,
+  savedMissionId: null, savedMission: null,
+  explainUrl: null, explainedClass: null,
+  videoDets: [], missionName: "",
+};
+
 export default function Mission() {
   const fileRef = useRef<HTMLInputElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const [missionName, setMissionName] = useState(`MISSION-${new Date().toISOString().slice(0,16).replace(/[-T:]/g,"")}`);
-  const [fileUrl, setFileUrl] = useState<string | null>(null);
-  const [fileType, setFileType] = useState<"image" | "video" | null>(null);
-  const [currentFile, setCurrentFile] = useState<File | null>(null);
+  const [missionName, setMissionName] = useState(_cache.missionName || `MISSION-${new Date().toISOString().slice(0,16).replace(/[-T:]/g,"")}`);
+  const [fileUrl, setFileUrl] = useState<string | null>(_cache.fileUrl);
+  const [fileType, setFileType] = useState<"image" | "video" | null>(_cache.fileType);
+  const [currentFile, setCurrentFile] = useState<File | null>(_cache.currentFile);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<PredictResponse | null>(null);
+  const [result, setResult] = useState<PredictResponse | null>(_cache.result);
   const [saveToDb, setSaveToDb] = useState(true);
-  const [savedMissionId, setSavedMissionId] = useState<number | null>(null);
-  const [savedMission, setSavedMission] = useState<DbMission | null>(null);
-  const [explainUrl, setExplainUrl] = useState<string | null>(null);
+  const [savedMissionId, setSavedMissionId] = useState<number | null>(_cache.savedMissionId);
+  const [savedMission, setSavedMission] = useState<DbMission | null>(_cache.savedMission);
+  const [explainUrl, setExplainUrl] = useState<string | null>(_cache.explainUrl);
   const [explainLoading, setExplainLoading] = useState(false);
-  const [explainedClass, setExplainedClass] = useState<string | null>(null);
+  const [explainedClass, setExplainedClass] = useState<string | null>(_cache.explainedClass);
   const [streamUrl, setStreamUrl] = useState("");
   const [streamDialogOpen, setStreamDialogOpen] = useState(false);
   const [streamBusy, setStreamBusy] = useState(false);
-  const [videoDets, setVideoDets] = useState<DbDetection[]>([]);
+  const [videoDets, setVideoDets] = useState<DbDetection[]>(_cache.videoDets);
   const [videoPolling, setVideoPolling] = useState(false);
   const [videoCurrentTime, setVideoCurrentTime] = useState(0);
 
+  // Mirror state to module cache so re-mount restores it.
+  useEffect(() => {
+    _cache.fileUrl = fileUrl;
+    _cache.fileType = fileType;
+    _cache.currentFile = currentFile;
+    _cache.result = result;
+    _cache.savedMissionId = savedMissionId;
+    _cache.savedMission = savedMission;
+    _cache.explainUrl = explainUrl;
+    _cache.explainedClass = explainedClass;
+    _cache.videoDets = videoDets;
+    _cache.missionName = missionName;
+  });
+
   const onPick = () => fileRef.current?.click();
+
+  function newMission() {
+    if (explainUrl) URL.revokeObjectURL(explainUrl);
+    if (fileUrl) URL.revokeObjectURL(fileUrl);
+    setFileUrl(null);
+    setFileType(null);
+    setCurrentFile(null);
+    setResult(null);
+    setSavedMissionId(null);
+    setSavedMission(null);
+    setExplainUrl(null);
+    setExplainedClass(null);
+    setVideoDets([]);
+    setVideoCurrentTime(0);
+    setError(null);
+    setMissionName(`MISSION-${new Date().toISOString().slice(0,16).replace(/[-T:]/g,"")}`);
+    fileRef.current?.click();
+  }
 
   const onFile = (f: File | null) => {
     if (!f) return;
@@ -190,13 +243,18 @@ export default function Mission() {
     }
   }
 
-  // Auto-predict when an image loads
+  // Auto-predict when an image loads. Skipped if state was restored from
+  // the module cache (image already analyzed + ingested in prior mount).
   useEffect(() => {
     if (!fileUrl || !currentFile) return;
+    const alreadyAnalyzed = fileType === "image" ? result != null : videoDets.length > 0;
+    const alreadyIngested = savedMissionId != null;
     if (fileType === "image") {
-      fetch(fileUrl).then(r => r.blob()).then(b => runPredict(b, "upload.jpg"));
-      if (saveToDb) saveMission(currentFile);
-    } else if (fileType === "video" && saveToDb) {
+      if (!alreadyAnalyzed) {
+        fetch(fileUrl).then(r => r.blob()).then(b => runPredict(b, "upload.jpg"));
+      }
+      if (saveToDb && !alreadyIngested) saveMission(currentFile);
+    } else if (fileType === "video" && saveToDb && !alreadyIngested) {
       // Videos can't run /predict on a single frame reliably — we ingest,
       // wait for the pipeline to produce tracked detections, then overlay
       // them on playback.
@@ -492,6 +550,15 @@ export default function Mission() {
             >
               <Upload size={14} /> Ingest
             </button>
+            {fileUrl && (
+              <button
+                onClick={newMission}
+                className="flex items-center gap-2 glass border border-border px-4 py-1.5 rounded text-sm hover:bg-panel2 transition-fast"
+                title="Discard current mission and pick a new file (current image stays loaded across tab switches until you click this)"
+              >
+                <RotateCcw size={14} /> Next Mission
+              </button>
+            )}
             <button
               onClick={() => setStreamDialogOpen(true)}
               className="flex items-center gap-2 glass border border-border px-4 py-1.5 rounded text-sm hover:bg-panel2 transition-fast"

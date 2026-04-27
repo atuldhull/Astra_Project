@@ -92,6 +92,17 @@ export type Mission = {
   gps_point?: [number, number] | null;
 };
 
+export type ChatMessage = {
+  id: number;
+  mission_id: number | null;
+  role: "user" | "astra";
+  text: string;
+  source: "rule" | "llm" | "error" | "note" | "briefing" | null;
+  citations: Record<string, unknown>[];
+  operator_id: string | null;
+  created_at: string;
+};
+
 export type TrackPoint = {
   frame_index: number;
   frame_timestamp_ms: number;
@@ -119,6 +130,17 @@ export type AoiCorners = {
 
 export const api = {
   health: () => json<{ status: string; device: string; model_loaded: boolean }>("/health"),
+  chatThread: (mission_id: number | null) => {
+    const q = mission_id != null ? `?mission_id=${mission_id}` : "";
+    return json<ChatMessage[]>(`/api/v1/chat/thread${q}`);
+  },
+  chatAsk: (body: { question: string; mission_id?: number | null; operator_id?: string | null }) =>
+    json<{ answer: string; source: string; citations: Record<string, unknown>[]; llm_available: boolean }>(
+      `/api/v1/chat`,
+      { method: "POST", body: JSON.stringify(body) },
+    ),
+  chatNote: (body: { text: string; mission_id: number; operator_id?: string | null }) =>
+    json<ChatMessage>(`/api/v1/chat/note`, { method: "POST", body: JSON.stringify(body) }),
   listMissions: (limit = 50) => json<Mission[]>(`/api/v1/ingest?limit=${limit}`),
   listDetections: (params?: { mission_id?: number; class_id?: number; limit?: number }) => {
     const q = new URLSearchParams();
