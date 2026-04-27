@@ -1,9 +1,21 @@
 # ASTRA — Aerial Surveillance & Threat Recognition Assistant
 
-> **Sovereign, explainable, edge-deployable AI for aerial target recognition — trained on a student laptop in under 2 hours, with Grad-CAM, track-based temporal analysis, and measured adversarial robustness.**
+> **Sovereign, explainable, adversarial-aware aerial-recognition platform — runs end-to-end on a 6 GB laptop GPU. Round 1 selected; Round 2 ships fine-grained military airframe ID, federated learning with Sybil resistance, dual-operator engagement workflow, tamper-evident audit chain, and on-phone alerts.**
 
 Built for the **ASTRA Defence-Tech Expo 2026, BMSIT&M Bengaluru** (Apr 30).
 Track: *AI & Machine Learning in Defence Technology*.
+
+**Status: Round 2 shipped.** All 10 features verified end-to-end via
+`python scripts/e2e_regression.py` — see [docs/RELEASE-R2.md](docs/RELEASE-R2.md)
+for the full feature matrix and [docs/pitch-content-r2.md](docs/pitch-content-r2.md)
+for the pitch deck content.
+
+## Round 2 highlights — what's new since Round 1
+- **Stage-2 cascade classifier** — fine-grained military airframe ID (20 airframes incl. F-22, Su-35, B-52, P-3C). 89.03% top-1 / 99.32% top-5 on MAR20.
+- **Federated learning + FoolsGold** — in-process FedAvg orchestrator across N nodes with cosine-similarity Sybil reweighting. 2 colluding attackers → weight 0.000.
+- **Adversarial A/B** — v1 vs v1-hardened model picker, FGSM with measured retention curve. Helipad scene: v1 0% → v1-hardened 80% retention at ε=0.05.
+- **Operational realism** — WebSocket live push, mission diff, dual-operator engagement (2 distinct ops), Telegram phone alerts, SHA-256 hash-chained audit.
+- **Out-of-distribution gatekeeper** — flag dets with low conf / bad aspect / flat region as `?` instead of false-class.
 
 ---
 
@@ -25,15 +37,17 @@ Track: *AI & Machine Learning in Defence Technology*.
 - **Grad-CAM explainability** (`/explain`) — EigenCAM heatmap on last backbone layer, box-masked for focal visualization
 - **FGSM adversarial attack** (`/adversarial`) — proper gradient-based attack with measured degradation curve
 
-### Front-end (6 pages)
+### Front-end (8 pages — 2 new in R2)
 | Page | Purpose |
 |---|---|
-| **Mission** | Upload image or video, live detection with canvas overlay, Grad-CAM click, video playback with synced tracked boxes |
-| **Map** | Leaflet map with geo-referenced detections, friendly-force markers, dashed AOI polygon, track polylines |
-| **Alerts** | Ranked threat queue with natural-language narratives, client-side weight-slider re-ranking, confirm/reject/escalate |
-| **Audit** | Append-only event log with filter + search, signed PDF mission-report export |
+| **Mission** | Upload image or video, live detection with canvas overlay, Grad-CAM click, video playback with synced tracked boxes. **R2:** airframe sub-class label (`E-8 0.90`), OOD detections render dashed-grey with `?` |
+| **Map** | Leaflet map with geo-referenced detections, friendly-force markers, dashed AOI polygon, track polylines. **R2:** WebSocket LIVE indicator, pins POP in real time, popups show airframe sub-class |
+| **Alerts** | Ranked threat queue with NL narratives, client-side weight-slider re-ranking. **R2:** dual-operator engage workflow (2/2 confirms badge → ENGAGED) |
+| **Audit** | Append-only event log with filter + search, signed PDF export. **R2:** SHA-256 hash chain + `verify chain` button (green/red badge) |
 | **Benchmark** | Real training metrics, per-class mAP bar chart, latency by target |
-| **Adversarial** | Side-by-side FGSM attack with epsilon slider showing model degradation |
+| **Adversarial** | FGSM attack with epsilon slider. **R2:** v1 / v1-hardened A/B model picker + retention comparison strip |
+| **Federated** ⭐NEW R2 | 4-panel dashboard: global accuracy curve, per-client accuracy, FoolsGold weight bars, quarantine status |
+| **Diff** ⭐NEW R2 | Side-by-side mission diff (Leaflet) — added/removed/moved tracks with arrow polylines |
 
 ### Infra
 - **FastAPI** backend · **Postgres** (missions, detections, alerts, audit) · **Redis** (reserved for multi-worker)
