@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api import adversarial, alerts, audit, detections, diff, explain, federated, ingest, predict, reports, stream, ws
+from app.api import adversarial, alerts, audit, auth, detections, diff, explain, federated, ingest, predict, reports, stream, ws
 
 router = APIRouter(prefix="/api/v1")
 router.include_router(ingest.router)
@@ -15,6 +15,7 @@ router.include_router(reports.router)
 router.include_router(adversarial.router)
 router.include_router(federated.router)
 router.include_router(diff.router)
+router.include_router(auth.router)
 
 # Websocket router is mounted separately (no /api/v1 prefix).
 ws_router = ws.router

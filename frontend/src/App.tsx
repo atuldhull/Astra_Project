@@ -10,6 +10,7 @@ import Benchmark from "./pages/Benchmark";
 import Adversarial from "./pages/Adversarial";
 import Federated from "./pages/Federated";
 import MissionDiff from "./pages/MissionDiff";
+import Login from "./pages/Login";
 import { SplashBoot, shouldShowSplash } from "./components/SplashBoot";
 import { Sidebar } from "./components/Sidebar";
 import { TacticalBackground } from "./components/TacticalBackground";
@@ -49,6 +50,7 @@ export default function App() {
           <Route path="/adversarial" element={<Adversarial />} />
           <Route path="/federated" element={<Federated />} />
           <Route path="/diff" element={<MissionDiff />} />
+          <Route path="/login" element={<Login />} />
         </Routes>
       </main>
       <OnboardingTour />

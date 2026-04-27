@@ -12,12 +12,13 @@
  * Polls /health every 5s for backend status.
  */
 import { useEffect, useMemo, useState } from "react";
-import { NavLink } from "react-router-dom";
-import { ChevronsLeft, ChevronsRight, Cpu, Shield, Wifi, WifiOff } from "lucide-react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { ChevronsLeft, ChevronsRight, Cpu, Shield, Wifi, WifiOff, LogIn, LogOut, User } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { api } from "../lib/api";
 import { StatusPill } from "./StatusPill";
 import { ThemeToggle } from "./ThemeToggle";
+import { fetchMe, getToken, logout, subscribeAuth, type Me } from "../lib/auth";
 
 const COLLAPSE_KEY = "astra:sidebarCollapsed:v1";
 
@@ -38,6 +39,7 @@ type HealthState = {
 };
 
 export function Sidebar({ items }: Props) {
+  const navigate = useNavigate();
   // Default to expanded; user can collapse and we remember.
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     try { return localStorage.getItem(COLLAPSE_KEY) === "1"; } catch { return false; }
@@ -47,6 +49,14 @@ export function Sidebar({ items }: Props) {
   const [missionCount, setMissionCount] = useState<number | null>(null);
   const [alertCount, setAlertCount] = useState<number | null>(null);
   const [chainOk, setChainOk] = useState<boolean | null>(null);
+  const [me, setMe] = useState<Me | null>(null);
+
+  // Auth state — re-sync whenever token changes
+  useEffect(() => {
+    const sync = async () => setMe(getToken() ? await fetchMe() : null);
+    sync();
+    return subscribeAuth(() => sync());
+  }, []);
 
   useEffect(() => {
     try { localStorage.setItem(COLLAPSE_KEY, collapsed ? "1" : "0"); } catch { /* noop */ }
@@ -228,6 +238,36 @@ export function Sidebar({ items }: Props) {
             <div className="pt-2 border-t border-border flex items-center justify-between">
               <span className="text-2xs uppercase-wide text-muted2 font-mono">theme</span>
               <ThemeToggle />
+            </div>
+
+            {/* Auth chip */}
+            <div className="pt-2 border-t border-border">
+              {me ? (
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <User size={11} className="text-cyan shrink-0" />
+                    <div className="min-w-0">
+                      <div className="text-2xs font-mono truncate">{me.operator_id}</div>
+                      <div className="text-[10px] text-muted2 font-mono uppercase-wide tracking-wider">{me.role}</div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => { logout(); navigate("/login"); }}
+                    className="p-1 text-muted hover:text-threat-crit transition-fast"
+                    title="Sign out"
+                  >
+                    <LogOut size={12} />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => navigate("/login")}
+                  className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded text-2xs uppercase-wide font-mono tracking-wider border border-border bg-panel2 hover:bg-panel3 text-muted hover:text-text transition-fast"
+                  title="Sign in to elevate role"
+                >
+                  <LogIn size={11} /> sign in
+                </button>
+              )}
             </div>
           </>
         ) : (
