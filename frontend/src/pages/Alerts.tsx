@@ -1,6 +1,11 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { Check, X, ArrowUpCircle, Loader2, RefreshCw, Crosshair, ShieldCheck } from "lucide-react";
+import { Check, X, ArrowUpCircle, Loader2, RefreshCw, Crosshair, ShieldCheck, AlertTriangle, Flame, Inbox } from "lucide-react";
 import { api, threatColor, type Alert, type Mission } from "../lib/api";
+import { PageHeader } from "../components/PageHeader";
+import { HeroStat } from "../components/HeroStat";
+import { StatusPill } from "../components/StatusPill";
+import { EmptyState } from "../components/EmptyState";
+import { toast } from "../components/Toast";
 
 // Must match backend DEFAULT_WEIGHTS in scoring.py
 const DEFAULT_W = { w_class: 0.35, w_prox: 0.25, w_motion: 0.20, w_count: 0.10, w_conf: 0.10 };
@@ -113,8 +118,12 @@ export default function Alerts() {
       const updated = await api.actOnAlert(alertId, { action, operator_id: operatorId });
       // optimistic update
       setAlerts((prev) => prev.map((a) => (a.id === alertId ? updated : a)));
+      const sev = updated.status === "engaged" ? "crit" : updated.status === "escalated" ? "warn" : "success";
+      toast[sev](`Alert #${alertId} ${updated.status}`, `by ${operatorId}${action === "engage" && updated.status === "escalated" ? ` · ${updated.confirmations?.length ?? 0}/2 confirms` : ""}`);
     } catch (e) {
-      setError(`${action} failed: ${(e as Error).message}`);
+      const msg = (e as Error).message;
+      setError(`${action} failed: ${msg}`);
+      toast.crit(`${action} failed`, msg);
     } finally {
       setBusyId(null);
     }
@@ -131,39 +140,79 @@ export default function Alerts() {
     escalated: alerts.filter((a) => a.status === "escalated").length,
   };
 
+  // Top-1 critical-threat alert for the hero panel
+  const topCrit = ranked.find(({ live }) => live >= 0.75)?.alert;
+  const engagedCount = alerts.filter((a) => a.status === "engaged").length;
+
   return (
     <div className="h-full flex flex-col">
-      <header className="px-6 py-4 border-b border-border flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-lg font-semibold">Ranked Threat Queue</h1>
-          <p className="text-xs text-muted">
-            {alerts.length} alerts · {counts.pending} pending, {counts.confirmed} confirmed,{" "}
-            {counts.rejected} rejected, {counts.escalated} escalated
+      <PageHeader
+        icon={AlertTriangle}
+        title="Ranked Threat Queue"
+        subtitle={
+          <>
+            {alerts.length} alerts · {counts.pending} pending · {counts.confirmed} confirmed · {counts.rejected} rejected · {counts.escalated} escalated
+            {engagedCount > 0 && (<>{" · "}<span className="text-threat-crit">{engagedCount} engaged</span></>)}
             {loading && " · refreshing..."}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <label className="text-xs text-muted">Mission:</label>
-          <select
-            className="bg-panel border border-border rounded px-3 py-1.5 text-sm font-mono min-w-[200px]"
-            value={selectedId ?? ""}
-            onChange={(e) => setSelectedId(Number(e.target.value))}
-          >
-            {missions.length === 0 && <option>(no missions)</option>}
-            {missions.map((m) => (
-              <option key={m.id} value={m.id}>
-                #{m.id} · {m.name}
-              </option>
-            ))}
-          </select>
-          <label className="text-xs text-muted">Operator:</label>
-          <input
-            className="bg-panel border border-border rounded px-3 py-1.5 text-sm font-mono w-28"
-            value={operatorId}
-            onChange={(e) => setOperatorId(e.target.value)}
-          />
-        </div>
-      </header>
+          </>
+        }
+        badge={topCrit ? <StatusPill variant="err" size="sm">CRITICAL · {(topCrit.threat_score * 100).toFixed(0)}%</StatusPill> : null}
+        actions={
+          <>
+            <label className="text-xs text-muted">Mission:</label>
+            <select
+              className="bg-panel border border-border rounded px-3 py-1.5 text-sm font-mono min-w-[200px]"
+              value={selectedId ?? ""}
+              onChange={(e) => setSelectedId(Number(e.target.value))}
+            >
+              {missions.length === 0 && <option>(no missions)</option>}
+              {missions.map((m) => (
+                <option key={m.id} value={m.id}>
+                  #{m.id} · {m.name}
+                </option>
+              ))}
+            </select>
+            <label className="text-xs text-muted">Operator:</label>
+            <input
+              className="bg-panel border border-border rounded px-3 py-1.5 text-sm font-mono w-28"
+              value={operatorId}
+              onChange={(e) => setOperatorId(e.target.value)}
+            />
+          </>
+        }
+      />
+
+      {/* Hero KPI strip */}
+      <div className="px-6 pt-4 grid grid-cols-4 gap-3">
+        <HeroStat
+          label="total alerts"
+          value={alerts.length}
+          icon={AlertTriangle}
+          tone={alerts.length > 0 ? "cyan" : "neutral"}
+          sub={`${counts.pending} pending`}
+        />
+        <HeroStat
+          label="critical (≥0.75)"
+          value={ranked.filter(({live}) => live >= 0.75).length}
+          icon={Flame}
+          tone="crit"
+          sub="needs attention"
+        />
+        <HeroStat
+          label="escalated"
+          value={counts.escalated}
+          icon={ArrowUpCircle}
+          tone={counts.escalated > 0 ? "high" : "neutral"}
+          sub="awaiting 2nd op"
+        />
+        <HeroStat
+          label="engaged"
+          value={engagedCount}
+          icon={Crosshair}
+          tone={engagedCount > 0 ? "crit" : "neutral"}
+          sub="dual-confirmed"
+        />
+      </div>
 
       {error && (
         <div className="mx-6 mt-3 bg-threat-crit/20 border border-threat-crit/40 text-threat-crit p-2 rounded text-xs">
@@ -171,8 +220,8 @@ export default function Alerts() {
         </div>
       )}
 
-      <div className="flex-1 p-6 grid grid-cols-[1fr_300px] gap-6 overflow-hidden">
-        <div className="bg-panel border border-border rounded overflow-auto">
+      <div className="flex-1 p-6 pt-4 grid grid-cols-[1fr_300px] gap-6 overflow-hidden">
+        <div className="glass rounded-lg overflow-auto shadow-panel">
           <table className="w-full text-sm">
             <thead className="bg-panel2 text-muted text-xs uppercase tracking-wider sticky top-0 z-10">
               <tr>
@@ -190,8 +239,13 @@ export default function Alerts() {
             <tbody>
               {ranked.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="px-4 py-8 text-center text-muted text-sm">
-                    No alerts. Upload an image in Mission to generate some.
+                  <td colSpan={9}>
+                    <EmptyState
+                      icon={Inbox}
+                      title="No alerts in queue"
+                      body="The threat narrator hasn't flagged anything yet. Upload an image or video on the Mission page to generate detections + threat-scored alerts."
+                      cta={{ label: "Go to Mission page", href: "/mission" }}
+                    />
                   </td>
                 </tr>
               )}
@@ -325,7 +379,7 @@ export default function Alerts() {
           </table>
         </div>
 
-        <aside className="bg-panel border border-border rounded p-4 space-y-4 overflow-auto">
+        <aside className="glass rounded-lg p-4 space-y-4 overflow-auto shadow-panel">
           <div className="flex items-center justify-between">
             <div className="text-xs text-muted uppercase tracking-wider">Score Weights</div>
             <button

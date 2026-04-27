@@ -1,8 +1,11 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, TileLayer, CircleMarker, Popup, Polygon, Polyline, Marker, useMap } from "react-leaflet";
 import L from "leaflet";
-import { Loader2, RefreshCw, Route, Radio } from "lucide-react";
+import { Loader2, RefreshCw, Route, Radio, Map as MapIcon, MapPin, Crosshair, GitBranch } from "lucide-react";
 import { api, openLiveSocket, type Detection, type Mission, type Track, DEFAULT_AOI } from "../lib/api";
+import { PageHeader } from "../components/PageHeader";
+import { HeroStat } from "../components/HeroStat";
+import { StatusPill } from "../components/StatusPill";
 
 // Friendly asset locations (must match backend config.py defaults)
 const FRIENDLY_ASSETS: { name: string; lat: number; lon: number }[] = [
@@ -169,68 +172,100 @@ export default function MapView() {
   const counts: Record<string, number> = {};
   for (const d of geoDetections) counts[d.class_name] = (counts[d.class_name] ?? 0) + 1;
 
+  // OOD count for hero stats
+  const oodCount = geoDetections.filter((d) => d.extras?.ood_flag).length;
+
   return (
     <div className="h-full flex flex-col">
-      <header className="px-6 py-4 border-b border-border flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-lg font-semibold flex items-center gap-2">
-            Tactical Map
-            <span
-              className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider transition-colors ${
-                liveConnected
-                  ? "bg-threat-low/20 text-threat-low border border-threat-low/40"
-                  : "bg-panel2 text-muted border border-border"
-              }`}
-              title={liveConnected ? "WebSocket connected — pins pop in real time" : "WebSocket disconnected — falling back to 5s polling"}
-            >
-              <Radio
-                size={9}
-                className={liveConnected && livePulse > 0 ? "animate-pulse" : ""}
-                key={livePulse /* re-key to retrigger animation on each event */}
-              />
-              {liveConnected ? "live" : "offline"}
-            </span>
-          </h1>
-          <p className="text-xs text-muted">
+      <PageHeader
+        icon={MapIcon}
+        title="Tactical Map"
+        badge={
+          <StatusPill
+            variant={liveConnected ? "live" : "neutral"}
+            size="sm"
+            title={liveConnected ? "WebSocket connected — pins pop in real time" : "WebSocket disconnected — 5s polling fallback"}
+          >
+            <Radio size={9} className="mr-1" key={livePulse} />
+            {liveConnected ? "live" : "offline"}
+          </StatusPill>
+        }
+        subtitle={
+          <>
             {geoDetections.length} geo-pins
             {tracks.length > 0 && ` · ${tracks.length} tracks`}
+            {oodCount > 0 && (<>{' · '}<span className="text-muted">{oodCount} OOD-flagged</span></>)}
             {loading && " · refreshing..."}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {tracks.length > 0 && (
-            <label className="flex items-center gap-1.5 text-xs text-muted cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={showTracks}
-                onChange={(e) => setShowTracks(e.target.checked)}
-                className="accent-accent"
-              />
-              <Route size={12} /> Tracks
-            </label>
-          )}
-          <label className="text-xs text-muted">Mission:</label>
-          <select
-            className="bg-panel border border-border rounded px-3 py-1.5 text-sm font-mono min-w-[220px]"
-            value={selectedId ?? ""}
-            onChange={(e) => setSelectedId(Number(e.target.value))}
-          >
-            {missions.length === 0 && <option>(no missions yet)</option>}
-            {missions.map((m) => (
-              <option key={m.id} value={m.id}>
-                #{m.id} · {m.name}
-              </option>
-            ))}
-          </select>
-          <button
-            onClick={() => selectedId != null && setSelectedId(selectedId)}
-            className="p-1.5 rounded hover:bg-panel2 text-muted"
-            title="Refresh"
-          >
-            {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
-          </button>
-        </div>
-      </header>
+          </>
+        }
+        actions={
+          <>
+            {tracks.length > 0 && (
+              <label className="flex items-center gap-1.5 text-xs text-muted cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={showTracks}
+                  onChange={(e) => setShowTracks(e.target.checked)}
+                  className="accent-accent"
+                />
+                <Route size={12} /> Tracks
+              </label>
+            )}
+            <label className="text-xs text-muted">Mission:</label>
+            <select
+              className="bg-panel border border-border rounded px-3 py-1.5 text-sm font-mono min-w-[220px]"
+              value={selectedId ?? ""}
+              onChange={(e) => setSelectedId(Number(e.target.value))}
+            >
+              {missions.length === 0 && <option>(no missions yet)</option>}
+              {missions.map((m) => (
+                <option key={m.id} value={m.id}>
+                  #{m.id} · {m.name}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={() => selectedId != null && setSelectedId(selectedId)}
+              className="p-1.5 rounded hover:bg-panel2 text-muted transition-fast"
+              title="Refresh"
+            >
+              {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+            </button>
+          </>
+        }
+      />
+
+      {/* Hero KPI strip */}
+      <div className="px-6 pt-4 grid grid-cols-4 gap-3">
+        <HeroStat
+          label="geo-pins"
+          value={geoDetections.length}
+          icon={MapPin}
+          tone={geoDetections.length > 0 ? "cyan" : "neutral"}
+          sub={`${detections.length} total dets`}
+        />
+        <HeroStat
+          label="tracks"
+          value={tracks.length}
+          icon={Route}
+          tone={tracks.length > 0 ? "low" : "neutral"}
+          sub={tracks.length > 0 ? `avg ${(tracks.reduce((s,t)=>s+t.point_count,0)/tracks.length).toFixed(1)} pts/track` : "no movement"}
+        />
+        <HeroStat
+          label="OOD-flagged"
+          value={oodCount}
+          icon={Crosshair}
+          tone={oodCount > 0 ? "high" : "neutral"}
+          sub="conf+aspect+edge"
+        />
+        <HeroStat
+          label="missions"
+          value={missions.length}
+          icon={GitBranch}
+          tone="neutral"
+          sub="loaded"
+        />
+      </div>
 
       {error && (
         <div className="mx-6 mt-3 bg-threat-crit/20 border border-threat-crit/40 text-threat-crit p-2 rounded text-xs">
@@ -238,7 +273,7 @@ export default function MapView() {
         </div>
       )}
 
-      <div className="flex-1 relative">
+      <div className="flex-1 relative px-6 pb-6 pt-3">
         <MapContainer
           center={[12.9716, 77.5946]}
           zoom={15}
@@ -349,7 +384,7 @@ export default function MapView() {
         </MapContainer>
 
         {/* Legend */}
-        <div className="absolute bottom-4 left-4 bg-panel/90 backdrop-blur border border-border rounded p-3 text-xs z-[1000] min-w-[180px]">
+        <div className="absolute bottom-10 left-10 glass-strong rounded-lg p-3 text-xs z-[1000] min-w-[180px]">
           <div className="text-muted uppercase tracking-wider mb-2">Legend</div>
           {Object.entries(counts).length === 0 ? (
             <div className="text-muted">No detections — upload via Mission page</div>
