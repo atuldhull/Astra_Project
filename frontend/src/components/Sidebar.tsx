@@ -37,9 +37,11 @@ type HealthState = {
 };
 
 export function Sidebar({ items }: Props) {
+  // Default to expanded; user can collapse and we remember.
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     try { return localStorage.getItem(COLLAPSE_KEY) === "1"; } catch { return false; }
   });
+  // Slightly narrower expanded width so the dashboard gets more room.
   const [health, setHealth] = useState<HealthState>({ ok: false, device: null, modelLoaded: null, lastSyncMs: null });
   const [missionCount, setMissionCount] = useState<number | null>(null);
   const [alertCount, setAlertCount] = useState<number | null>(null);
@@ -104,7 +106,7 @@ export function Sidebar({ items }: Props) {
     return `${Math.round(sec / 60)}m`;
   }, [health.lastSyncMs]);
 
-  const widthCls = collapsed ? "w-16" : "w-60";
+  const widthCls = collapsed ? "w-14" : "w-52";
 
   return (
     <aside

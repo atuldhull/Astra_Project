@@ -134,10 +134,10 @@ export default function Command() {
         </div>
       </header>
 
-      {/* The wall — 12-cell grid */}
-      <div className="flex-1 p-5 grid grid-cols-12 grid-rows-[auto_auto_auto] gap-3 overflow-auto auto-rows-min">
-        {/* [01] System status — 3 cols */}
-        <Tile span={3} accent="cyan" badge="01" title="System">
+      {/* The wall — 4-column grid, tiles at 1 / 2 / 3 / 4 cols wide */}
+      <div className="flex-1 p-5 grid grid-cols-4 gap-3 overflow-auto auto-rows-min content-start">
+        {/* [01] System status — 1 col */}
+        <Tile span={1} accent="cyan" badge="01" title="System">
           <div className="space-y-1.5 text-xs">
             <Row label="backend" v={health.ok ? "online" : "down"} tone={health.ok ? "low" : "crit"} />
             <Row label="device" v={health.device ?? "—"} mono />
@@ -147,8 +147,8 @@ export default function Command() {
           </div>
         </Tile>
 
-        {/* [02] Mission stream — 5 cols */}
-        <Tile span={5} accent="amber" badge="02" title="Mission Stream" linkTo="/mission">
+        {/* [02] Mission stream — 2 cols */}
+        <Tile span={2} accent="amber" badge="02" title="Mission Stream" linkTo="/mission">
           {missions.length === 0 ? (
             <div className="text-2xs text-muted">No missions yet — ingest one on /mission.</div>
           ) : (
@@ -166,8 +166,8 @@ export default function Command() {
           )}
         </Tile>
 
-        {/* [03] Threat board — 4 cols */}
-        <Tile span={4} accent="crit" badge="03" title="Threat Board" linkTo="/alerts">
+        {/* [03] Threat board — 1 col */}
+        <Tile span={1} accent="crit" badge="03" title="Threat Board" linkTo="/alerts">
           <div className="space-y-1">
             {topAlerts.length === 0 ? (
               <div className="text-2xs text-muted">No alerts.</div>
@@ -192,8 +192,8 @@ export default function Command() {
           </div>
         </Tile>
 
-        {/* [04] Cascade summary — 3 cols */}
-        <Tile span={3} accent="cyan" badge="04" title="Cascade ID" linkTo="/mission">
+        {/* [04] Cascade summary — 1 col */}
+        <Tile span={1} accent="cyan" badge="04" title="Cascade ID" linkTo="/mission">
           {airframeCounts.length === 0 ? (
             <div className="text-2xs text-muted">No airframes ID'd in latest mission.</div>
           ) : (
@@ -211,8 +211,8 @@ export default function Command() {
           </div>
         </Tile>
 
-        {/* [05] Federated state — 5 cols */}
-        <Tile span={5} accent="amber" badge="05" title="Federated · FoolsGold" linkTo="/federated">
+        {/* [05] Federated state — 2 cols */}
+        <Tile span={2} accent="amber" badge="05" title="Federated · FoolsGold" linkTo="/federated">
           {!fed?.available ? (
             <div className="text-2xs text-muted">
               No federated run loaded.{" "}
@@ -238,8 +238,8 @@ export default function Command() {
           )}
         </Tile>
 
-        {/* [06] Audit chain — 4 cols */}
-        <Tile span={4} accent={chainOk === false ? "crit" : "low"} badge="06" title="Audit · Hash Chain" linkTo="/audit">
+        {/* [06] Audit chain — 2 cols */}
+        <Tile span={2} accent={chainOk === false ? "crit" : "low"} badge="06" title="Audit · Hash Chain" linkTo="/audit">
           <div className="flex items-center gap-2 mb-2">
             {chainOk == null ? (
               <StatusPill variant="neutral" size="sm">unverified</StatusPill>
@@ -261,8 +261,8 @@ export default function Command() {
           </ul>
         </Tile>
 
-        {/* [07] Adversarial — 3 cols */}
-        <Tile span={3} accent="amber" badge="07" title="Adversarial A/B" linkTo="/adversarial">
+        {/* [07] Adversarial — 1 col */}
+        <Tile span={1} accent="amber" badge="07" title="Adversarial A/B" linkTo="/adversarial">
           <div className="space-y-2 text-xs">
             <div className="flex justify-between">
               <span className="text-muted">v1 baseline</span>
@@ -278,8 +278,8 @@ export default function Command() {
           </div>
         </Tile>
 
-        {/* [08] OOD gate — 3 cols */}
-        <Tile span={3} accent="cyan" badge="08" title="OOD Gatekeeper">
+        {/* [08] OOD gate — 1 col */}
+        <Tile span={1} accent="cyan" badge="08" title="OOD Gatekeeper">
           <div className="flex items-baseline gap-3 mb-2">
             <span className={`text-2xl font-mono tabular-nums ${oodCount > 0 ? "text-threat-high" : "text-threat-low"}`}>
               <NumberTicker value={oodCount} />
@@ -292,8 +292,8 @@ export default function Command() {
           </div>
         </Tile>
 
-        {/* [09] Activity timeline — 6 cols (terminal-style) */}
-        <Tile span={6} accent="amber" badge="09" title="Activity · Live Tail" linkTo="/audit">
+        {/* [09] Activity timeline — 3 cols (terminal-style, full width feels) */}
+        <Tile span={3} accent="amber" badge="09" title="Activity · Live Tail" linkTo="/audit">
           <div className="font-mono text-2xs space-y-0.5 text-muted">
             {audit.slice(0, 8).map((e) => (
               <div key={e.id} className="flex gap-2 items-baseline">
@@ -307,8 +307,8 @@ export default function Command() {
           </div>
         </Tile>
 
-        {/* [10] Quick actions — 3 cols */}
-        <Tile span={3} accent="amber" badge="10" title="Quick Actions">
+        {/* [10] Quick actions — 1 col */}
+        <Tile span={1} accent="amber" badge="10" title="Quick Actions">
           <div className="space-y-2 text-xs">
             <ActionLink to="/mission" icon={Play}    label="Ingest a mission" />
             <ActionLink to="/map"     icon={MapPin}  label="Open tactical map" />
@@ -352,21 +352,28 @@ function Tile({
     crit:  "from-threat-crit/0 via-threat-crit/70 to-threat-crit/0",
   };
   const inner = (
-    <div className={`relative glass-strong rounded-lg p-3 h-full overflow-hidden border ${accentColor[accent]} hover:border-accent transition-fast group`}>
+    <div className={`relative glass-strong rounded-lg p-4 h-full min-h-[180px] overflow-hidden border ${accentColor[accent]} hover:border-accent transition-fast group`}>
       <div className={`absolute top-0 left-3 right-3 h-px bg-gradient-to-r ${accentLine[accent]}`} />
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-2xs text-muted2">[{badge}]</span>
-          <span className="text-xs uppercase-wide tracking-wider font-semibold">{title}</span>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="font-mono text-2xs text-muted2 shrink-0">[{badge}]</span>
+          <span className="text-xs uppercase-wide tracking-wider font-semibold truncate">{title}</span>
         </div>
         {linkTo && (
-          <ArrowRight size={11} className="text-muted2 group-hover:text-accent transition-fast" />
+          <ArrowRight size={12} className="text-muted2 group-hover:text-accent transition-fast shrink-0" />
         )}
       </div>
       {children}
     </div>
   );
-  const cls = `col-span-${span}`;
+  // IMPORTANT: Tailwind JIT can't see `col-span-${n}` interpolation. Hard-code.
+  const SPAN_CLS: Record<number, string> = {
+    1: "col-span-1",
+    2: "col-span-2",
+    3: "col-span-3",
+    4: "col-span-4",
+  };
+  const cls = SPAN_CLS[span] ?? "col-span-1";
   if (linkTo) return <Link to={linkTo} className={cls}>{inner}</Link>;
   return <div className={cls}>{inner}</div>;
 }
