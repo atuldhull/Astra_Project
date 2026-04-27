@@ -38,6 +38,17 @@ ROUND2_COLUMNS: list[tuple[str, str, str]] = [
     ("audit_events", "row_hash", "ALTER TABLE audit_events ADD COLUMN row_hash VARCHAR(64)"),
 ]
 
+# Round-2 Postgres enum value additions: (enum_type, new_value).
+# Postgres enums are static — `Base.metadata.create_all` won't add new
+# values to a pre-existing type. Each is wrapped in a separate transaction
+# because ALTER TYPE ADD VALUE can't run inside a multi-statement
+# transaction in older Postgres.
+ROUND2_ENUM_VALUES: list[tuple[str, str]] = [
+    ("auditeventtype", "alert_confirmation"),
+    ("auditeventtype", "alert_engaged"),
+    ("alertstatus", "engaged"),
+]
+
 
 def main() -> None:
     print("Creating any missing tables...")
@@ -56,6 +67,60 @@ def main() -> None:
                 continue
             print(f"  [add]  {table}.{column}")
             conn.execute(text(ddl))
+
+    print("\nApplying Round-2 enum value additions (if absent)...")
+    # Postgres-only — no-op on SQLite/MySQL where enums are different.
+    if engine.dialect.name == "postgresql":
+        for enum_type, value in ROUND2_ENUM_VALUES:
+            with engine.begin() as conn:
+                # Check if value already exists in enum.
+                exists = conn.execute(text("""
+                    SELECT 1 FROM pg_enum e
+                    JOIN pg_type t ON e.enumtypid = t.oid
+                    WHERE t.typname = :etype AND e.enumlabel = :val
+                """), {"etype": enum_type, "val": value}).first()
+                if exists:
+                    print(f"  [ok]   {enum_type}.{value} already present")
+                    continue
+                print(f"  [add]  {enum_type}.{value}")
+                # Use IF NOT EXISTS via DO block to be safe on race
+                conn.execute(text(f"ALTER TYPE {enum_type} ADD VALUE IF NOT EXISTS '{value}'"))
+
+    # Repair audit-event hash chain. Re-walks every row from genesis and
+    # rewrites any row whose prev_hash/row_hash doesn't match the chain
+    # value. This both backfills NULL hashes (pre-Round-2 rows) AND repairs
+    # rows that were chained against an incomplete predecessor (rows
+    # written by the new code BEFORE the backfill ran).
+    print("\nRepairing audit-event hash chain (re-walks from genesis, rewrites mismatched rows)...")
+    from app.db.models import AuditEvent
+    from app.db.session import SessionLocal
+    from app.services.audit import GENESIS_HASH, _row_hash
+    db = SessionLocal()
+    try:
+        rows = db.query(AuditEvent).order_by(AuditEvent.id.asc()).all()
+        prev = GENESIS_HASH
+        repaired = 0
+        for r in rows:
+            fields = {
+                "event_type": r.event_type.value,
+                "operator_id": r.operator_id,
+                "mission_id": r.mission_id,
+                "alert_id": r.alert_id,
+                "payload": r.payload_json,
+            }
+            expected = _row_hash(prev, fields)
+            if r.prev_hash != prev or r.row_hash != expected:
+                r.prev_hash = prev
+                r.row_hash = expected
+                repaired += 1
+            prev = expected
+        if repaired:
+            db.commit()
+            print(f"  repaired {repaired} of {len(rows)} rows")
+        else:
+            print(f"  all {len(rows)} rows already chain-correct")
+    finally:
+        db.close()
 
     print("\nFinal table list:")
     for tname in sorted(inspect(engine).get_table_names()):
