@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { NavLink, Navigate, Route, Routes } from "react-router-dom";
 import { Activity, AlertTriangle, GitCompareArrows, Map, Network, ScrollText, Shield, Target } from "lucide-react";
 import Mission from "./pages/Mission";
@@ -8,6 +9,7 @@ import Benchmark from "./pages/Benchmark";
 import Adversarial from "./pages/Adversarial";
 import Federated from "./pages/Federated";
 import MissionDiff from "./pages/MissionDiff";
+import { SplashBoot, shouldShowSplash } from "./components/SplashBoot";
 
 const nav = [
   { to: "/mission", label: "Mission", icon: Target },
@@ -21,6 +23,10 @@ const nav = [
 ];
 
 export default function App() {
+  const [showingSplash, setShowingSplash] = useState<boolean>(() => shouldShowSplash());
+  if (showingSplash) {
+    return <SplashBoot onDone={() => setShowingSplash(false)} />;
+  }
   return (
     <div className="h-full flex">
       <aside className="w-56 bg-panel border-r border-border flex flex-col">
