@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api import adversarial, alerts, audit, auth, detections, diff, explain, federated, ingest, predict, reports, stream, ws
+from app.api import adversarial, alerts, audit, auth, chat, detections, diff, explain, federated, ingest, predict, reports, stream, ws
 
 router = APIRouter(prefix="/api/v1")
 router.include_router(ingest.router)
