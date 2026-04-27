@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
-import { Activity, AlertTriangle, GitCompareArrows, LayoutGrid, Map, Network, ScrollText, Shield, Target } from "lucide-react";
+import { Activity, AlertTriangle, GitCompareArrows, LayoutGrid, Map, MessageCircle, Network, ScrollText, Shield, Target } from "lucide-react";
 import Command from "./pages/Command";
 import Mission from "./pages/Mission";
 import MapView from "./pages/MapView";
@@ -11,6 +11,7 @@ import Adversarial from "./pages/Adversarial";
 import Federated from "./pages/Federated";
 import MissionDiff from "./pages/MissionDiff";
 import Login from "./pages/Login";
+import Chat from "./pages/Chat";
 import { SplashBoot, shouldShowSplash } from "./components/SplashBoot";
 import { Sidebar } from "./components/Sidebar";
 import { TacticalBackground } from "./components/TacticalBackground";
@@ -26,6 +27,7 @@ const nav = [
   { to: "/adversarial", label: "Adversarial", icon: Shield },
   { to: "/federated", label: "Federated", icon: Network },
   { to: "/diff", label: "Diff", icon: GitCompareArrows },
+  { to: "/chat", label: "Chat", icon: MessageCircle },
 ];
 
 export default function App() {
@@ -51,6 +53,7 @@ export default function App() {
           <Route path="/federated" element={<Federated />} />
           <Route path="/diff" element={<MissionDiff />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/chat" element={<Chat />} />
         </Routes>
       </main>
       <OnboardingTour />

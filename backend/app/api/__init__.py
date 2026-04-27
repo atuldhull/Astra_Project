@@ -16,6 +16,7 @@ router.include_router(adversarial.router)
 router.include_router(federated.router)
 router.include_router(diff.router)
 router.include_router(auth.router)
+router.include_router(chat.router)
 
 # Websocket router is mounted separately (no /api/v1 prefix).
 ws_router = ws.router
