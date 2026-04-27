@@ -13,6 +13,7 @@ import MissionDiff from "./pages/MissionDiff";
 import { SplashBoot, shouldShowSplash } from "./components/SplashBoot";
 import { Sidebar } from "./components/Sidebar";
 import { TacticalBackground } from "./components/TacticalBackground";
+import { OnboardingTour } from "./components/OnboardingTour";
 
 const nav = [
   { to: "/command", label: "Command", icon: LayoutGrid },
@@ -50,6 +51,7 @@ export default function App() {
           <Route path="/diff" element={<MissionDiff />} />
         </Routes>
       </main>
+      <OnboardingTour />
     </div>
   );
 }

@@ -217,6 +217,80 @@ def generate_mission_report(db: Session, mission_id: int) -> bytes:
         ]))
         story.append(cls_tbl)
 
+    # ── R3: Stage-2 cascade airframes ────────────────────────────────────
+    airframe_counts: dict[str, int] = {}
+    airframe_confs: dict[str, list[float]] = {}
+    for d in detections:
+        ex = json.loads(d.extras_json) if d.extras_json else {}
+        if ex.get("airframe"):
+            af = ex["airframe"]
+            airframe_counts[af] = airframe_counts.get(af, 0) + 1
+            airframe_confs.setdefault(af, []).append(float(ex.get("airframe_confidence", 0.0)))
+    if airframe_counts:
+        story.append(Paragraph("Stage-2 Cascade · Fine-Grained Airframe ID (MAR20)", s["h2"]))
+        af_rows = [["Airframe", "Count", "Mean conf", "Max conf"]]
+        for af, cnt in sorted(airframe_counts.items(), key=lambda x: -x[1]):
+            confs = airframe_confs[af]
+            mean = sum(confs) / len(confs)
+            mx = max(confs)
+            af_rows.append([af, str(cnt), f"{mean:.3f}", f"{mx:.3f}"])
+        af_tbl = Table(af_rows, colWidths=[60 * mm, 25 * mm, 30 * mm, 30 * mm])
+        af_tbl.setStyle(TableStyle([
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("BACKGROUND", (0, 0), (-1, 0), PANEL),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("FONTSIZE", (0, 0), (-1, -1), 9),
+            ("FONTNAME", (0, 1), (-1, -1), "Courier"),
+            ("TEXTCOLOR", (0, 1), (-1, -1), TEXT),
+            ("ALIGN", (1, 0), (-1, -1), "RIGHT"),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+            ("TOPPADDING", (0, 0), (-1, -1), 3),
+            ("GRID", (0, 0), (-1, -1), 0.25, BORDER),
+        ]))
+        story.append(af_tbl)
+        story.append(Paragraph(
+            "Stage-1 detector emits 'aircraft-fixed-wing'; stage-2 yolo11n-cls trained on "
+            "MAR20 (89.03% top-1, 99.32% top-5) refines to specific airframe.",
+            s["muted"],
+        ))
+
+    # ── R3: OOD-flagged section ──────────────────────────────────────────
+    ood_dets: list = []
+    for d in detections:
+        ex = json.loads(d.extras_json) if d.extras_json else {}
+        if ex.get("ood_flag"):
+            ood_dets.append((d, ex))
+    if ood_dets:
+        story.append(Paragraph(f"Out-of-Distribution Gatekeeper · {len(ood_dets)} detection(s) flagged", s["h2"]))
+        story.append(Paragraph(
+            "Detections whose confidence × aspect-ratio × edge-density signals exceed the OOD threshold (0.55). "
+            "Frontend renders these grey-with-?, the system showing it knew it didn't know.",
+            s["muted"],
+        ))
+        story.append(Spacer(1, 3))
+        ood_rows = [["Det ID", "Stage-1 class", "Conf", "OOD score", "Reasons"]]
+        for d, ex in ood_dets[:25]:
+            ood_rows.append([
+                f"#{d.id}",
+                d.class_name,
+                f"{d.confidence:.2f}",
+                f"{ex.get('ood_score', 0):.3f}",
+                ", ".join(ex.get("ood_reasons", []))[:50],
+            ])
+        ood_tbl = Table(ood_rows, colWidths=[18 * mm, 38 * mm, 16 * mm, 22 * mm, 76 * mm])
+        ood_tbl.setStyle(TableStyle([
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("BACKGROUND", (0, 0), (-1, 0), PANEL),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("FONTSIZE", (0, 0), (-1, -1), 8),
+            ("FONTNAME", (0, 1), (-1, -1), "Courier"),
+            ("TEXTCOLOR", (0, 1), (-1, -1), TEXT),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+            ("TOPPADDING", (0, 0), (-1, -1), 2),
+            ("GRID", (0, 0), (-1, -1), 0.2, BORDER),
+        ]))
+        story.append(ood_tbl)
+
     # Top threats
     if alerts:
         story.append(Paragraph(f"Top {min(15, len(alerts))} Threat Alerts (ranked by score)", s["h2"]))
@@ -299,6 +373,83 @@ def generate_mission_report(db: Session, mission_id: int) -> bytes:
         ]))
         story.append(audit_tbl)
 
+    # ── R3: Audit chain validation cert ──────────────────────────────────
+    story.append(Paragraph("Audit Chain Validation", s["h2"]))
+    try:
+        from app.services.audit import verify_chain
+        chain_result = verify_chain(db)
+        chain_ok = chain_result.get("ok", False)
+        chain_checked = chain_result.get("checked", 0)
+        chain_break = chain_result.get("broken_at_id")
+        cert_rows = [
+            ["Chain status", "VERIFIED ✓" if chain_ok else f"BROKEN at #{chain_break}"],
+            ["Rows checked", f"{chain_checked} audit events"],
+            ["Algorithm",   "SHA-256 (prev_hash || canonical_json(row))"],
+            ["Genesis",     "0" * 64],
+        ]
+        cert_tbl = Table(cert_rows, colWidths=[40 * mm, 130 * mm])
+        cert_tbl.setStyle(TableStyle([
+            ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+            ("FONTNAME", (1, 0), (1, -1), "Courier"),
+            ("FONTSIZE", (0, 0), (-1, -1), 8.5),
+            ("TEXTCOLOR", (0, 0), (0, -1), MUTED),
+            ("TEXTCOLOR", (1, 0), (1, 0), THREAT_LOW if chain_ok else THREAT_CRIT),
+            ("TEXTCOLOR", (1, 1), (1, -1), TEXT),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+            ("TOPPADDING", (0, 0), (-1, -1), 2),
+            ("LINEBELOW", (0, 0), (-1, -1), 0.2, BORDER),
+        ]))
+        story.append(cert_tbl)
+    except Exception as exc:
+        story.append(Paragraph(f"<i>Chain verification unavailable: {exc}</i>", s["muted"]))
+
+    # ── R3: Federated participation log (if any) ─────────────────────────
+    try:
+        import os
+        from pathlib import Path as _P
+        fed_log = _P(os.environ.get("ASTRA_FEDERATED_LOG", "D:/astra-data/federated/run.jsonl"))
+        if fed_log.exists():
+            recs = []
+            for line in fed_log.read_text(encoding="utf-8").splitlines()[-200:]:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    recs.append(json.loads(line))
+                except Exception:
+                    pass
+            cfg_rec = next((r for r in recs if r.get("kind") == "server_start"), None)
+            agg_recs = [r for r in recs if r.get("kind") == "aggregation"]
+            fg_recs = [r for r in recs if r.get("kind") == "foolsgold"]
+            if cfg_rec and agg_recs:
+                story.append(Paragraph("Federated Participation (FedAvg + FoolsGold)", s["h2"]))
+                last = agg_recs[-1]
+                last_acc = (last.get("global_eval") or {}).get("accuracy")
+                fed_rows = [
+                    ["Task",          str(cfg_rec.get("task", "—"))],
+                    ["Clients",       ", ".join(cfg_rec.get("client_ids", []))],
+                    ["Rounds done",   str(last.get("round", "—"))],
+                    ["Final accuracy", f"{last_acc * 100:.1f}%" if isinstance(last_acc, (int, float)) else "—"],
+                ]
+                if fg_recs:
+                    last_fg = fg_recs[-1]
+                    quarantined = [c for c, d in last_fg.get("diag", {}).items() if d.get("flagged")]
+                    fed_rows.append(["FoolsGold quarantined", ", ".join(quarantined) if quarantined else "(none)"])
+                fed_tbl = Table(fed_rows, colWidths=[40 * mm, 130 * mm])
+                fed_tbl.setStyle(TableStyle([
+                    ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+                    ("FONTNAME", (1, 0), (1, -1), "Courier"),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8.5),
+                    ("TEXTCOLOR", (0, 0), (0, -1), MUTED),
+                    ("TEXTCOLOR", (1, 0), (1, -1), TEXT),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+                    ("TOPPADDING", (0, 0), (-1, -1), 2),
+                    ("LINEBELOW", (0, 0), (-1, -1), 0.2, BORDER),
+                ]))
+                story.append(fed_tbl)
+    except Exception:
+        pass
+
     # Footer — integrity hash
     story.append(Spacer(1, 10))
     story.append(HRFlowable(width="100%", thickness=0.25, color=BORDER))
@@ -312,6 +463,8 @@ def generate_mission_report(db: Session, mission_id: int) -> bytes:
         "detections": len(detections),
         "alerts": len(alerts),
         "class_counts": cls_counts,
+        "airframe_counts": airframe_counts,
+        "ood_count": len(ood_dets),
         "status_counts": status_counts,
     }, sort_keys=True).encode("utf-8")
     digest = hashlib.sha256(hash_body).hexdigest()
@@ -321,7 +474,7 @@ def generate_mission_report(db: Session, mission_id: int) -> bytes:
         s["muted"],
     ))
     story.append(Paragraph(
-        "Generated by ASTRA · Aerial Surveillance & Threat Recognition · "
+        "Generated by ASTRA · Aerial Surveillance &amp; Threat Recognition · "
         f"Report timestamp {_fmt_ts(datetime.now(timezone.utc))}",
         s["muted"],
     ))

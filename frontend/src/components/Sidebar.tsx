@@ -17,6 +17,7 @@ import { ChevronsLeft, ChevronsRight, Cpu, Shield, Wifi, WifiOff } from "lucide-
 import type { LucideIcon } from "lucide-react";
 import { api } from "../lib/api";
 import { StatusPill } from "./StatusPill";
+import { ThemeToggle } from "./ThemeToggle";
 
 const COLLAPSE_KEY = "astra:sidebarCollapsed:v1";
 
@@ -222,6 +223,11 @@ export function Sidebar({ items }: Props) {
             <div className="flex items-center justify-between text-2xs pt-1 border-t border-border">
               <span className="font-mono text-muted2 uppercase-wide">last sync</span>
               <span className="font-mono tabular-nums text-muted2">{lastSyncStr}</span>
+            </div>
+
+            <div className="pt-2 border-t border-border flex items-center justify-between">
+              <span className="text-2xs uppercase-wide text-muted2 font-mono">theme</span>
+              <ThemeToggle />
             </div>
           </>
         ) : (
