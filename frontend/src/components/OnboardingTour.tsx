@@ -12,7 +12,9 @@
 import { useEffect, useState } from "react";
 import { ArrowRight, X } from "lucide-react";
 
-const KEY = "astra:tourSeen:v1";
+// Bumped for v3.0: existing users see the refreshed tour once, then never
+// again. Old keys (v1) are intentionally left in place for forensics.
+const KEY = "astra:tourSeen:v3";
 
 type Step = {
   /** CSS selector for the element to highlight; null = centered modal */
@@ -26,8 +28,8 @@ type Step = {
 const STEPS: Step[] = [
   {
     target: null,
-    title: "Welcome to ASTRA",
-    body: "ASTRA is a sovereign aerial-recognition platform — runs end-to-end on a 6 GB laptop GPU. This 90-second tour will show you the key features.",
+    title: "Welcome to ASTRA v3.0",
+    body: "Sovereign · on-device · defensible — three pillars, all running on a 6 GB laptop GPU. This 90-second tour walks you through every major capability. Press → to begin or ESC to skip.",
   },
   {
     target: 'a[href="/command"]',
@@ -69,12 +71,18 @@ const STEPS: Step[] = [
     target: 'a[href="/audit"]',
     side: "right",
     title: "Tamper-evident audit",
-    body: "Every action is SHA-256 hash-chained. Edit any row retroactively → chain breaks. Click 'verify chain' anytime.",
+    body: "Every action is SHA-256 hash-chained from a genesis row. Click 'Verify chain' on the Audit page — watch the SHA walk every row in front of you with the tip hash visible.",
+  },
+  {
+    target: 'a[href="/chat"]',
+    side: "right",
+    title: "Commander Q&A",
+    body: "Ask the database in plain English. Mission-scoped threads persist in Postgres. Type 'details of mission #N' for a full briefing including operator notes and audit summary.",
   },
   {
     target: null,
     title: "You're set",
-    body: "Refresh anytime to play this tour again. Run scripts/e2e_regression.py before any demo to confirm all systems are green.",
+    body: "Press ? on any page for the contextual help overlay. Run scripts/preflight.sh before any demo to confirm ALL GREEN. Welcome to v3.0 — let's go.",
   },
 ];
 
