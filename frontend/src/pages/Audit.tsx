@@ -58,8 +58,9 @@ export default function Audit() {
   const [filter, setFilter] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [chainStatus, setChainStatus] = useState<{ ok: boolean; checked: number; broken_at_id: number | null; reason?: string } | null>(null);
+  const [chainStatus, setChainStatus] = useState<{ ok: boolean; checked: number; broken_at_id: number | null; reason?: string; genesis?: string; tip?: string } | null>(null);
   const [verifying, setVerifying] = useState(false);
+  const [verifyFlash, setVerifyFlash] = useState(false);
   const pollRef = useRef<number | null>(null);
 
   const load = async () => {
@@ -92,13 +93,20 @@ export default function Audit() {
 
   async function verifyChain() {
     setVerifying(true);
+    setVerifyFlash(false);
+    const t0 = performance.now();
     try {
       const res = await fetch(`${API_BASE}/api/v1/audit/verify`);
       if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
       const v = await res.json();
+      // Floor at 700ms so the SHA-walk animation lands.
+      const elapsed = performance.now() - t0;
+      if (elapsed < 700) await new Promise((r) => setTimeout(r, 700 - elapsed));
       setChainStatus(v);
+      setVerifyFlash(true);
+      window.setTimeout(() => setVerifyFlash(false), 2500);
       if (v.ok) {
-        toast.success("Audit chain verified", `${v.checked} rows · SHA-256 chain unbroken from genesis`);
+        toast.success("Chain verified", `${v.checked} rows · genesis ${(v.genesis ?? "").slice(0, 8)}… → tip ${(v.tip ?? "").slice(-8)}`);
       } else {
         toast.crit("Chain integrity broken", `Row #${v.broken_at_id} fails: ${v.reason}`);
       }
@@ -223,6 +231,44 @@ export default function Audit() {
           </>
         }
       />
+
+      {/* Verify-chain flash banner — landing zone for demo theatre */}
+      {(verifying || verifyFlash) && chainStatus !== null && (
+        <div
+          className={`mx-6 mt-4 px-4 py-3 rounded-lg border font-mono text-xs flex items-center gap-3 transition-all ${
+            chainStatus.ok
+              ? "border-threat-low/60 bg-threat-low/10 text-threat-low shadow-[0_0_24px_rgba(74,222,128,0.18)]"
+              : "border-threat-crit/60 bg-threat-crit/10 text-threat-crit"
+          } ${verifyFlash ? "animate-pulse" : ""}`}
+        >
+          {chainStatus.ok ? <ShieldCheck size={16} /> : <ShieldAlert size={16} />}
+          <span className="font-semibold uppercase-wide tracking-wider text-[11px]">
+            {chainStatus.ok ? "CHAIN VERIFIED" : "CHAIN BROKEN"}
+          </span>
+          <span className="opacity-90">
+            {chainStatus.checked} rows · SHA-256 walk
+          </span>
+          {chainStatus.genesis && chainStatus.tip && (
+            <span className="ml-auto text-muted2">
+              genesis <span className="text-text">{chainStatus.genesis.slice(0, 10)}…</span>
+              {" → tip "}
+              <span className="text-text">{chainStatus.tip.slice(0, 10)}…{chainStatus.tip.slice(-6)}</span>
+            </span>
+          )}
+          {!chainStatus.ok && (
+            <span className="ml-auto">
+              broken @ #{chainStatus.broken_at_id} · {chainStatus.reason}
+            </span>
+          )}
+        </div>
+      )}
+      {verifying && chainStatus === null && (
+        <div className="mx-6 mt-4 px-4 py-3 rounded-lg border border-accent/40 bg-accent/5 text-accent font-mono text-xs flex items-center gap-3">
+          <Loader2 size={14} className="animate-spin" />
+          <span className="uppercase-wide tracking-wider text-[11px] font-semibold">WALKING SHA-256 CHAIN FROM GENESIS</span>
+          <span className="ml-auto text-muted2">recomputing every row hash...</span>
+        </div>
+      )}
 
       {/* Hero KPI strip */}
       <div className="px-6 pt-4 grid grid-cols-4 gap-3">

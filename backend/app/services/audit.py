@@ -86,7 +86,11 @@ def verify_chain(db: Session) -> dict:
     prev = GENESIS_HASH
     for r in rows:
         if r.prev_hash and r.prev_hash != prev:
-            return {"ok": False, "checked": r.id, "broken_at_id": r.id, "reason": "prev_hash_mismatch"}
+            return {
+                "ok": False, "checked": r.id, "broken_at_id": r.id,
+                "reason": "prev_hash_mismatch",
+                "genesis": GENESIS_HASH, "tip": prev,
+            }
         fields = {
             "event_type": r.event_type.value,
             "operator_id": r.operator_id,
@@ -96,6 +100,13 @@ def verify_chain(db: Session) -> dict:
         }
         expected = _row_hash(prev, fields)
         if r.row_hash and r.row_hash != expected:
-            return {"ok": False, "checked": r.id, "broken_at_id": r.id, "reason": "row_hash_mismatch"}
+            return {
+                "ok": False, "checked": r.id, "broken_at_id": r.id,
+                "reason": "row_hash_mismatch",
+                "genesis": GENESIS_HASH, "tip": prev,
+            }
         prev = r.row_hash or expected
-    return {"ok": True, "checked": len(rows), "broken_at_id": None}
+    return {
+        "ok": True, "checked": len(rows), "broken_at_id": None,
+        "genesis": GENESIS_HASH, "tip": prev,
+    }
