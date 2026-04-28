@@ -400,6 +400,9 @@ def _rule_answer(db: Session, q: str, mission_id: int | None = None) -> Answer:
 
 # ── Tier 1: LLM with retrieval ─────────────────────────────────────────
 
+_LLM = None  # Singleton Llama instance — populated on first call OR by warmup hook.
+
+
 def _llm_available() -> bool:
     if not PHI_PATH.exists():
         return False
@@ -410,13 +413,23 @@ def _llm_available() -> bool:
         return False
 
 
+def _get_llm():
+    """Return the cached Llama instance, instantiating it on first call.
+    Called explicitly from the FastAPI startup warmup hook and lazily by
+    _llm_answer() to keep cold-start cost out of the request path."""
+    global _LLM
+    if _LLM is not None:
+        return _LLM
+    from llama_cpp import Llama
+    _LLM = Llama(model_path=str(PHI_PATH), n_ctx=2048, n_threads=4, verbose=False)
+    return _LLM
+
+
 def _llm_answer(db: Session, q: str, mission_id: int | None = None) -> Answer:
     """If llama-cpp-python + Phi-3.5 are available, answer with retrieval."""
     if not _llm_available():
         # Mark caller to fall through
         raise RuntimeError("LLM not available")
-
-    from llama_cpp import Llama
 
     # Mission-scoped retrieval if we have a mission_id, else global.
     if mission_id is not None and db.get(Mission, mission_id) is not None:
@@ -464,7 +477,7 @@ def _llm_answer(db: Session, q: str, mission_id: int | None = None) -> Answer:
         f"<|user|>\nContext:\n{chr(10).join(ctx_lines)}\n\nQuestion: {q}\n<|end|>\n<|assistant|>\n"
     )
 
-    llm = Llama(model_path=str(PHI_PATH), n_ctx=2048, n_threads=4, verbose=False)
+    llm = _get_llm()
     out = llm(prompt, max_tokens=220, temperature=0.2, stop=["<|end|>", "<|user|>"])
     text = out["choices"][0]["text"].strip()
     return Answer(text=text, source="llm", citations=cites)
