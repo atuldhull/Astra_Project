@@ -49,6 +49,9 @@ class Mission(Base):
     source_path: Mapped[str] = mapped_column(String(512))
     aoi_corners_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # Round-3 soft-delete: NULL = active, set timestamp = soft-deleted.
+    # Hard-deleting would orphan detections/alerts and break the audit trail.
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
 
     detections: Mapped[list[Detection]] = relationship(back_populates="mission", cascade="all, delete-orphan")
     alerts: Mapped[list[Alert]] = relationship(back_populates="mission", cascade="all, delete-orphan")

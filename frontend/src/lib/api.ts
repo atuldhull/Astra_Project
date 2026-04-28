@@ -172,6 +172,10 @@ export const api = {
     ),
   chatNote: (body: { text: string; mission_id: number; operator_id?: string | null }) =>
     json<ChatMessage>(`/api/v1/chat/note`, { method: "POST", body: JSON.stringify(body) }),
+  deleteMission: (mission_id: number) =>
+    json<{ id: number; deleted_at: string; already: boolean }>(
+      `/api/v1/ingest/${mission_id}`, { method: "DELETE" },
+    ),
   detectorMetrics: () => json<DetectorMetrics>(`/api/v1/benchmarks/detector`),
   latencyMetrics: () => json<LatencyMetrics>(`/api/v1/benchmarks/latency`),
   adversarialMetrics: () => json<AdversarialMetrics>(`/api/v1/benchmarks/adversarial`),

@@ -116,8 +116,27 @@ def get_mission(mission_id: int, db: Session = Depends(get_db)) -> MissionOut:
 @router.get("", response_model=list[MissionOut])
 def list_missions(
     limit: int = 50,
+    include_deleted: bool = False,
     db: Session = Depends(get_db),
 ) -> list[MissionOut]:
-    """Recent missions, newest first. Used by the Map page's mission selector."""
+    """Recent missions, newest first. Soft-deleted missions are hidden by
+    default; pass include_deleted=true for an archive view."""
     stmt = select(Mission).order_by(Mission.created_at.desc()).limit(limit)
+    if not include_deleted:
+        stmt = stmt.where(Mission.deleted_at.is_(None))
     return [MissionOut.model_validate(m) for m in db.execute(stmt).scalars().all()]
+
+
+@router.delete("/{mission_id}", status_code=200)
+def soft_delete_mission(mission_id: int, db: Session = Depends(get_db)) -> dict:
+    """Soft-delete a mission (sets deleted_at = NOW). Detections and audit
+    rows are preserved — the audit chain is append-only by contract."""
+    from datetime import datetime, timezone
+    mission = db.get(Mission, mission_id)
+    if not mission:
+        raise HTTPException(404, "Mission not found")
+    if mission.deleted_at is not None:
+        return {"id": mission.id, "deleted_at": mission.deleted_at.isoformat(), "already": True}
+    mission.deleted_at = datetime.now(timezone.utc)
+    db.commit()
+    return {"id": mission.id, "deleted_at": mission.deleted_at.isoformat(), "already": False}
