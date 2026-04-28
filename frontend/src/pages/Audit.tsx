@@ -8,6 +8,7 @@ import { EmptyState } from "../components/EmptyState";
 import { toast } from "../components/Toast";
 import { ChainVisual } from "../components/ChainVisual";
 import { ExportMenu } from "../components/ExportMenu";
+import { absoluteIst, relativeTime } from "../lib/time";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -21,12 +22,8 @@ const EVENT_COLORS: Record<string, string> = {
   weights_changed:    "#a78bfa",
 };
 
-function fmtTime(iso: string): string {
-  try {
-    const d = new Date(iso);
-    return d.toISOString().replace("T", " ").replace(/\.\d+Z$/, "Z");
-  } catch { return iso; }
-}
+// Audit rows show relative time so the operator can scan recency
+// without parsing UTC offsets. Hovering reveals the exact IST timestamp.
 
 function describe(e: AuditEvent): string {
   const p = e.payload_json ?? {};
@@ -339,7 +336,7 @@ export default function Audit() {
                 key={e.id}
                 className="border-b border-border last:border-0 px-4 py-3 grid grid-cols-[170px_90px_170px_1fr] gap-4 hover:bg-panel2"
               >
-                <span className="text-muted">{fmtTime(e.created_at)}</span>
+                <span className="text-muted" title={absoluteIst(e.created_at)}>{relativeTime(e.created_at)}</span>
                 <span className="text-accent">{e.operator_id ?? "system"}</span>
                 <span style={{ color: EVENT_COLORS[e.event_type] ?? "#8b9aad" }}>
                   {e.event_type}

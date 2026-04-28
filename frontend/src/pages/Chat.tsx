@@ -21,6 +21,7 @@ import { StatusPill } from "../components/StatusPill";
 import { EmptyState } from "../components/EmptyState";
 import { toast } from "../components/Toast";
 import { api, type Mission, type ChatMessage as DbChatMessage } from "../lib/api";
+import { absoluteIst, relativeTime } from "../lib/time";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -215,7 +216,7 @@ export default function Chat() {
                       className={`w-full text-left px-3 py-2 text-xs hover:bg-panel2 font-mono ${m.id === activeMissionId ? "text-accent bg-panel2" : ""}`}
                     >
                       <div>#{m.id} {m.name}</div>
-                      <div className="text-[10px] text-muted">{new Date(m.created_at).toLocaleString()}</div>
+                      <div className="text-[10px] text-muted" title={absoluteIst(m.created_at)}>{relativeTime(m.created_at)}</div>
                     </button>
                   ))}
                 </div>

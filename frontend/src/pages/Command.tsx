@@ -28,6 +28,7 @@ import { api, type Alert, type AuditEvent, type Detection, type Mission } from "
 import { TacticalBackground } from "../components/TacticalBackground";
 import { StatusPill } from "../components/StatusPill";
 import { NumberTicker } from "../components/NumberTicker";
+import { absoluteIst, clockIst, relativeTime } from "../lib/time";
 import { Sparkline } from "../components/Sparkline";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
@@ -157,8 +158,8 @@ export default function Command() {
                 <li key={m.id} className="flex items-center gap-2 truncate">
                   <span className="font-mono text-muted2 shrink-0">#{m.id.toString().padStart(3, "0")}</span>
                   <span className="font-mono truncate flex-1">{m.name}</span>
-                  <span className="text-2xs text-muted2 font-mono shrink-0">
-                    {new Date(m.created_at).toLocaleTimeString("en-IN", { hour12: false })}
+                  <span className="text-2xs text-muted2 font-mono shrink-0" title={absoluteIst(m.created_at)}>
+                    {relativeTime(m.created_at)}
                   </span>
                 </li>
               ))}
@@ -297,7 +298,7 @@ export default function Command() {
           <div className="font-mono text-2xs space-y-0.5 text-muted">
             {audit.slice(0, 8).map((e) => (
               <div key={e.id} className="flex gap-2 items-baseline">
-                <span className="text-muted2">{new Date(e.created_at).toLocaleTimeString("en-IN", { hour12: false })}</span>
+                <span className="text-muted2" title={absoluteIst(e.created_at)}>{clockIst(e.created_at)}</span>
                 <span className="text-cyan w-32 shrink-0 truncate">{e.event_type}</span>
                 <span className="text-muted2 shrink-0">{e.operator_id ?? "system"}</span>
                 <span className="text-muted truncate">{e.payload_json ? JSON.stringify(e.payload_json).slice(0, 80) : ""}</span>
