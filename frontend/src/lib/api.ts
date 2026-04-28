@@ -92,6 +92,37 @@ export type Mission = {
   gps_point?: [number, number] | null;
 };
 
+export type DetectorMetrics = {
+  available: boolean;
+  hint?: string;
+  captured_at?: string;
+  map_50?: number;
+  map_50_95?: number;
+  precision?: number;
+  recall?: number;
+  per_class?: { class_id: number; class_name: string; ap_50_95: number }[];
+};
+
+export type LatencyMetrics = {
+  available: boolean;
+  hint?: string;
+  captured_at?: string;
+  n?: number;
+  p50_ms?: number;
+  p95_ms?: number;
+  p99_ms?: number;
+  max_ms?: number;
+};
+
+export type AdversarialMetrics = {
+  available: boolean;
+  hint?: string;
+  captured_at?: string;
+  baseline_retention?: number;
+  hardened_retention?: number;
+  per_sample?: { sample: string; baseline: number; hardened: number }[];
+};
+
 export type ChatMessage = {
   id: number;
   mission_id: number | null;
@@ -141,6 +172,9 @@ export const api = {
     ),
   chatNote: (body: { text: string; mission_id: number; operator_id?: string | null }) =>
     json<ChatMessage>(`/api/v1/chat/note`, { method: "POST", body: JSON.stringify(body) }),
+  detectorMetrics: () => json<DetectorMetrics>(`/api/v1/benchmarks/detector`),
+  latencyMetrics: () => json<LatencyMetrics>(`/api/v1/benchmarks/latency`),
+  adversarialMetrics: () => json<AdversarialMetrics>(`/api/v1/benchmarks/adversarial`),
   listMissions: (limit = 50) => json<Mission[]>(`/api/v1/ingest?limit=${limit}`),
   listDetections: (params?: { mission_id?: number; class_id?: number; limit?: number }) => {
     const q = new URLSearchParams();

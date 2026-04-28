@@ -1,23 +1,24 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from "recharts";
-import { Activity, Cpu, Gauge, Layers, Target, Zap } from "lucide-react";
+import { Activity, Gauge, Layers, Target } from "lucide-react";
 import { PageHeader } from "../components/PageHeader";
 import { HeroStat } from "../components/HeroStat";
 import { StatusPill } from "../components/StatusPill";
+import { api, type DetectorMetrics, type LatencyMetrics } from "../lib/api";
 
-// Round-2 numbers from docs/benchmark-report.md.
-const PER_CLASS = [
-  { cls: "small-vehicle", v1: 0.408, hardened: 0.391 },
-  { cls: "large-vehicle", v1: 0.660, hardened: 0.634 },
-  { cls: "fixed-wing",    v1: 0.915, hardened: 0.932 },
-  { cls: "rotor",         v1: 0.242, hardened: 0.201 },
-  { cls: "ship",          v1: 0.770, hardened: 0.779 },
-  { cls: "storage-depot", v1: 0.393, hardened: 0.433 },
-  { cls: "harbor",        v1: 0.733, hardened: 0.743 },
-  { cls: "bridge",        v1: 0.000, hardened: 0.235 },
-];
+// R2 hardened-model numbers (kept until T3.1 PGD finetune ships).
+const R2_HARDENED_AP: Record<string, number> = {
+  "small-vehicle":       0.391,
+  "large-vehicle":       0.634,
+  "aircraft-fixed-wing": 0.932,
+  "aircraft-rotor":      0.201,
+  "ship":                0.779,
+  "storage-depot":       0.433,
+  "harbor":              0.743,
+  "bridge":              0.235,
+};
 
-const LATENCY = [
+const LATENCY_FALLBACK = [
   { target: "RTX 4050 FP32", ms: 22.3 },
   { target: "RTX 4050 p95",  ms: 33.6 },
   { target: "CPU ONNX FP32", ms: 35.7 },
@@ -31,66 +32,122 @@ const CASCADE = [
   { metric: "model size MB",  value: 3.2 },
 ];
 
+const SHORT_NAME: Record<string, string> = {
+  "aircraft-fixed-wing": "fixed-wing",
+  "aircraft-rotor":      "rotor",
+};
+
 export default function Benchmark() {
-  const meanV1 = PER_CLASS.reduce((s, r) => s + r.v1, 0) / PER_CLASS.length;
-  const meanHardened = PER_CLASS.reduce((s, r) => s + r.hardened, 0) / PER_CLASS.length;
+  const [det, setDet] = useState<DetectorMetrics | null>(null);
+  const [lat, setLat] = useState<LatencyMetrics | null>(null);
 
-  // Race-the-targets animated bars: animate from 0 -> real value on mount
-  const [animValues, setAnimValues] = useState({ v1: 0, hardened: 0, lat: 0 });
   useEffect(() => {
-    const t = setTimeout(() => setAnimValues({ v1: meanV1, hardened: meanHardened, lat: 22.3 }), 100);
-    return () => clearTimeout(t);
-  }, [meanV1, meanHardened]);
+    api.detectorMetrics().then(setDet).catch(() => setDet({ available: false }));
+    api.latencyMetrics().then(setLat).catch(() => setLat({ available: false }));
+  }, []);
 
-  const radarData = PER_CLASS.map((p) => ({ cls: p.cls, v1: p.v1, hardened: p.hardened }));
+  // Per-class data: real v1 AP from API, R2 hardened constants (until T3.1).
+  const perClass = useMemo(() => {
+    const rows = (det?.per_class ?? []).map((r) => ({
+      cls: SHORT_NAME[r.class_name] ?? r.class_name,
+      v1: r.ap_50_95,
+      hardened: R2_HARDENED_AP[r.class_name] ?? 0,
+    }));
+    return rows;
+  }, [det]);
+
+  const meanV1 = perClass.length ? perClass.reduce((s, r) => s + r.v1, 0) / perClass.length : 0;
+  const meanHardened = perClass.length ? perClass.reduce((s, r) => s + r.hardened, 0) / perClass.length : 0;
+
+  const heroMap50 = det?.available ? det.map_50! : 0;
+  const heroMap5095 = det?.available ? det.map_50_95! : 0;
+  const heroLatency = lat?.available ? lat.p50_ms! : 22.3;
+  const heroLatencyP99 = lat?.available ? lat.p99_ms! : null;
+  const capturedLine = det?.captured_at
+    ? `captured ${new Date(det.captured_at).toLocaleString("en-IN", { hour12: false })}`
+    : "no capture on disk · run scripts/capture_detector_map.py";
 
   return (
     <div className="h-full flex flex-col">
       <PageHeader
         icon={Activity}
         title="Benchmark"
-        badge={<StatusPill variant="ok" size="sm">DOTA-v1.5 · 1561 imgs · 67k inst</StatusPill>}
-        subtitle="yolo11n · 640² · stage-1 detector + stage-2 MAR20 cascade"
+        badge={
+          det?.available
+            ? <StatusPill variant="ok" size="sm">DOTA-v1 · 1561 imgs · 67k inst</StatusPill>
+            : <StatusPill variant="neutral" size="sm">no capture</StatusPill>
+        }
+        subtitle={`yolo11n · 640² · stage-1 detector + stage-2 MAR20 cascade · ${capturedLine}`}
       />
 
-      {/* Hero KPI strip */}
       <div className="px-6 pt-4 grid grid-cols-4 gap-3">
-        <HeroStat label="mAP@0.5 stage-1" value={meanV1} decimals={3} icon={Target} tone="cyan" sub="DOTA · 8 classes" />
-        <HeroStat label="cascade top-1" value={89.03} unit="%" decimals={2} icon={Layers} tone="low" sub="MAR20 · 20 airframes" />
-        <HeroStat label="GPU latency" value={22.3} unit="ms" decimals={1} icon={Gauge} tone="low" sub="RTX 4050 · FP32" />
-        <HeroStat label="model size" value={5.5 + 3.2} unit="MB" decimals={1} icon={Cpu} tone="neutral" sub="both stages on disk" />
+        <HeroStat
+          label="mAP@0.5"
+          value={heroMap50}
+          decimals={3}
+          icon={Target}
+          tone="cyan"
+          sub="DOTA-val · stage-1"
+          ticker={det?.available}
+        />
+        <HeroStat
+          label="mAP@0.5:0.95"
+          value={heroMap5095}
+          decimals={3}
+          icon={Target}
+          tone="low"
+          sub="strict overlap"
+        />
+        <HeroStat
+          label="cascade top-1"
+          value={89.03}
+          unit="%"
+          decimals={2}
+          icon={Layers}
+          tone="low"
+          sub="MAR20 · 20 airframes"
+        />
+        <HeroStat
+          label={heroLatencyP99 != null ? "latency p50 · p99" : "GPU latency"}
+          value={heroLatency}
+          unit={heroLatencyP99 != null ? `· ${heroLatencyP99}ms` : "ms"}
+          decimals={1}
+          icon={Gauge}
+          tone="low"
+          sub={lat?.available ? `n=${lat.n} ingest→alert` : "RTX 4050 · FP32"}
+        />
       </div>
 
       <div className="flex-1 p-6 pt-4 grid grid-cols-2 gap-6 overflow-auto auto-rows-min">
-        {/* Per-class A/B comparison */}
-        <div className="glass shadow-panel rounded-lg p-4">
+        <div className="glass shadow-panel rounded-lg p-4" title="Average Precision per class on the DOTA-val split. Higher is better. Hardened bars are R2 augmentation-trained (T3.1 PGD-trained replacement pending).">
           <div className="flex items-center justify-between mb-3">
-            <div className="text-sm font-semibold">mAP@0.5 per class · v1 vs v1-hardened</div>
+            <div className="text-sm font-semibold">AP@0.5:0.95 per class · v1 vs v1-hardened</div>
             <span className="text-2xs text-muted2 font-mono uppercase-wide tracking-wider">RACE-THE-TARGETS</span>
           </div>
           <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={PER_CLASS}>
+            <BarChart data={perClass}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis dataKey="cls" stroke="var(--muted)" fontSize={10} angle={-20} textAnchor="end" height={60} />
               <YAxis stroke="var(--muted)" fontSize={10} domain={[0, 1]} />
               <Tooltip contentStyle={{ background: "var(--panel)", border: "1px solid var(--border)", fontSize: 11 }} />
-              <Bar dataKey="v1" fill="var(--accent)" name="v1" isAnimationActive animationDuration={1200} />
-              <Bar dataKey="hardened" fill="var(--cyan)" name="v1-hardened" isAnimationActive animationDuration={1200} />
+              <Bar dataKey="v1" fill="var(--accent)" name="v1 (live)" isAnimationActive animationDuration={1200} />
+              <Bar dataKey="hardened" fill="var(--cyan)" name="v1-hardened (R2)" isAnimationActive animationDuration={1200} />
             </BarChart>
           </ResponsiveContainer>
           <div className="text-2xs text-muted mt-2 leading-snug">
-            Heavy augmentation: bridge mAP 0.0 → 0.235 standout. Aircraft and ship slightly improved on hardened.
+            v1 mean AP: <span className="text-accent font-mono">{meanV1.toFixed(3)}</span> ·
+            hardened mean AP: <span className="text-cyan font-mono">{meanHardened.toFixed(3)}</span>.
+            Hardened bars are R2-era; PGD finetune replaces them in T3.1.
           </div>
         </div>
 
-        {/* Per-class radar */}
-        <div className="glass shadow-panel rounded-lg p-4">
+        <div className="glass shadow-panel rounded-lg p-4" title="Polar view of per-class AP. Larger envelope = better all-around model. Lets you spot which classes the hardening regressed on.">
           <div className="flex items-center justify-between mb-3">
             <div className="text-sm font-semibold">Per-class radar · spectrum view</div>
             <span className="text-2xs text-muted2 font-mono uppercase-wide tracking-wider">8-AXIS</span>
           </div>
           <ResponsiveContainer width="100%" height={280}>
-            <RadarChart data={radarData}>
+            <RadarChart data={perClass}>
               <PolarGrid stroke="var(--border)" />
               <PolarAngleAxis dataKey="cls" stroke="var(--muted)" fontSize={9} />
               <PolarRadiusAxis stroke="var(--border)" angle={30} domain={[0, 1]} />
@@ -101,14 +158,13 @@ export default function Benchmark() {
           </ResponsiveContainer>
         </div>
 
-        {/* Latency targets */}
-        <div className="glass shadow-panel rounded-lg p-4">
+        <div className="glass shadow-panel rounded-lg p-4" title="Inference latency by deployment target. Lower is better. p99 reflects worst-case ingest-to-alert WebSocket round-trip.">
           <div className="flex items-center justify-between mb-3">
             <div className="text-sm font-semibold">Latency by deployment target</div>
             <span className="text-2xs text-muted2 font-mono uppercase-wide tracking-wider">LOWER&nbsp;IS&nbsp;BETTER</span>
           </div>
           <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={LATENCY}>
+            <BarChart data={LATENCY_FALLBACK}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis dataKey="target" stroke="var(--muted)" fontSize={10} angle={-15} textAnchor="end" height={60} />
               <YAxis stroke="var(--muted)" fontSize={10} unit=" ms" />
@@ -116,10 +172,14 @@ export default function Benchmark() {
               <Bar dataKey="ms" fill="var(--threat-low)" isAnimationActive animationDuration={1200} />
             </BarChart>
           </ResponsiveContainer>
+          {lat?.available && (
+            <div className="text-2xs text-muted mt-2 leading-snug">
+              End-to-end (ingest → alert via WS) · n={lat.n} · p50 <span className="text-text font-mono">{lat.p50_ms}ms</span> · p95 <span className="text-text font-mono">{lat.p95_ms}ms</span> · p99 <span className="text-text font-mono">{lat.p99_ms}ms</span>
+            </div>
+          )}
         </div>
 
-        {/* Cascade mini-board */}
-        <div className="glass shadow-panel rounded-lg p-4">
+        <div className="glass shadow-panel rounded-lg p-4" title="MAR20 cascade — fine-grained airframe identification. Top-1 is exact-match accuracy; top-5 is the truth being in the model's top 5 guesses.">
           <div className="flex items-center justify-between mb-3">
             <div className="text-sm font-semibold">Stage-2 cascade (MAR20)</div>
             <span className="text-2xs text-muted2 font-mono uppercase-wide tracking-wider">20-CLASS · NANO</span>
@@ -151,13 +211,10 @@ export default function Benchmark() {
           </div>
           <div className="mt-3 pt-3 border-t border-border text-2xs text-muted leading-snug">
             Trained 57 min on RTX 4050 · 22,341 crops · 50 epochs (early-stop @ 46).
-            <span className="block text-cyan font-mono mt-1">{`Best epoch: 34  · top-1 89.03%`}</span>
+            <span className="block text-cyan font-mono mt-1">Best epoch: 34 · top-1 89.03%</span>
           </div>
         </div>
       </div>
-
-      {/* Suppress unused-import warning if Zap isn't used elsewhere */}
-      {void [Zap, animValues]}
     </div>
   );
 }
