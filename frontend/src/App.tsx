@@ -17,6 +17,7 @@ import { Sidebar } from "./components/Sidebar";
 import { TacticalBackground } from "./components/TacticalBackground";
 import { OnboardingTour } from "./components/OnboardingTour";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { useDemoMode } from "./lib/demoMode";
 
 const nav = [
   { to: "/command", label: "Command", icon: LayoutGrid },
@@ -32,7 +33,9 @@ const nav = [
 ];
 
 export default function App() {
-  const [showingSplash, setShowingSplash] = useState<boolean>(() => shouldShowSplash());
+  const [demo] = useDemoMode();
+  // Demo mode skips splash + onboarding so judges land on a populated console.
+  const [showingSplash, setShowingSplash] = useState<boolean>(() => !demo && shouldShowSplash());
   if (showingSplash) {
     return <SplashBoot onDone={() => setShowingSplash(false)} />;
   }
@@ -57,7 +60,13 @@ export default function App() {
           <Route path="/chat" element={<ErrorBoundary scope="chat"><Chat /></ErrorBoundary>} />
         </Routes>
       </main>
-      <OnboardingTour />
+      {!demo && <OnboardingTour />}
+      {demo && (
+        <div className="fixed top-2 left-1/2 -translate-x-1/2 z-[10000] flex items-center gap-2 px-3 py-1 rounded-full glass-strong border border-accent/40 shadow-glow-accent text-2xs font-mono text-accent uppercase-wide tracking-wider pointer-events-none">
+          <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+          DEMO MODE
+        </div>
+      )}
     </div>
   );
 }

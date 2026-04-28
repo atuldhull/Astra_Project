@@ -18,6 +18,7 @@ import type { LucideIcon } from "lucide-react";
 import { api } from "../lib/api";
 import { StatusPill } from "./StatusPill";
 import { ThemeToggle } from "./ThemeToggle";
+import { useDemoMode } from "../lib/demoMode";
 import { fetchMe, getToken, logout, subscribeAuth, type Me } from "../lib/auth";
 
 const COLLAPSE_KEY = "astra:sidebarCollapsed:v1";
@@ -40,6 +41,7 @@ type HealthState = {
 
 export function Sidebar({ items }: Props) {
   const navigate = useNavigate();
+  const [demo, setDemo] = useDemoMode();
   // Default to expanded; user can collapse and we remember.
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     try { return localStorage.getItem(COLLAPSE_KEY) === "1"; } catch { return false; }
@@ -238,6 +240,26 @@ export function Sidebar({ items }: Props) {
             <div className="pt-2 border-t border-border flex items-center justify-between">
               <span className="text-2xs uppercase-wide text-muted2 font-mono">theme</span>
               <ThemeToggle />
+            </div>
+
+            {/* Demo-mode toggle — judges/judges-mode hides operator chrome */}
+            <div className="pt-2 border-t border-border flex items-center justify-between">
+              <span
+                className="text-2xs uppercase-wide text-muted2 font-mono"
+                title="Hides operator-only chrome (debug pills, internal IDs, dev links). Judges land on the populated console immediately."
+              >
+                demo mode
+              </span>
+              <button
+                onClick={() => setDemo(!demo)}
+                className={`text-2xs font-mono px-2 py-0.5 rounded uppercase-wide tracking-wider transition-fast ${
+                  demo
+                    ? "bg-accent/20 text-accent border border-accent/40"
+                    : "bg-panel2 text-muted2 border border-border hover:text-text"
+                }`}
+              >
+                {demo ? "ON" : "OFF"}
+              </button>
             </div>
 
             {/* Auth chip */}
