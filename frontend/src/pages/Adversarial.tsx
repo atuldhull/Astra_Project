@@ -405,7 +405,10 @@ export default function Adversarial() {
                 <ShieldCheck size={11} className="text-accent" /> A/B retention @ ε={epsilon.toFixed(2)}
               </div>
               {/* Gauges side-by-side */}
-              <div className="grid grid-cols-2 gap-2 mb-3">
+              <div
+                className="grid grid-cols-2 gap-2 mb-3"
+                title="Retention gauge — fraction of clean detections that survive an adversarial attack. v1 = baseline, v1-hardened = adversarially-trained. Higher is better. ≥75% green, 45-75% yellow, <45% red."
+              >
                 {(["v1", "v1-hardened"] as const).map((v) => {
                   const r = abHistory[v];
                   return (

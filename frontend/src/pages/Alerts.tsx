@@ -225,7 +225,10 @@ export default function Alerts() {
 
       {/* Threat waveform strip — drama-bar showing the queue as audio-style bars */}
       <div className="px-6 pt-3">
-        <div className="glass-strong rounded-md px-3 py-2 flex items-center gap-3">
+        <div
+          className="glass-strong rounded-md px-3 py-2 flex items-center gap-3"
+          title="Threat-frequency waveform — one bar per alert, height ∝ threat score (0-1), color by severity. Newest alerts on the right. Lets the operator spot rising threat trends at a glance."
+        >
           <span className="text-2xs uppercase-wide text-muted2 font-mono tracking-wider shrink-0">
             THREAT&nbsp;FREQ
           </span>

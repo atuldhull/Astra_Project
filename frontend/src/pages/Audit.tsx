@@ -310,7 +310,10 @@ export default function Audit() {
 
       {/* Chain ribbon — animated SHA-256 link visualization above the log */}
       <div className="px-6 pt-3">
-        <div className="glass-strong rounded-md px-3 py-2">
+        <div
+          className="glass-strong rounded-md px-3 py-2"
+          title="Hash-chain ribbon — each link shows row id + truncated SHA-256 hash + event type. Tampering with any historical row breaks the chain at that point. Same primitive Bitcoin uses for block headers."
+        >
           <div className="text-2xs uppercase-wide text-muted2 font-mono tracking-wider mb-0.5 flex items-center justify-between">
             <span>SHA-256 · CHAIN VISUAL · LAST 8 ROWS</span>
             <span className={chainStatus?.ok ? "text-threat-low" : chainStatus?.ok === false ? "text-threat-crit" : "text-muted"}>

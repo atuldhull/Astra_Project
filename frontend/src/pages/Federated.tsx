@@ -195,7 +195,10 @@ export default function Federated() {
             title="Network Topology · FoolsGold weighted edges"
             sub={`${allClientIds.length} clients · aggregator central`}
           >
-            <div className="h-[280px] flex items-center justify-center">
+            <div
+              className="h-[280px] flex items-center justify-center"
+              title="Federated topology — central aggregator surrounded by N clients. Edge stroke-width = FoolsGold aggregation weight (how much that client's update is trusted). Quarantined Sybils render dashed-red. Animated dots flow along edges proportional to contribution."
+            >
               <FederatedTopology
                 weights={lastFg?.weights ?? Object.fromEntries(allClientIds.map((c) => [c, 1 / Math.max(1, allClientIds.length)]))}
                 poisonIds={cfg.poison_client_id ? [cfg.poison_client_id] : []}

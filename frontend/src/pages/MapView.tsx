@@ -217,7 +217,10 @@ export default function MapView() {
                 <Route size={12} /> Tracks
               </label>
             )}
-            <label className="flex items-center gap-1.5 text-xs text-muted cursor-pointer select-none">
+            <label
+              className="flex items-center gap-1.5 text-xs text-muted cursor-pointer select-none"
+              title="Detection density heatmap — additive radial blobs over each detection, weight ∝ confidence. Reveals clustering hotspots (e.g. enemy massing) without needing to scroll the marker list."
+            >
               <input
                 type="checkbox"
                 checked={showHeatmap}
