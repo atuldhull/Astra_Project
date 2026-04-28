@@ -1,0 +1,12 @@
+{
+  "captured_at": "2026-04-28T11:37:25.342786+00:00",
+  "image": "D:\\astra-data\\demo-samples\\02-airfield-hero.jpg",
+  "n": 20,
+  "failures": 0,
+  "p50_ms": 487.4,
+  "p95_ms": 560.1,
+  "p99_ms": 562.3,
+  "max_ms": 562.3,
+  "min_ms": 441.0,
+  "mean_ms": 492.7
+}
