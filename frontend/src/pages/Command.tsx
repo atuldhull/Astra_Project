@@ -317,6 +317,33 @@ export default function Command() {
             <ActionLink to="/audit"   icon={ScrollText} label="Verify audit chain" />
           </div>
         </Tile>
+
+        {/* [11] What makes ASTRA different — pitch-pillars tile */}
+        <Tile span={4} accent="cyan" badge="11" title="What makes ASTRA different">
+          <div className="grid grid-cols-3 gap-3 text-xs">
+            <Pillar
+              tag="01"
+              tone="cyan"
+              title="SOVEREIGN"
+              body="Open architecture, Indian context, no US lock-in, fully air-gappable. Runs on any 6 GB GPU."
+            />
+            <Pillar
+              tag="02"
+              tone="amber"
+              title="ON-DEVICE"
+              body="Stage-1 detector + stage-2 cascade + LLM-grounded chat all on one laptop. No cloud, no data leaves the box."
+            />
+            <Pillar
+              tag="03"
+              tone="low"
+              title="DEFENSIBLE"
+              body="Every detection signed, every action SHA-256 hash-chained, adversarially tested with measured retention."
+            />
+          </div>
+          <div className="mt-3 pt-3 border-t border-border text-[11px] text-muted2 leading-snug font-mono">
+            Palantir Gotham · Anduril Lattice · TAK · generic CV vendors — none hit all three rows. ASTRA does.
+          </div>
+        </Tile>
       </div>
 
       {/* keep an extra background layer behind everything */}
@@ -395,6 +422,33 @@ function ActionLink({ to, icon: Icon, label }: { to: string; icon: any; label: s
       <span className="flex-1 truncate">{label}</span>
       <ArrowRight size={11} className="text-muted2 group-hover:text-accent" />
     </Link>
+  );
+}
+
+function Pillar({
+  tag, tone, title, body,
+}: {
+  tag: string;
+  tone: "cyan" | "amber" | "low";
+  title: string;
+  body: string;
+}) {
+  const accent = tone === "cyan"
+    ? "border-cyan/40 shadow-[inset_0_0_24px_rgba(34,211,238,0.06)]"
+    : tone === "amber"
+    ? "border-amber-400/40 shadow-[inset_0_0_24px_rgba(251,191,36,0.06)]"
+    : "border-threat-low/40 shadow-[inset_0_0_24px_rgba(74,222,128,0.06)]";
+  const titleTone = tone === "cyan"
+    ? "text-cyan"
+    : tone === "amber"
+    ? "text-amber-400"
+    : "text-threat-low";
+  return (
+    <div className={`relative rounded-md border ${accent} bg-panel2/40 p-3`}>
+      <div className="absolute top-2 right-2 text-[10px] font-mono text-muted2 tracking-wider">{tag}</div>
+      <div className={`font-mono text-[11px] tracking-[0.2em] uppercase ${titleTone} mb-1.5`}>{title}</div>
+      <div className="text-[11px] text-muted leading-snug">{body}</div>
+    </div>
   );
 }
 
