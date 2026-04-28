@@ -9,6 +9,8 @@ import { toast } from "../components/Toast";
 import { ChainVisual } from "../components/ChainVisual";
 import { ExportMenu } from "../components/ExportMenu";
 import { absoluteIst, relativeTime } from "../lib/time";
+import { useStallTimeout } from "../lib/useStallTimeout";
+import { SkeletonRow } from "../components/Skeleton";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -54,6 +56,7 @@ export default function Audit() {
   const [exporting, setExporting] = useState(false);
   const [filter, setFilter] = useState("");
   const [loading, setLoading] = useState(false);
+  const stalled = useStallTimeout(loading, 15_000);
   const [error, setError] = useState<string | null>(null);
   const [chainStatus, setChainStatus] = useState<{ ok: boolean; checked: number; broken_at_id: number | null; reason?: string; genesis?: string; tip?: string } | null>(null);
   const [verifying, setVerifying] = useState(false);
@@ -323,7 +326,18 @@ export default function Audit() {
 
       <div className="flex-1 p-6 pt-3 flex gap-6 overflow-hidden">
         <div className="flex-1 glass rounded-lg overflow-auto font-mono text-xs shadow-panel">
-          {filtered.length === 0 ? (
+          {events.length === 0 && loading ? (
+            <div className="p-4 space-y-2">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <SkeletonRow key={i} cols={4} />
+              ))}
+              {stalled && (
+                <div className="text-xs text-threat-high pt-2 px-1">
+                  Still loading after 15s — backend may be slow or unreachable. Try the verify-chain button or refresh.
+                </div>
+              )}
+            </div>
+          ) : filtered.length === 0 ? (
             <EmptyState
               icon={ScrollText}
               title={events.length === 0 ? "No audit events yet" : "No matches"}
