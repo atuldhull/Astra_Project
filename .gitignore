@@ -58,3 +58,4 @@ tiles/
 *.tmp
 *.bak
 desktop.ini
+.frontend-errors.log

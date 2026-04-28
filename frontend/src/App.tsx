@@ -16,6 +16,7 @@ import { SplashBoot, shouldShowSplash } from "./components/SplashBoot";
 import { Sidebar } from "./components/Sidebar";
 import { TacticalBackground } from "./components/TacticalBackground";
 import { OnboardingTour } from "./components/OnboardingTour";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const nav = [
   { to: "/command", label: "Command", icon: LayoutGrid },
@@ -43,17 +44,17 @@ export default function App() {
       <main className="flex-1 overflow-auto">
         <Routes>
           <Route path="/" element={<Navigate to="/command" replace />} />
-          <Route path="/command" element={<Command />} />
-          <Route path="/mission" element={<Mission />} />
-          <Route path="/map" element={<MapView />} />
-          <Route path="/alerts" element={<Alerts />} />
-          <Route path="/audit" element={<Audit />} />
-          <Route path="/benchmark" element={<Benchmark />} />
-          <Route path="/adversarial" element={<Adversarial />} />
-          <Route path="/federated" element={<Federated />} />
-          <Route path="/diff" element={<MissionDiff />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/chat" element={<Chat />} />
+          <Route path="/command" element={<ErrorBoundary scope="command"><Command /></ErrorBoundary>} />
+          <Route path="/mission" element={<ErrorBoundary scope="mission"><Mission /></ErrorBoundary>} />
+          <Route path="/map" element={<ErrorBoundary scope="map"><MapView /></ErrorBoundary>} />
+          <Route path="/alerts" element={<ErrorBoundary scope="alerts"><Alerts /></ErrorBoundary>} />
+          <Route path="/audit" element={<ErrorBoundary scope="audit"><Audit /></ErrorBoundary>} />
+          <Route path="/benchmark" element={<ErrorBoundary scope="benchmark"><Benchmark /></ErrorBoundary>} />
+          <Route path="/adversarial" element={<ErrorBoundary scope="adversarial"><Adversarial /></ErrorBoundary>} />
+          <Route path="/federated" element={<ErrorBoundary scope="federated"><Federated /></ErrorBoundary>} />
+          <Route path="/diff" element={<ErrorBoundary scope="diff"><MissionDiff /></ErrorBoundary>} />
+          <Route path="/login" element={<ErrorBoundary scope="login"><Login /></ErrorBoundary>} />
+          <Route path="/chat" element={<ErrorBoundary scope="chat"><Chat /></ErrorBoundary>} />
         </Routes>
       </main>
       <OnboardingTour />
