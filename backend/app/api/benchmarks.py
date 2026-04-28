@@ -14,6 +14,7 @@ import json
 from pathlib import Path
 
 from fastapi import APIRouter
+from fastapi.responses import Response
 
 router = APIRouter(prefix="/benchmarks", tags=["benchmarks"])
 
@@ -55,4 +56,17 @@ def adversarial_metrics() -> dict:
     return _read(
         "adversarial_ab.json",
         "run: python scripts/adversarial_ab.py",
+    )
+
+
+@router.get("/onepager.pdf")
+def onepager_pdf() -> Response:
+    """Single-page judge/procurement take-away PDF. Pulls live numbers
+    from benchmarks/*.json so it's always the most recent capture."""
+    from app.services.onepager import render_onepager
+    pdf = render_onepager()
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": 'inline; filename="astra-v3-onepager.pdf"'},
     )
