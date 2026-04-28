@@ -414,6 +414,15 @@ export default function MapView() {
                       {d.extras?.airframe && (
                         <div className="text-blue-600">
                           ⤷ <b>{d.extras.airframe}</b> ({((d.extras.airframe_confidence ?? 0) * 100).toFixed(0)}%)
+                          {d.extras?.airframe_top3 && d.extras.airframe_top3.length > 1 && (
+                            <span className="ml-1 text-gray-500 text-[10px]">
+                              alt: {d.extras.airframe_top3
+                                .filter((t) => t.name !== d.extras!.airframe)
+                                .slice(0, 2)
+                                .map((t) => `${t.name} ${(t.conf * 100).toFixed(0)}%`)
+                                .join(" · ")}
+                            </span>
+                          )}
                         </div>
                       )}
                       <div>conf: {d.confidence.toFixed(2)}</div>

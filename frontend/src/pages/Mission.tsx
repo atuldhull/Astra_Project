@@ -567,15 +567,28 @@ export default function Mission() {
     return src.filter((d) => d.extras?.airframe).length;
   }, [fileType, videoDets, imageDbDets]);
 
-  // Image-mode airframe summary — counts per type from the saved mission.
+  // Image-mode airframe summary — counts per type, plus the top-3
+  // alternates from the most-confident detection of each type. Top-3
+  // surfaces model uncertainty: when the cascade is 91% sure it's an
+  // F-22, what were its 2nd and 3rd guesses?
   const imageAirframeCounts = useMemo(() => {
-    const c: Record<string, { n: number; conf: number[] }> = {};
+    const c: Record<string, {
+      n: number;
+      conf: number[];
+      bestConf: number;
+      top3: { name: string; conf: number }[];
+    }> = {};
     for (const d of imageDbDets) {
       const name = d.extras?.airframe;
       if (!name) continue;
-      (c[name] ??= { n: 0, conf: [] });
-      c[name].n += 1;
-      if (d.extras?.airframe_confidence != null) c[name].conf.push(d.extras.airframe_confidence);
+      const conf = d.extras?.airframe_confidence ?? 0;
+      const slot = (c[name] ??= { n: 0, conf: [], bestConf: -1, top3: [] });
+      slot.n += 1;
+      slot.conf.push(conf);
+      if (conf > slot.bestConf) {
+        slot.bestConf = conf;
+        slot.top3 = (d.extras?.airframe_top3 ?? []).slice(0, 3);
+      }
     }
     return c;
   }, [imageDbDets]);
@@ -933,20 +946,39 @@ export default function Mission() {
                     )}
                   </div>
                   {Object.keys(imageAirframeCounts).length > 0 ? (
-                    <div className="space-y-1 font-mono text-xs">
+                    <div className="space-y-1.5 font-mono text-xs">
                       {Object.entries(imageAirframeCounts)
                         .sort(([, a], [, b]) => b.n - a.n)
                         .map(([name, info]) => {
                           const avg = info.conf.length
                             ? info.conf.reduce((s, x) => s + x, 0) / info.conf.length
                             : 0;
+                          const top3 = info.top3.filter((t) => t.name !== name).slice(0, 2);
                           return (
-                            <div key={name} className="flex items-center justify-between py-1 border-b border-border last:border-0">
-                              <span className="text-blue-300">{name}</span>
-                              <div className="flex items-center gap-3">
-                                <span className="text-accent">× {info.n}</span>
-                                <span className="text-muted">{(avg * 100).toFixed(0)}%</span>
+                            <div key={name} className="py-1 border-b border-border last:border-0">
+                              <div className="flex items-center justify-between">
+                                <span className="text-blue-300">{name}</span>
+                                <div className="flex items-center gap-3">
+                                  <span className="text-accent">× {info.n}</span>
+                                  <span className="text-muted">{(avg * 100).toFixed(0)}%</span>
+                                </div>
                               </div>
+                              {top3.length > 0 && (
+                                <div
+                                  className="mt-0.5 flex items-center gap-1 text-[10px] text-muted2"
+                                  title="2nd & 3rd guesses from the cascade — surfaces model uncertainty per detection"
+                                >
+                                  <span className="opacity-60">alt:</span>
+                                  {top3.map((t) => (
+                                    <span
+                                      key={t.name}
+                                      className="px-1.5 py-0.5 rounded bg-panel2 border border-border text-muted"
+                                    >
+                                      {t.name} {(t.conf * 100).toFixed(0)}%
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           );
                         })}
@@ -1029,15 +1061,38 @@ export default function Mission() {
                           Airframes ID'd <span className="text-accent">·</span>
                           <span className="text-[10px] normal-case ml-1">MAR20 cascade</span>
                         </div>
-                        <div className="space-y-1 font-mono text-xs">
-                          {ided.map((d) => (
-                            <div key={d.id} className="flex items-center justify-between">
-                              <span className="text-blue-300">{d.extras!.airframe}</span>
-                              <span className="text-muted">
-                                {((d.extras!.airframe_confidence ?? 0) * 100).toFixed(0)}%
-                              </span>
-                            </div>
-                          ))}
+                        <div className="space-y-1.5 font-mono text-xs">
+                          {ided.map((d) => {
+                            const top3 = (d.extras?.airframe_top3 ?? [])
+                              .filter((t) => t.name !== d.extras!.airframe)
+                              .slice(0, 2);
+                            return (
+                              <div key={d.id} className="py-1 border-b border-border last:border-0">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-blue-300">{d.extras!.airframe}</span>
+                                  <span className="text-muted">
+                                    {((d.extras!.airframe_confidence ?? 0) * 100).toFixed(0)}%
+                                  </span>
+                                </div>
+                                {top3.length > 0 && (
+                                  <div
+                                    className="mt-0.5 flex items-center gap-1 text-[10px] text-muted2"
+                                    title="2nd & 3rd guesses from the cascade"
+                                  >
+                                    <span className="opacity-60">alt:</span>
+                                    {top3.map((t) => (
+                                      <span
+                                        key={t.name}
+                                        className="px-1.5 py-0.5 rounded bg-panel2 border border-border text-muted"
+                                      >
+                                        {t.name} {(t.conf * 100).toFixed(0)}%
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     );
