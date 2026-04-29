@@ -11,7 +11,8 @@ import { HudCornerStat } from "../components/HudOverlay";
 import { ExportMenu } from "../components/ExportMenu";
 import { HeatmapOverlay } from "../components/HeatmapOverlay";
 import { VerifyBadge } from "../components/VerifyBadge";
-import { Flame } from "lucide-react";
+import { Flame, Boxes } from "lucide-react";
+import { ClusterLayer, type ClusterPoint } from "../components/ClusterLayer";
 
 // Friendly asset locations (must match backend config.py defaults)
 const FRIENDLY_ASSETS: { name: string; lat: number; lon: number }[] = [
@@ -66,6 +67,13 @@ export default function MapView() {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [showTracks, setShowTracks] = useState(true);
   const [showHeatmap, setShowHeatmap] = useState(false);
+  // D4.5 — cluster mode persists across navigations.
+  const [showCluster, setShowCluster] = useState<boolean>(() => {
+    try { return localStorage.getItem("astra:mapCluster") === "1"; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("astra:mapCluster", showCluster ? "1" : "0"); } catch { /* noop */ }
+  }, [showCluster]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [liveConnected, setLiveConnected] = useState(false);
@@ -218,6 +226,18 @@ export default function MapView() {
                 <Route size={12} /> Tracks
               </label>
             )}
+            <label
+              className="flex items-center gap-1.5 text-xs text-muted cursor-pointer select-none"
+              title="Group nearby markers into a single count badge. Engages automatically only above ~30 markers; click a cluster to zoom-fit its envelope."
+            >
+              <input
+                type="checkbox"
+                checked={showCluster}
+                onChange={(e) => setShowCluster(e.target.checked)}
+                className="accent-accent"
+              />
+              <Boxes size={12} /> Cluster
+            </label>
             <label
               className="flex items-center gap-1.5 text-xs text-muted cursor-pointer select-none"
               title="Detection density heatmap — additive radial blobs over each detection, weight ∝ confidence. Reveals clustering hotspots (e.g. enemy massing) without needing to scroll the marker list."
@@ -386,10 +406,18 @@ export default function MapView() {
             );
           })}
 
-          {/* Individual detections: only show ones NOT already in a visible track */}
-          {geoDetections
-            .filter((d) => !(showTracks && d.track_id != null && tracks.some((t) => t.track_id === d.track_id && t.point_count >= 2)))
-            .map((d) => {
+          {/* Individual detections: only show ones NOT already in a visible track.
+              D4.5: when showCluster is on, the same renderer is fed through
+              ClusterLayer (zoom-aware grid clustering). Single-marker buckets
+              fall through to the same per-point JSX so the popup is identical. */}
+          {(() => {
+            const filtered = geoDetections.filter(
+              (d) => !(showTracks && d.track_id != null && tracks.some((t) => t.track_id === d.track_id && t.point_count >= 2)),
+            );
+            const detById = new Map(filtered.map((d) => [d.id, d]));
+            const renderPoint = (p: ClusterPoint) => {
+              const d = detById.get(Number(p.id));
+              if (!d) return null;
               const isOod = !!d.extras?.ood_flag;
               const color = isOod ? "#94a3b8" : (CLASS_COLORS[d.class_name] ?? "#ff7a1a");
               return (
@@ -445,7 +473,13 @@ export default function MapView() {
                   </Popup>
                 </CircleMarker>
               );
-            })}
+            };
+            const points: ClusterPoint[] = filtered.map((d) => ({ id: d.id, lat: d.lat!, lon: d.lon! }));
+            if (showCluster) {
+              return <ClusterLayer points={points} renderPoint={renderPoint} />;
+            }
+            return points.map(renderPoint);
+          })()}
 
           {/* Heatmap layer — additive radial blobs sized by detection confidence */}
           {showHeatmap && (
