@@ -250,7 +250,56 @@ export const api = {
     new_class_id?: number;
     reason?: string;
   }) => json<Alert>(`/api/v1/alerts/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
-  listAudit: () => json<AuditEvent[]>("/api/v1/audit"),
+  listAudit: (params?: {
+    event_types?: string[];
+    operator_id?: string;
+    since?: string;
+    until?: string;
+    limit?: number;
+  }) => {
+    const q = new URLSearchParams();
+    if (params?.event_types?.length) q.set("event_types", params.event_types.join(","));
+    if (params?.operator_id) q.set("operator_id", params.operator_id);
+    if (params?.since) q.set("since", params.since);
+    if (params?.until) q.set("until", params.until);
+    if (params?.limit) q.set("limit", String(params.limit));
+    const qs = q.toString();
+    return json<AuditEvent[]>(`/api/v1/audit${qs ? `?${qs}` : ""}`);
+  },
+  // v3.0/D3.2 — chain operations
+  verifyAuditRow: (row_id: number) =>
+    json<{
+      ok: boolean;
+      checked: number;
+      broken_at_id: number | null;
+      reason: string | null;
+      row_hash: string | null;
+      prev_hash: string | null;
+    }>(`/api/v1/audit/verify-row/${row_id}`),
+  operatorActivity: (params?: { since?: string; until?: string }) => {
+    const q = new URLSearchParams();
+    if (params?.since) q.set("since", params.since);
+    if (params?.until) q.set("until", params.until);
+    const qs = q.toString();
+    return json<{
+      since: string | null;
+      until: string | null;
+      operators: Array<{
+        operator_id: string;
+        total: number;
+        by_event_type: Record<string, number>;
+      }>;
+      system_events: number;
+      total: number;
+    }>(`/api/v1/audit/operator-activity${qs ? `?${qs}` : ""}`);
+  },
+  /** Returns the URL for the range-cert PDF — caller passes it to <a download>. */
+  auditRangeCertUrl: (params: { since?: string; until?: string }) => {
+    const q = new URLSearchParams();
+    if (params.since) q.set("since", params.since);
+    if (params.until) q.set("until", params.until);
+    return `${BASE}/api/v1/audit/range-cert${q.toString() ? `?${q}` : ""}`;
+  },
   ingest: async (file: File, name: string, aoi: AoiCorners) => {
     const fd = new FormData();
     fd.append("name", name);
