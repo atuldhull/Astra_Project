@@ -6,7 +6,7 @@ import { HeroStat } from "../components/HeroStat";
 import { StatusPill } from "../components/StatusPill";
 import { EmptyState } from "../components/EmptyState";
 import { toast } from "../components/Toast";
-import { useCritAckOnMount } from "../components/CritCascade";
+import { useCritAckOnMount, useEngageHandoff } from "../components/CritCascade";
 import { AlertVerifyBadge } from "../components/AlertVerifyBadge";
 import { AlertRowPulse } from "../components/CritCascade";
 import { ThreatWaveform } from "../components/ThreatWaveform";
@@ -56,6 +56,9 @@ type DetClass = { class_id: number; class_name: string; confidence: number };
 export default function Alerts() {
   // D4.3 — visiting /alerts acks all unack crit alerts (sidebar badge clears).
   useCritAckOnMount();
+  // D5.4 — one-shot handoff from CritEngagePrompt: pre-select the alert's
+  // mission and scroll to its row.
+  const handoff = useEngageHandoff();
   const [missions, setMissions] = useState<Mission[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [alerts, setAlerts] = useState<Alert[]>([]);
@@ -67,19 +70,38 @@ export default function Alerts() {
   const [error, setError] = useState<string | null>(null);
   const pollRef = useRef<number | null>(null);
 
-  // Load missions and default-select newest
+  // Load missions and default-select newest. D5.4: when an engage-handoff
+  // payload is present, prefer THAT mission so the alert is on screen.
   useEffect(() => {
     api.listMissions(50)
       .then((m) => {
         setMissions(m);
         if (m.length > 0) {
+          if (handoff?.mission_id != null && m.some((x) => x.id === handoff.mission_id)) {
+            setSelectedId(handoff.mission_id);
+            return;
+          }
           const stored = Number(localStorage.getItem("astra:lastMissionId") ?? "");
           const preferred = m.find((x) => x.id === stored) ?? m[0];
           setSelectedId(preferred.id);
         }
       })
       .catch((e) => setError(`missions: ${(e as Error).message}`));
+    // handoff is a one-shot value computed at mount time
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // D5.4 — once alerts load and the handoff is for this mission, scroll
+  // the matching row into view + flash it briefly.
+  useEffect(() => {
+    if (!handoff || alerts.length === 0) return;
+    const row = document.querySelector<HTMLElement>(`[data-alert-id="${handoff.alert_id}"]`);
+    if (!row) return;
+    row.scrollIntoView({ behavior: "smooth", block: "center" });
+    row.classList.add("crit-row-flash");
+    const timer = window.setTimeout(() => row.classList.remove("crit-row-flash"), 1700);
+    return () => window.clearTimeout(timer);
+  }, [handoff, alerts]);
 
   // Poll alerts + detections for the selected mission
   useEffect(() => {
@@ -285,6 +307,7 @@ export default function Alerts() {
                 return (
                   <Fragment key={a.id}>
                   <tr
+                    data-alert-id={a.id}
                     className="border-t border-border hover:bg-panel2 transition-colors relative"
                   >
                     <td className="px-3 py-2 font-mono text-muted relative" rowSpan={a.narrative ? 2 : 1}>

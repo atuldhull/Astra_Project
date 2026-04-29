@@ -19,6 +19,7 @@
  * No DB, no backend changes. Pure subscriber pattern.
  */
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AlertOctagon } from "lucide-react";
 import { openLiveSocket } from "../lib/api";
 import { toast } from "./Toast";
@@ -321,6 +322,85 @@ export function useRecentCritFlash(): boolean {
   const [, setN] = useState(0);
   useEffect(() => critCascade.subscribe(() => setN((n) => n + 1)), []);
   return critCascade.recentCritGlobal() != null;
+}
+
+/** D5.4 — Engage prompt banner. When a fresh crit lands AND it has an
+ *  alert_id, render a fixed banner top-center with an "Engage →" button
+ *  for 6s. Click → write a one-shot handoff blob to localStorage and
+ *  navigate to /alerts. The Alerts page reads the blob on mount,
+ *  selects the matching mission + scrolls to the alert. */
+const ENGAGE_BANNER_MS = 6000;
+const ENGAGE_HANDOFF_KEY = "astra:engageHandoff";
+
+export function CritEngagePrompt() {
+  const navigate = useNavigate();
+  const [, setN] = useState(0);
+  useEffect(() => critCascade.subscribe(() => setN((n) => n + 1)), []);
+  const recent = _state.recent;
+  const fresh = recent && recent.alert_id != null && (Date.now() - recent.at) < ENGAGE_BANNER_MS;
+  if (!fresh || !recent) return null;
+  return (
+    <div
+      className="fixed top-3 left-1/2 -translate-x-1/2 z-[10005] flex items-center gap-3 px-3 py-2 rounded-full glass-strong border border-threat-crit/60 shadow-2xl animate-pulse-soft"
+      style={{ boxShadow: "0 0 24px rgba(239,68,68,0.45)" }}
+    >
+      <span className="text-2xs font-mono uppercase-wide tracking-wider text-threat-crit">
+        CRIT · alert #{recent.alert_id}
+      </span>
+      <span className="text-xs text-muted font-mono">
+        {recent.class_name} {recent.threat_score.toFixed(2)}
+      </span>
+      <button
+        onClick={() => {
+          try {
+            localStorage.setItem(ENGAGE_HANDOFF_KEY, JSON.stringify({
+              alert_id: recent.alert_id,
+              mission_id: recent.mission_id,
+              ts: Date.now(),
+            }));
+          } catch { /* noop */ }
+          // Drop the recent pointer so the prompt closes immediately.
+          _state.recent = null;
+          emit();
+          navigate("/alerts");
+        }}
+        className="ml-1 inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-mono uppercase-wide tracking-wider bg-threat-crit text-bg hover:brightness-110 transition-fast"
+      >
+        Engage →
+      </button>
+      <button
+        onClick={() => { _state.recent = null; emit(); }}
+        className="text-muted2 hover:text-text -m-1 p-1.5"
+        title="Dismiss"
+        aria-label="Dismiss crit prompt"
+      >
+        <AlertOctagon size={11} />
+      </button>
+    </div>
+  );
+}
+
+export const CRIT_ENGAGE_HANDOFF_KEY = ENGAGE_HANDOFF_KEY;
+
+/** D5.4 — drop-in hook for /alerts. On mount: read the handoff blob, if
+ *  fresh (<30s old) return its payload so the page can pre-select the
+ *  mission + scroll to the alert. The blob is consumed immediately
+ *  (cleared) so repeated /alerts visits don't re-trigger the flow. */
+export function useEngageHandoff(): { alert_id: number; mission_id: number } | null {
+  const [payload] = useState(() => {
+    try {
+      const raw = localStorage.getItem(ENGAGE_HANDOFF_KEY);
+      if (!raw) return null;
+      localStorage.removeItem(ENGAGE_HANDOFF_KEY);
+      const p = JSON.parse(raw);
+      if (typeof p?.alert_id !== "number" || typeof p?.mission_id !== "number") return null;
+      if (typeof p?.ts !== "number" || (Date.now() - p.ts) > 30_000) return null;
+      return { alert_id: p.alert_id, mission_id: p.mission_id };
+    } catch {
+      return null;
+    }
+  });
+  return payload;
 }
 
 /** D5.3 — corner-bracket flash overlay for the Mission Bezel when a crit

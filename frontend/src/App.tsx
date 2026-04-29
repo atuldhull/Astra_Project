@@ -23,7 +23,7 @@ import { OnboardingTour } from "./components/OnboardingTour";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { CommandPalette } from "./components/CommandPalette";
 import { HelpOverlay } from "./components/HelpOverlay";
-import { CritCascadeListener, CritSweep } from "./components/CritCascade";
+import { CritCascadeListener, CritSweep, CritEngagePrompt } from "./components/CritCascade";
 import { useDemoMode } from "./lib/demoMode";
 
 // v3.0/D3.1 — Two-group navigation IA.
@@ -103,6 +103,7 @@ export default function App() {
       <HelpOverlay />
       <CritCascadeListener />
       <CritSweep />
+      <CritEngagePrompt />
       {demo && (
         <div className="fixed top-2 left-1/2 -translate-x-1/2 z-[10000] flex items-center gap-2 px-3 py-1 rounded-full glass-strong border border-accent/40 shadow-glow-accent text-2xs font-mono text-accent uppercase-wide tracking-wider pointer-events-none">
           <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
