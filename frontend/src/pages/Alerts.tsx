@@ -6,6 +6,7 @@ import { HeroStat } from "../components/HeroStat";
 import { StatusPill } from "../components/StatusPill";
 import { EmptyState } from "../components/EmptyState";
 import { toast } from "../components/Toast";
+import { useCritAckOnMount } from "../components/CritCascade";
 import { ThreatWaveform } from "../components/ThreatWaveform";
 import { ExportMenu } from "../components/ExportMenu";
 
@@ -51,6 +52,8 @@ function rerankScore(a: Alert, w: Weights): number {
 type DetClass = { class_id: number; class_name: string; confidence: number };
 
 export default function Alerts() {
+  // D4.3 — visiting /alerts acks all unack crit alerts (sidebar badge clears).
+  useCritAckOnMount();
   const [missions, setMissions] = useState<Mission[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [alerts, setAlerts] = useState<Alert[]>([]);

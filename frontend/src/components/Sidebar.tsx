@@ -20,6 +20,7 @@ import { StatusPill } from "./StatusPill";
 import { ThemeToggle } from "./ThemeToggle";
 import { useDemoMode } from "../lib/demoMode";
 import { fetchMe, getToken, logout, subscribeAuth, type Me } from "../lib/auth";
+import { CritUnackBadge } from "./CritCascade";
 
 const COLLAPSE_KEY = "astra:sidebarCollapsed:v1";
 
@@ -191,6 +192,8 @@ export function Sidebar({ groups }: Props) {
                         {!collapsed && (
                           <>
                             <span className="flex-1 truncate">{label}</span>
+                            {/* D4.3 — surface the unack-crit count next to Threats. */}
+                            {to === "/alerts" && <CritUnackBadge />}
                             {badgeVal != null && badgeVal !== "" && (
                               <span className="text-2xs text-muted font-mono tabular-nums">{badgeVal}</span>
                             )}
