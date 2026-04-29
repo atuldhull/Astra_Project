@@ -298,3 +298,14 @@ button, a { outline: none; } /* re-applied via :focus-visible above */
 .leaflet-tooltip.cluster-count-tooltip::before {
   display: none;
 }
+
+/* ──────────────────────────────────────────────────────────────────────
+ * D5.3 — sidebar Threats row red flash on fresh crit arrival
+ * ──────────────────────────────────────────────────────────────────────*/
+@keyframes crit-row-flash-anim {
+  0%   { background-color: rgba(239, 68, 68, 0.35); box-shadow: inset 3px 0 0 #ef4444; }
+  100% { background-color: rgba(239, 68, 68, 0);    box-shadow: inset 3px 0 0 transparent; }
+}
+.crit-row-flash {
+  animation: crit-row-flash-anim 1.6s ease-out forwards;
+}

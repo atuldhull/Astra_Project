@@ -8,6 +8,7 @@ import { EmptyState } from "../components/EmptyState";
 import { toast } from "../components/Toast";
 import { useCritAckOnMount } from "../components/CritCascade";
 import { AlertVerifyBadge } from "../components/AlertVerifyBadge";
+import { AlertRowPulse } from "../components/CritCascade";
 import { ThreatWaveform } from "../components/ThreatWaveform";
 import { ExportMenu } from "../components/ExportMenu";
 
@@ -284,9 +285,12 @@ export default function Alerts() {
                 return (
                   <Fragment key={a.id}>
                   <tr
-                    className="border-t border-border hover:bg-panel2 transition-colors"
+                    className="border-t border-border hover:bg-panel2 transition-colors relative"
                   >
-                    <td className="px-3 py-2 font-mono text-muted" rowSpan={a.narrative ? 2 : 1}>{i + 1}</td>
+                    <td className="px-3 py-2 font-mono text-muted relative" rowSpan={a.narrative ? 2 : 1}>
+                      <AlertRowPulse alertId={a.id} />
+                      {i + 1}
+                    </td>
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-2 font-mono text-xs">
                         <span

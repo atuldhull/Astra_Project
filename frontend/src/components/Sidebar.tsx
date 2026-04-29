@@ -20,7 +20,7 @@ import { StatusPill } from "./StatusPill";
 import { ThemeToggle } from "./ThemeToggle";
 import { useDemoMode } from "../lib/demoMode";
 import { fetchMe, getToken, logout, subscribeAuth, type Me } from "../lib/auth";
-import { CritUnackBadge } from "./CritCascade";
+import { CritUnackBadge, useRecentCritFlash } from "./CritCascade";
 
 const COLLAPSE_KEY = "astra:sidebarCollapsed:v1";
 
@@ -51,6 +51,8 @@ type HealthState = {
 export function Sidebar({ groups }: Props) {
   const navigate = useNavigate();
   const [demo, setDemo] = useDemoMode();
+  // D5.3 — when a fresh crit lands, flash the whole Threats row red.
+  const critFlashing = useRecentCritFlash();
   // Default to expanded; user can collapse and we remember.
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     try { return localStorage.getItem(COLLAPSE_KEY) === "1"; } catch { return false; }
@@ -179,6 +181,9 @@ export function Sidebar({ groups }: Props) {
                         isActive
                           ? "bg-panel2 text-accent"
                           : "text-muted hover:text-text hover:bg-panel2/60"
+                      } ${
+                        // D5.3 — Threats row flashes red on fresh crit arrival
+                        to === "/alerts" && critFlashing ? "crit-row-flash" : ""
                       }`
                     }
                     title={collapsed ? label : undefined}

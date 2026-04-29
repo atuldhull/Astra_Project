@@ -10,6 +10,7 @@ import { Bezel } from "../components/Bezel";
 import { HudCornerStat, HudRecBadge, HudCrosshair, HudThreatBar } from "../components/HudOverlay";
 import { ReplayScrubber } from "../components/ReplayScrubber";
 import { AuditDrawer } from "../components/AuditDrawer";
+import { CritCornerFlash } from "../components/CritCascade";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -1010,6 +1011,7 @@ export default function Mission() {
             </>
           }
         ><div className="relative w-full h-full flex items-center justify-center">
+          <CritCornerFlash missionId={savedMissionId} />
           {fileUrl ? (
             <>
               {fileType === "image" ? (

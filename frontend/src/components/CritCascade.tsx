@@ -155,6 +155,26 @@ export const critCascade = {
     }
     return best;
   },
+  /** D5.3 — is `recent` a crit for this mission? Lasts SWEEP_DURATION_MS. */
+  recentCritForMission(mission_id: number): CritEvent | null {
+    if (!_state.recent) return null;
+    if (_state.recent.mission_id !== mission_id) return null;
+    if (Date.now() - _state.recent.at > 1600) return null;
+    return _state.recent;
+  },
+  /** D5.3 — is there ANY recent crit (for sidebar flash)? */
+  recentCritGlobal(): CritEvent | null {
+    if (!_state.recent) return null;
+    if (Date.now() - _state.recent.at > 1600) return null;
+    return _state.recent;
+  },
+  /** D5.3 — fresh alert_action for a specific alert id, used by row pulse. */
+  freshActionForAlert(alert_id: number): AlertAction | null {
+    const a = _state.actions.get(alert_id);
+    if (!a) return null;
+    if (Date.now() - a.at > ACTION_FRESHNESS_MS) return null;
+    return a;
+  },
   /** Dev tool only — wipe seen so the demo can replay the same alert. */
   reset() {
     _state.recent = null;
@@ -294,6 +314,87 @@ export function useCritAckOnMount() {
   useEffect(() => {
     critCascade.ackAll();
   }, []);
+}
+
+/** D5.3 — returns true while a recent crit is active (within 1.6s). */
+export function useRecentCritFlash(): boolean {
+  const [, setN] = useState(0);
+  useEffect(() => critCascade.subscribe(() => setN((n) => n + 1)), []);
+  return critCascade.recentCritGlobal() != null;
+}
+
+/** D5.3 — corner-bracket flash overlay for the Mission Bezel when a crit
+ *  lands on the currently-displayed mission. Renders inside its parent
+ *  (parent must be position:relative). 1.6s ease-out. */
+export function CritCornerFlash({ missionId }: { missionId: number | null }) {
+  const [, setN] = useState(0);
+  useEffect(() => critCascade.subscribe(() => setN((n) => n + 1)), []);
+  if (missionId == null) return null;
+  const recent = critCascade.recentCritForMission(missionId);
+  if (!recent) return null;
+  return (
+    <div className="absolute inset-0 z-[35] pointer-events-none" aria-hidden>
+      {(["tl", "tr", "bl", "br"] as const).map((pos) => (
+        <span
+          key={pos}
+          className="absolute"
+          style={{
+            top: pos.startsWith("t") ? -2 : undefined,
+            bottom: pos.startsWith("b") ? -2 : undefined,
+            left: pos.endsWith("l") ? -2 : undefined,
+            right: pos.endsWith("r") ? -2 : undefined,
+            width: 22, height: 22,
+            borderTop: pos.startsWith("t") ? "3px solid #ef4444" : undefined,
+            borderBottom: pos.startsWith("b") ? "3px solid #ef4444" : undefined,
+            borderLeft: pos.endsWith("l") ? "3px solid #ef4444" : undefined,
+            borderRight: pos.endsWith("r") ? "3px solid #ef4444" : undefined,
+            boxShadow: "0 0 12px rgba(239,68,68,0.7)",
+            animation: "crit-corner-flash 1.6s ease-out forwards",
+          }}
+        />
+      ))}
+      <style>{`
+        @keyframes crit-corner-flash {
+          0%, 70%  { opacity: 1; }
+          100%     { opacity: 0; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+/** D5.3 — left-border pulse for an alert table row. Only fires when an
+ *  alert action just landed for *this* alert id. */
+export function AlertRowPulse({ alertId }: { alertId: number }) {
+  const [, setN] = useState(0);
+  useEffect(() => critCascade.subscribe(() => setN((n) => n + 1)), []);
+  const a = critCascade.freshActionForAlert(alertId);
+  if (!a) return null;
+  const tone = a.action === "engage"
+    ? "#ef4444"
+    : a.action === "engage_partial"
+    ? "#fbbf24"
+    : "#22d3ee";
+  return (
+    <span
+      className="absolute left-0 top-0 bottom-0 pointer-events-none"
+      style={{
+        width: 3,
+        background: tone,
+        boxShadow: `0 0 8px ${tone}`,
+        animation: "alert-row-pulse 4s ease-out forwards",
+      }}
+      aria-hidden
+    >
+      <style>{`
+        @keyframes alert-row-pulse {
+          0%   { opacity: 1; }
+          80%  { opacity: 0.7; }
+          100% { opacity: 0; }
+        }
+      `}</style>
+    </span>
+  );
 }
 
 /** D4.4 — small pulsing pill that surfaces "ACKED BY <op>" on a mission
