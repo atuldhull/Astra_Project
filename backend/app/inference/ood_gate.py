@@ -8,30 +8,39 @@ storage depot). Without a gate the demo viewer thinks the model is wrong;
 with the gate, the same detection shows as grey-with-"?" and the demo viewer
 sees that the system *knew* it didn't know.
 
-We ship two implementations behind one interface:
+Three backends behind one interface — selectable via ASTRA_OOD_BACKEND:
 
-  * lightweight (default, no downloads, ALWAYS available):
-      OOD score per detection from three heuristics:
+  * mahalanobis (T1.3, DEFAULT when calibrated weights exist):
+      9-D model-agnostic feature vector → per-class Gaussian → squared
+      Mahalanobis distance to class mean → flag if > 99th percentile of
+      in-distribution distances. Fit by scripts/calibrate_ood.py.
+
+  * heuristic (R2 baseline, ALWAYS available — fallback):
+      OOD score per detection from three signals:
         - low confidence relative to its class's training-time mean
         - extreme aspect ratio for the claimed class (e.g. a 5:1 ship)
-        - low edge density inside the bbox (real DOTA objects have texture)
-      Score is in [0,1]; threshold 0.55 → flagged.
+        - low edge density inside the bbox
 
-  * SAM (optional, opt-in via env var or weight presence):
-      Mask the bbox interior with SAM, count distinct components, compare
-      with YOLO's expectation. NOT SHIPPED YET — placeholder hook below
-      so we can drop in `sam_vit_b` weights tomorrow without UI changes.
+  * SAM (placeholder, not shipped):
+      Mask the bbox interior with SAM, count components, compare with
+      YOLO's expectation. Hook below; weights+code TBD.
 
 Result is stashed into Detection.extras_json as:
-    {"ood_score": 0.62, "ood_flag": true, "ood_reasons": ["low_conf", "aspect"]}
+    {"ood_score": 0.62, "ood_flag": true,
+     "ood_reasons": ["mahalanobis(d2=12.4 > τ=8.7)"]}
 """
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 
 import cv2
 import numpy as np
+
+from app.inference import ood_calib
+
+OOD_BACKEND = os.environ.get("ASTRA_OOD_BACKEND", "mahalanobis").lower()
 
 
 # Per-class typical aspect ratio range (w/h). Outside this range we suspect
@@ -116,6 +125,62 @@ def _edge_score(density: float) -> tuple[float, bool]:
     return min(1.0, (EDGE_DENSITY_FLOOR - density) / EDGE_DENSITY_FLOOR), True
 
 
+def _heuristic(
+    image_bgr: np.ndarray,
+    class_name: str,
+    confidence: float,
+    x1: float, y1: float, x2: float, y2: float,
+) -> OodResult:
+    """R2 baseline: low_conf + aspect + edge_density signals."""
+    reasons: list[str] = []
+    s_conf, t_conf = _conf_score(class_name, confidence)
+    if t_conf:
+        reasons.append(f"low_conf({confidence:.2f})")
+    s_aspect, t_aspect = _aspect_score(class_name, x1, y1, x2, y2)
+    if t_aspect:
+        w, h = x2 - x1, y2 - y1
+        reasons.append(f"aspect({w/max(h,1):.2f})")
+    density = _edge_density(image_bgr, x1, y1, x2, y2)
+    s_edge, t_edge = _edge_score(density)
+    if t_edge:
+        reasons.append(f"flat_region({density:.3f})")
+    score = float(0.45 * s_conf + 0.35 * s_aspect + 0.20 * s_edge)
+    return OodResult(
+        score=round(score, 4),
+        flagged=score >= OOD_THRESHOLD,
+        reasons=reasons,
+    )
+
+
+def _mahalanobis(
+    image_bgr: np.ndarray,
+    class_name: str,
+    confidence: float,
+    x1: float, y1: float, x2: float, y2: float,
+) -> OodResult | None:
+    """T1.3 Mahalanobis backend. Returns None if calibration absent or
+    feature extraction fails — caller should then fall through to the
+    heuristic."""
+    calib = ood_calib.load()
+    if calib is None:
+        return None
+    feat = ood_calib.extract_features(image_bgr, confidence, x1, y1, x2, y2)
+    if feat is None:
+        return None
+    res = ood_calib.score(calib, class_name, feat)
+    if res is None:
+        # Class wasn't in the calibration set — fall through to heuristic.
+        return None
+    reasons: list[str] = []
+    if res.flagged:
+        reasons.append(f"mahalanobis(d2={res.distance:.1f} > tau={res.threshold:.1f})")
+    return OodResult(
+        score=round(res.score, 4),
+        flagged=res.flagged,
+        reasons=reasons,
+    )
+
+
 def assess_detection(
     image_bgr: np.ndarray,
     class_name: str,
@@ -124,36 +189,16 @@ def assess_detection(
 ) -> OodResult:
     """Compute an OOD assessment for a single detection.
 
-    Combines three lightweight signals (conf, aspect, edge-density) into a
-    single 0..1 score. Reasons list is human-readable for the UI tooltip."""
-    reasons: list[str] = []
-    sub_scores: list[float] = []
-
-    s_conf, t_conf = _conf_score(class_name, confidence)
-    if t_conf:
-        reasons.append(f"low_conf({confidence:.2f})")
-    sub_scores.append(s_conf)
-
-    s_aspect, t_aspect = _aspect_score(class_name, x1, y1, x2, y2)
-    if t_aspect:
-        w, h = x2 - x1, y2 - y1
-        reasons.append(f"aspect({w/max(h,1):.2f})")
-    sub_scores.append(s_aspect)
-
-    density = _edge_density(image_bgr, x1, y1, x2, y2)
-    s_edge, t_edge = _edge_score(density)
-    if t_edge:
-        reasons.append(f"flat_region({density:.3f})")
-    sub_scores.append(s_edge)
-
-    # Weighted combination: low_conf and aspect carry more weight than
-    # texture (edge density is noisier).
-    score = float(0.45 * s_conf + 0.35 * s_aspect + 0.20 * s_edge)
-    return OodResult(
-        score=round(score, 4),
-        flagged=score >= OOD_THRESHOLD,
-        reasons=reasons,
-    )
+    Backend selection:
+      ASTRA_OOD_BACKEND=mahalanobis (default) — try Mahalanobis first;
+        fall back to heuristic if calibration is absent or class unknown.
+      ASTRA_OOD_BACKEND=heuristic — skip Mahalanobis, use heuristic only.
+    """
+    if OOD_BACKEND == "mahalanobis":
+        m = _mahalanobis(image_bgr, class_name, confidence, x1, y1, x2, y2)
+        if m is not None:
+            return m
+    return _heuristic(image_bgr, class_name, confidence, x1, y1, x2, y2)
 
 
 # ── Optional SAM hook (no-op until weights present) ──────────────────────
