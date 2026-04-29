@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
-import { Activity, AlertTriangle, Crosshair, GitCompareArrows, Inbox, LayoutGrid, Map, MessageCircle, Network, ScrollText, Shield, Target } from "lucide-react";
+import { Activity, AlertTriangle, Crosshair, GitCompareArrows, HeartPulse, Inbox, LayoutGrid, Map, MessageCircle, Network, ScrollText, Shield, Target } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import Command from "./pages/Command";
 import Mission from "./pages/Mission";
@@ -15,6 +15,7 @@ import Login from "./pages/Login";
 import Chat from "./pages/Chat";
 import CounterDrone from "./pages/CounterDrone";
 import PublicReports from "./pages/PublicReports";
+import Health from "./pages/Health";
 import { SplashBoot, shouldShowSplash } from "./components/SplashBoot";
 import { Sidebar } from "./components/Sidebar";
 import { TacticalBackground } from "./components/TacticalBackground";
@@ -60,6 +61,7 @@ export const NAV: NavGroup[] = [
     items: [
       { to: "/diff",            label: "Mission Diff",   icon: GitCompareArrows },
       { to: "/public-reports",  label: "Public Reports", icon: Inbox },
+      { to: "/health",          label: "Health",         icon: HeartPulse },
     ],
   },
 ];
@@ -92,6 +94,7 @@ export default function App() {
           <Route path="/chat" element={<ErrorBoundary scope="chat"><Chat /></ErrorBoundary>} />
           <Route path="/counter-drone" element={<ErrorBoundary scope="counter-drone"><CounterDrone /></ErrorBoundary>} />
           <Route path="/public-reports" element={<ErrorBoundary scope="public-reports"><PublicReports /></ErrorBoundary>} />
+          <Route path="/health" element={<ErrorBoundary scope="health"><Health /></ErrorBoundary>} />
         </Routes>
       </main>
       {!demo && <OnboardingTour />}

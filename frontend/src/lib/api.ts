@@ -175,6 +175,64 @@ export type RecentPublicRow = {
   created_at: string;
 };
 
+// ── Health dashboard (D3.6) ──────────────────────────────────────────
+export type HealthDashboard = {
+  captured_at: string;
+  operator: { id: string; role: string };
+  backend: {
+    uptime_s: number;
+    version: string;
+    device: string;
+    model_path: string;
+    cuda_available: boolean;
+    python: string;
+    platform: string;
+  };
+  models: {
+    detector_ready: boolean;
+    cascade_ready: boolean;
+    llm_ready: boolean;
+    model_hash: string;
+    llm_path: string;
+  };
+  db: {
+    mission_count: number;
+    deleted_mission_count: number;
+    detection_count: number;
+    alert_count: number;
+    audit_count: number;
+    chat_message_count: number;
+    peer_witness_count: number;
+  };
+  chain: {
+    tip: string | null;
+    tip_id: number | null;
+    last_anchor: { ts: string; count: number; tip: string; backend: string } | null;
+    anchor_total: number;
+  };
+  ood: {
+    available: boolean;
+    weights_path?: string;
+    captured_at?: string;
+    classes?: string[];
+    n_samples_per_class?: Record<string, number>;
+    thresholds?: Record<string, number>;
+    hint?: string;
+    error?: string;
+  };
+  errors: { count_24h: number; last_message: string | null; last_ts: string | null };
+  latency: {
+    captured_at: string | null;
+    path: string;
+    data: { p50_ms: number; p95_ms: number; p99_ms: number; n: number; mean_ms: number };
+  } | null;
+  map: {
+    captured_at: string | null;
+    path: string;
+    data: { map_50: number; map_50_95: number; precision: number; recall: number };
+  } | null;
+};
+
 // ── Mesh witnessing (D3.4) ───────────────────────────────────────────
 export type MeshPeer = {
   peer_id: string;
@@ -471,6 +529,8 @@ export const api = {
     json<RecentPublicRow[]>(`/api/v1/public/recent?limit=${limit}`),
   publicThumbnailUrl: (mission_id: number) =>
     `${BASE}/api/v1/public/thumbnail/${mission_id}`,
+  // ── Health dashboard (D3.6) ──────────────────────────────────────
+  healthDashboard: () => json<HealthDashboard>(`/api/v1/health/dashboard`),
   ingest: async (file: File, name: string, aoi: AoiCorners) => {
     const fd = new FormData();
     fd.append("name", name);

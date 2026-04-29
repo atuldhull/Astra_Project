@@ -21,8 +21,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Activity, AlertTriangle, Anchor, Crosshair, GitCompareArrows, Inbox, LayoutGrid, Map, MessageCircle,
-  Network, Search, Shield, ShieldCheck, ScrollText, Target, Zap, type LucideIcon,
+  Activity, AlertTriangle, Anchor, Crosshair, GitCompareArrows, HeartPulse, Inbox, LayoutGrid, Map, MessageCircle,
+  Network, Search, Shield, ShieldCheck, ScrollText, Target, Terminal, Zap, type LucideIcon,
 } from "lucide-react";
 import { api, type Alert, type Mission } from "../lib/api";
 import { toggleDemoMode, useDemoMode } from "../lib/demoMode";
@@ -58,6 +58,31 @@ const PAGES: Array<{ to: string; label: string; sub: string; icon: LucideIcon; i
   { to: "/chat",        label: "Brief",         sub: "commander Q&A · Phi-3.5 grounded",   icon: MessageCircle,     ia: "operations" },
   { to: "/diff",            label: "Mission Diff",   sub: "compare two missions",                  icon: GitCompareArrows, ia: "operator"   },
   { to: "/public-reports",  label: "Public Reports", sub: "citizen-tip triage queue · drop pin",   icon: Inbox,            ia: "operator"   },
+  { to: "/health",          label: "Health",         sub: "system metrics · models · chain · errors", icon: HeartPulse,    ia: "operator"   },
+];
+
+// D3.6: capture commands surfaced in the palette as operator-only
+// quick-actions. They do NOT auto-execute — they toast the command and
+// copy it to the clipboard so the operator can run it in their venv.
+const HEALTH_CAPTURE_ACTIONS: Array<{ id: string; label: string; sub: string; cmd: string }> = [
+  {
+    id: "act:run-ood-calibration",
+    label: "Run OOD calibration",
+    sub: "fits Mahalanobis · operator-blocked",
+    cmd: "D:/astra-data/venvs/astra/Scripts/python.exe scripts/calibrate_ood.py",
+  },
+  {
+    id: "act:run-latency-capture",
+    label: "Run latency capture",
+    sub: "p50/p95/p99 over 25 ingests",
+    cmd: "D:/astra-data/venvs/astra/Scripts/python.exe scripts/capture_latency.py --n 25",
+  },
+  {
+    id: "act:run-detector-map",
+    label: "Run detector mAP capture",
+    sub: "DOTA-val · refreshes Benchmark hero",
+    cmd: "D:/astra-data/venvs/astra/Scripts/python.exe scripts/capture_detector_map.py",
+  },
 ];
 
 export function CommandPalette() {
@@ -152,6 +177,24 @@ export function CommandPalette() {
         toast.info(`Demo mode ${v ? "ON" : "OFF"}`, v ? "operator chrome hidden" : "full UI restored");
       },
     });
+    // D3.6 — operator-only capture toggles. Hidden in demo mode (mirrors
+    // sidebar). They toast + copy the command to clipboard, no automation.
+    if (!demo) {
+      for (const a of HEALTH_CAPTURE_ACTIONS) {
+        list.push({
+          id: a.id,
+          label: a.label,
+          sub: a.sub,
+          icon: Terminal,
+          group: "action", priority: 0,
+          run: () => {
+            toast.info("Run capture", a.cmd);
+            try { void navigator.clipboard?.writeText(a.cmd); } catch { /* noop */ }
+          },
+        });
+      }
+    }
+
     list.push({
       id: "act:sentinel-start",
       label: "Start swarm-loiter scenario",

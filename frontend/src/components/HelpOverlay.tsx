@@ -107,6 +107,15 @@ const ROUTE_HELP: Record<string, Section[]> = {
       "This is a SIMULATION. Real RF/kinetics are R4 hardware integration.",
     ]},
   ],
+  "/health": [
+    { title: "Health · System Metrics", lines: [
+      "Single-pane readout — auto-polls /health/dashboard every 10s.",
+      "Models row shows detector / cascade / Phi-3.5 ready/absent + model_hash.",
+      "Chain panel shows tip, last anchor, and peer witness count.",
+      "Calibration freshness flags OOD / latency / mAP files older than 7 days.",
+      "'Run capture' copies the venv command to clipboard — operator runs it.",
+    ]},
+  ],
   "/chat": [
     { title: "Commander Q&A", lines: [
       "Mission-scoped: pick a mission to bind the thread.",
