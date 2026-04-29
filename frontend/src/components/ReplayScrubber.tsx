@@ -39,6 +39,10 @@ type Props = {
   intervalMs?: number;
   /** Slider step. Default 100ms — fine for both video + audit timelines. */
   sliderStep?: number;
+  /** D5.1 — optional thumbnail strip below the slider. Each entry is a
+   *  data-URL (or http URL) + the absolute scrub position it represents.
+   *  Clicking a thumb seeks to that position. */
+  thumbnails?: { url: string; at: number }[];
 };
 
 export function ReplayScrubber({
@@ -46,6 +50,7 @@ export function ReplayScrubber({
   playing, onPlayingChange,
   formatLabel, subLabel,
   stepMs = 2000, intervalMs = 300, sliderStep = 100,
+  thumbnails,
 }: Props) {
   const valueRef = useRef(value);
   valueRef.current = value;
@@ -130,6 +135,43 @@ export function ReplayScrubber({
           )}
         </div>
       </div>
+
+      {/* D5.1 — frame thumbnail strip. Active thumb = the one whose `at`
+          is closest to the current value. Click any to seek. */}
+      {thumbnails && thumbnails.length > 0 && (
+        <div className="mt-2 flex gap-1 overflow-x-auto" style={{ scrollbarWidth: "thin" }}>
+          {(() => {
+            // Compute the index whose `at` is closest to value.
+            let activeIdx = 0;
+            let bestDelta = Infinity;
+            for (let i = 0; i < thumbnails.length; i++) {
+              const d = Math.abs(thumbnails[i].at - value);
+              if (d < bestDelta) { bestDelta = d; activeIdx = i; }
+            }
+            return thumbnails.map((t, i) => (
+              <button
+                key={i}
+                onClick={() => onChange(t.at)}
+                className={`shrink-0 rounded overflow-hidden border transition-fast ${
+                  i === activeIdx
+                    ? "border-cyan ring-2 ring-cyan/50"
+                    : "border-border hover:border-cyan/40 opacity-70 hover:opacity-100"
+                }`}
+                style={{ width: 56, height: 36 }}
+                title={`seek ${formatLabel(t.at)}`}
+                aria-label={`seek to thumbnail ${i + 1}`}
+              >
+                <img
+                  src={t.url}
+                  alt=""
+                  className="w-full h-full object-cover"
+                  draggable={false}
+                />
+              </button>
+            ));
+          })()}
+        </div>
+      )}
     </div>
   );
 }

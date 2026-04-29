@@ -472,6 +472,93 @@ export default function Mission() {
     }
   }, [scrubMs, replayBounds?.mode]);
 
+  // D5.1 — replay thumbnails. Sample N frames from the video at evenly-
+  // spaced timestamps once the video metadata is loaded. We use a hidden
+  // <video> element + a temp canvas because seeking the *visible* video
+  // would interfere with the operator's playback. Only re-runs when the
+  // file URL or the (computed) duration changes.
+  const [thumbs, setThumbs] = useState<{ url: string; at: number }[]>([]);
+  useEffect(() => {
+    setThumbs([]);
+    if (fileType !== "video" || !fileUrl || !replayBounds || replayBounds.mode !== "video") return;
+    const N = 8;
+    const totalMs = replayBounds.max - replayBounds.min;
+    if (totalMs < 2000) return;
+    let cancelled = false;
+    const created: string[] = [];
+    const out: { url: string; at: number }[] = [];
+    const hidden = document.createElement("video");
+    hidden.src = fileUrl;
+    hidden.crossOrigin = "anonymous";
+    hidden.preload = "auto";
+    hidden.muted = true;
+    hidden.playsInline = true;
+
+    const seekTo = (sec: number) =>
+      new Promise<void>((resolve) => {
+        const onSeeked = () => { hidden.removeEventListener("seeked", onSeeked); resolve(); };
+        hidden.addEventListener("seeked", onSeeked);
+        hidden.currentTime = sec;
+      });
+
+    const grab = (): string => {
+      const c = document.createElement("canvas");
+      c.width = 112;
+      c.height = 72;
+      const ctx = c.getContext("2d")!;
+      // Letterbox into 112×72 preserving aspect.
+      const vw = hidden.videoWidth || 16;
+      const vh = hidden.videoHeight || 9;
+      const ratio = Math.min(c.width / vw, c.height / vh);
+      const dw = vw * ratio;
+      const dh = vh * ratio;
+      const dx = (c.width - dw) / 2;
+      const dy = (c.height - dh) / 2;
+      ctx.fillStyle = "#0a0f14";
+      ctx.fillRect(0, 0, c.width, c.height);
+      ctx.drawImage(hidden, dx, dy, dw, dh);
+      return c.toDataURL("image/jpeg", 0.7);
+    };
+
+    const run = async () => {
+      try {
+        await new Promise<void>((res, rej) => {
+          if (hidden.readyState >= 1) return res();
+          hidden.addEventListener("loadedmetadata", () => res(), { once: true });
+          hidden.addEventListener("error", () => rej(new Error("video load failed")), { once: true });
+        });
+        for (let i = 0; i < N; i++) {
+          if (cancelled) return;
+          const t = replayBounds.min + (totalMs * (i + 0.5)) / N; // mid-bucket
+          await seekTo(t / 1000);
+          if (cancelled) return;
+          const url = grab();
+          created.push(url);
+          out.push({ url, at: t });
+        }
+        if (!cancelled) setThumbs(out);
+      } catch { /* ignore — no thumbs is graceful */ }
+    };
+    run();
+    return () => {
+      cancelled = true;
+      // Data URLs don't need revokeObjectURL; the hidden element is GC'd.
+      hidden.src = "";
+    };
+  }, [fileUrl, fileType, replayBounds?.min, replayBounds?.max, replayBounds?.mode]);
+
+  // D5.1 — live-tail. When scrubber is parked at the current max AND new
+  // detections arrive (videoDets / imageDbDets grow with later timestamps),
+  // advance scrubMs to the new max so the operator stays on "live".
+  useEffect(() => {
+    if (!replayBounds || scrubMs == null) return;
+    // Only auto-track if the scrubber is at-or-past the previous tip.
+    // We treat "within 250ms of the old max" as "at tip".
+    if (scrubMs < replayBounds.max - 250) return;
+    if (Math.abs(scrubMs - replayBounds.max) < 1) return; // already tip
+    setScrubMs(replayBounds.max);
+  }, [replayBounds?.max, replayBounds, scrubMs]);
+
   // Analyze current frame from video
   async function analyzeVideoFrame() {
     const v = videoRef.current;
@@ -1044,6 +1131,7 @@ export default function Mission() {
                   : new Date(v).toLocaleTimeString("en-IN", { hour12: false, timeZone: "Asia/Kolkata" }) + " IST"
               }
               subLabel={replayCounts(replayBounds.mode, scrubMs, videoDets, imageDbDets)}
+              thumbnails={replayBounds.mode === "video" ? thumbs : undefined}
             />
             {savedMissionId != null && (
               <AuditDrawer
