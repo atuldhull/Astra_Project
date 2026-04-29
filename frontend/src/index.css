@@ -286,12 +286,13 @@ button, a { outline: none; } /* re-applied via :focus-visible above */
  * D4.5 — cluster count tooltip on the map
  * ──────────────────────────────────────────────────────────────────────*/
 .leaflet-tooltip.cluster-count-tooltip {
-  background: rgba(34, 211, 238, 0.95);
+  background: transparent;
   border: none;
   box-shadow: none;
-  color: var(--bg);
-  padding: 1px 6px;
-  font-weight: 600;
+  color: #ffffff;
+  padding: 0;
+  font-weight: 700;
+  text-shadow: 0 0 3px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.7);
   pointer-events: none;
 }
 .leaflet-tooltip.cluster-count-tooltip::before {

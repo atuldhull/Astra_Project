@@ -59,6 +59,8 @@ def list_events(
     operator_id: str | None = Query(None),
     since: datetime | None = Query(None),
     until: datetime | None = Query(None),
+    alert_id: int | None = Query(None, description="D5.2 — filter to events tied to one alert"),
+    mission_id: int | None = Query(None, description="optional mission filter"),
     limit: int = Query(500, ge=1, le=5000),
     db: Session = Depends(get_db),
 ) -> list[AuditEventOut]:
@@ -72,6 +74,10 @@ def list_events(
         stmt = stmt.where(AuditEvent.event_type == event_type)
     if operator_id is not None:
         stmt = stmt.where(AuditEvent.operator_id == operator_id)
+    if alert_id is not None:
+        stmt = stmt.where(AuditEvent.alert_id == alert_id)
+    if mission_id is not None:
+        stmt = stmt.where(AuditEvent.mission_id == mission_id)
     if since is not None:
         stmt = stmt.where(AuditEvent.created_at >= since)
     if until is not None:

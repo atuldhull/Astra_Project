@@ -410,6 +410,8 @@ export const api = {
   listAudit: (params?: {
     event_types?: string[];
     operator_id?: string;
+    alert_id?: number;
+    mission_id?: number;
     since?: string;
     until?: string;
     limit?: number;
@@ -417,6 +419,8 @@ export const api = {
     const q = new URLSearchParams();
     if (params?.event_types?.length) q.set("event_types", params.event_types.join(","));
     if (params?.operator_id) q.set("operator_id", params.operator_id);
+    if (params?.alert_id != null) q.set("alert_id", String(params.alert_id));
+    if (params?.mission_id != null) q.set("mission_id", String(params.mission_id));
     if (params?.since) q.set("since", params.since);
     if (params?.until) q.set("until", params.until);
     if (params?.limit) q.set("limit", String(params.limit));

@@ -7,6 +7,7 @@ import { StatusPill } from "../components/StatusPill";
 import { EmptyState } from "../components/EmptyState";
 import { toast } from "../components/Toast";
 import { useCritAckOnMount } from "../components/CritCascade";
+import { AlertVerifyBadge } from "../components/AlertVerifyBadge";
 import { ThreatWaveform } from "../components/ThreatWaveform";
 import { ExportMenu } from "../components/ExportMenu";
 
@@ -311,6 +312,9 @@ export default function Alerts() {
                       {a.threat_score.toFixed(3)}
                     </td>
                     <td className="px-3 py-2 text-[11px] uppercase font-mono">
+                      <div className="flex items-center gap-1.5">
+                      <AlertVerifyBadge alertId={a.id} />
+                      </div>
                       {a.status === "pending" && <span className="text-muted">pending</span>}
                       {a.status === "confirmed" && <span className="text-threat-low">confirmed</span>}
                       {a.status === "rejected" && <span className="text-threat-crit">rejected</span>}

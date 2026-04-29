@@ -99,6 +99,10 @@ export default function MapView() {
       .catch((e) => setError(`missions: ${(e as Error).message}`));
   }, []);
 
+  // D5.2 — alert threat-score lookup for the selected mission, used as
+  // the per-detection threat hint feeding ClusterLayer's halo colour.
+  const [alertsByDetId, setAlertsByDetId] = useState<Map<number, number>>(new Map());
+
   // Load detections + tracks when mission changes + set up polling
   useEffect(() => {
     if (selectedId == null) return;
@@ -106,13 +110,17 @@ export default function MapView() {
     const fetchAll = async () => {
       try {
         setLoading(true);
-        const [d, t] = await Promise.all([
+        const [d, t, al] = await Promise.all([
           api.listDetections({ mission_id: selectedId, limit: 500 }),
           api.listTracks(selectedId).catch(() => [] as Track[]),
+          api.listAlerts({ mission_id: selectedId }).catch(() => []),
         ]);
         if (!cancelled) {
           setDetections(d);
           setTracks(t);
+          const m = new Map<number, number>();
+          for (const a of al) m.set(a.detection_id, a.threat_score);
+          setAlertsByDetId(m);
         }
       } catch (e) {
         if (!cancelled) setError(`fetch: ${(e as Error).message}`);
@@ -474,7 +482,12 @@ export default function MapView() {
                 </CircleMarker>
               );
             };
-            const points: ClusterPoint[] = filtered.map((d) => ({ id: d.id, lat: d.lat!, lon: d.lon! }));
+            const points: ClusterPoint[] = filtered.map((d) => ({
+              id: d.id,
+              lat: d.lat!,
+              lon: d.lon!,
+              threat: alertsByDetId.get(d.id),
+            }));
             if (showCluster) {
               return <ClusterLayer points={points} renderPoint={renderPoint} />;
             }

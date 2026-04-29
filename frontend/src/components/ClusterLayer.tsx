@@ -20,6 +20,10 @@ export type ClusterPoint = {
   lon: number;
   /** Optional severity / class colour hint for the cluster halo. */
   hint?: string;
+  /** D5.2 — per-point threat score 0..1. Cluster halo colour = max
+   *  threat in the bucket so a 30-marker cluster with one crit reads
+   *  red, not cyan. */
+  threat?: number;
 };
 
 type Props = {
@@ -87,14 +91,21 @@ export function ClusterLayer({ points, renderPoint, cellPx = 60, minPointsToClus
         const cLon = sumLon / bucket.length;
         const ids = bucket.map((b) => b.id).join(":");
         const radius = Math.min(28, 12 + Math.log2(bucket.length) * 4);
+        // D5.2 — colour by worst threat in the bucket.
+        const worst = bucket.reduce((m, b) => Math.max(m, b.threat ?? 0), 0);
+        const colour =
+          worst >= 0.75 ? "#ef4444"     // crit
+          : worst >= 0.55 ? "#fb923c"   // high
+          : worst >= 0.35 ? "#facc15"   // med
+          : "#22d3ee";                  // low / unknown
         return (
           <CircleMarker
             key={`cluster:${ids}`}
             center={[cLat, cLon]}
             radius={radius}
             pathOptions={{
-              color: "#22d3ee",
-              fillColor: "#22d3ee",
+              color: colour,
+              fillColor: colour,
               fillOpacity: 0.35,
               weight: 2,
             }}
