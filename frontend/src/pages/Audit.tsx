@@ -11,6 +11,7 @@ import { ExportMenu } from "../components/ExportMenu";
 import { absoluteIst, relativeTime } from "../lib/time";
 import { useStallTimeout } from "../lib/useStallTimeout";
 import { SkeletonRow } from "../components/Skeleton";
+import { AnchorStrip } from "../components/AnchorStrip";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -282,6 +283,8 @@ export default function Audit() {
           <span className="ml-auto text-muted2">recomputing every row hash...</span>
         </div>
       )}
+
+      <AnchorStrip />
 
       {/* Hero KPI strip */}
       <div className="px-6 pt-4 grid grid-cols-4 gap-3">

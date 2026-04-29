@@ -206,6 +206,25 @@ export const api = {
   provenanceKey: () => json<ProvenanceStatus>(`/api/v1/provenance/key`),
   provenanceVerify: (detection_id: number) =>
     json<ProvenanceVerify>(`/api/v1/provenance/verify/${detection_id}`),
+  anchorStatus: () =>
+    json<{
+      enabled: boolean;
+      anchor_file: string;
+      interval: number;
+      total: number;
+      last: { ts: string; count: number; tip: string; backend: string } | null;
+    }>(`/api/v1/anchor/status`),
+  anchorNow: () =>
+    json<{ ok: boolean; reason?: string; anchor?: { ts: string; count: number; tip: string; backend: string } }>(
+      `/api/v1/anchor/now`, { method: "POST" },
+    ),
+  anchorVerify: () =>
+    json<{
+      ok: boolean;
+      total: number;
+      mismatches: { count: number; ts: string; reason: string; anchored_tip?: string; live_tip?: string }[];
+      last: { ts: string; count: number; tip: string; backend: string } | null;
+    }>(`/api/v1/anchor/verify`),
   latencyMetrics: () => json<LatencyMetrics>(`/api/v1/benchmarks/latency`),
   adversarialMetrics: () => json<AdversarialMetrics>(`/api/v1/benchmarks/adversarial`),
   listMissions: (limit = 50) => json<Mission[]>(`/api/v1/ingest?limit=${limit}`),
