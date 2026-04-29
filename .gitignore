@@ -64,8 +64,5 @@ desktop.ini
 .history/
 .cache/
 .local/
-.claude/
-.cursor/
-.windsurf/
 .DS_Store
 Thumbs.db
