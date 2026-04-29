@@ -164,6 +164,19 @@ def process_mission(mission_id: int) -> dict:
         if not src.exists():
             return {"ok": False, "reason": f"source_missing: {src}"}
 
+        # v3.0/T1.1 — content-hash the source file once for provenance.
+        # Image+video paths share this; signature attribution is per-source.
+        try:
+            import hashlib
+            _hash = hashlib.sha256()
+            with src.open("rb") as _f:
+                for _chunk in iter(lambda: _f.read(1 << 20), b""):
+                    _hash.update(_chunk)
+            image_sha256 = _hash.hexdigest()
+        except Exception as exc:
+            log.warning("provenance: source hash failed for %s: %s", src, exc)
+            image_sha256 = None
+
         aoi = _aoi_from_mission(mission)
 
         # Gather frame-level detections.
@@ -249,10 +262,33 @@ def process_mission(mission_id: int) -> dict:
                     lat=lat, lon=lon,
                     track_id=r.track_id,
                     extras_json=json.dumps(extras) if extras else None,
+                    image_sha256=image_sha256,
                 )
                 db.add(det)
                 db.flush()
                 detection_count += 1
+
+                # v3.0/T1.1 — sign provenance after flush so created_at is set.
+                # Failures never break ingest (sign_detection swallows + logs).
+                if image_sha256:
+                    try:
+                        from app.services.provenance import (
+                            DetectionFields, model_hash, sign_detection,
+                        )
+                        sig = sign_detection(DetectionFields(
+                            mission_id=det.mission_id,
+                            class_id=det.class_id,
+                            class_name=det.class_name,
+                            confidence=det.confidence,
+                            x1=det.x1, y1=det.y1, x2=det.x2, y2=det.y2,
+                            image_sha256=image_sha256,
+                            model_hash=model_hash(),
+                            created_at_iso=det.created_at.isoformat() if det.created_at else "",
+                        ))
+                        if sig:
+                            det.signature_b64 = sig
+                    except Exception as exc:
+                        log.warning("provenance sign skipped for det %d: %s", det.id, exc)
 
                 score = compute_threat_score(
                     ScoreInputs(

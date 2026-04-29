@@ -10,6 +10,7 @@ import { Bezel } from "../components/Bezel";
 import { HudCornerStat } from "../components/HudOverlay";
 import { ExportMenu } from "../components/ExportMenu";
 import { HeatmapOverlay } from "../components/HeatmapOverlay";
+import { VerifyBadge } from "../components/VerifyBadge";
 import { Flame } from "lucide-react";
 
 // Friendly asset locations (must match backend config.py defaults)
@@ -426,6 +427,11 @@ export default function MapView() {
                                 .join(" · ")}
                             </span>
                           )}
+                        </div>
+                      )}
+                      {d.signature_b64 && (
+                        <div className="mt-1">
+                          <VerifyBadge detection_id={d.id} signed size="xs" />
                         </div>
                       )}
                       <div>conf: {d.confidence.toFixed(2)}</div>

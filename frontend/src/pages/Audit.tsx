@@ -61,6 +61,7 @@ export default function Audit() {
   const [chainStatus, setChainStatus] = useState<{ ok: boolean; checked: number; broken_at_id: number | null; reason?: string; genesis?: string; tip?: string } | null>(null);
   const [verifying, setVerifying] = useState(false);
   const [verifyFlash, setVerifyFlash] = useState(false);
+  const [provFp, setProvFp] = useState<string | null>(null);
   const pollRef = useRef<number | null>(null);
 
   const load = async () => {
@@ -88,6 +89,8 @@ export default function Audit() {
       })
       .catch(() => {});
     pollRef.current = window.setInterval(load, 4000);
+    // v3.0/T1.1 — fetch provenance public-key fingerprint for the footer
+    api.provenanceKey().then((s) => setProvFp(s.fingerprint ?? null)).catch(() => {});
     return () => { if (pollRef.current) window.clearInterval(pollRef.current); };
   }, []);
 
@@ -176,7 +179,17 @@ export default function Audit() {
           ) : null
         }
         subtitle={
-          <>Append-only · SHA-256 hash-chained · {events.length} events{loading && " · refreshing..."}</>
+          <>
+            Append-only · SHA-256 hash-chained · {events.length} events{loading && " · refreshing..."}
+            {provFp && (
+              <>
+                {" · "}
+                <span className="text-muted2 font-mono" title={`Server pubkey fingerprint (Ed25519): ${provFp}`}>
+                  pubkey {provFp.slice(0, 10)}…{provFp.slice(-6)}
+                </span>
+              </>
+            )}
+          </>
         }
         actions={
           <>

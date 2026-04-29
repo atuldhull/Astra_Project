@@ -38,6 +38,9 @@ ROUND2_COLUMNS: list[tuple[str, str, str]] = [
     ("audit_events", "row_hash", "ALTER TABLE audit_events ADD COLUMN row_hash VARCHAR(64)"),
     # v3.0/T0.13 — soft-delete on missions; NULL means active.
     ("missions", "deleted_at", "ALTER TABLE missions ADD COLUMN deleted_at TIMESTAMP WITH TIME ZONE"),
+    # v3.0/T1.1 — provenance signatures + image content hash on detections.
+    ("detections", "signature_b64", "ALTER TABLE detections ADD COLUMN signature_b64 VARCHAR(128)"),
+    ("detections", "image_sha256",  "ALTER TABLE detections ADD COLUMN image_sha256 VARCHAR(64)"),
 ]
 
 # Round-2 Postgres enum value additions: (enum_type, new_value).

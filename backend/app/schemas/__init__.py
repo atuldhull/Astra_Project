@@ -29,6 +29,10 @@ class DetectionOut(BaseModel):
     # Round-2: cascade output, OOD score, etc. Parsed from extras_json TEXT
     # column on the way out so the frontend gets a real object, not a string.
     extras: dict[str, Any] | None = Field(default=None, validation_alias="extras_json")
+    # v3.0/T1.1 — provenance signature + content hash. Frontend uses
+    # signature_b64 presence to decide whether to render the verify badge.
+    signature_b64: str | None = None
+    image_sha256: str | None = None
     created_at: datetime
 
     @field_validator("extras", mode="before")

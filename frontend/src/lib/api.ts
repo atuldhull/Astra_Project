@@ -33,7 +33,33 @@ export type Detection = {
   lat: number | null; lon: number | null;
   track_id: number | null;
   extras?: AirframeExtra | null;
+  // v3.0/T1.1 — Ed25519 provenance signature; presence enables the verify badge.
+  signature_b64?: string | null;
+  image_sha256?: string | null;
   created_at: string;
+};
+
+export type ProvenanceStatus = {
+  enabled: boolean;
+  key_file: string;
+  key_present: boolean;
+  fingerprint: string | null;
+  public_key_pem: string | null;
+  model_hash: string | null;
+};
+
+export type ProvenanceVerify = {
+  ok: boolean;
+  reason?: string;
+  fingerprint?: string;
+  detection_id: number;
+  signed_payload?: {
+    mission_id: number;
+    class_name: string;
+    confidence: number;
+    image_sha256_short: string;
+    model_hash_short: string;
+  };
 };
 
 /** Render the most specific label we have: airframe sub-class if MAR20
@@ -177,6 +203,9 @@ export const api = {
       `/api/v1/ingest/${mission_id}`, { method: "DELETE" },
     ),
   detectorMetrics: () => json<DetectorMetrics>(`/api/v1/benchmarks/detector`),
+  provenanceKey: () => json<ProvenanceStatus>(`/api/v1/provenance/key`),
+  provenanceVerify: (detection_id: number) =>
+    json<ProvenanceVerify>(`/api/v1/provenance/verify/${detection_id}`),
   latencyMetrics: () => json<LatencyMetrics>(`/api/v1/benchmarks/latency`),
   adversarialMetrics: () => json<AdversarialMetrics>(`/api/v1/benchmarks/adversarial`),
   listMissions: (limit = 50) => json<Mission[]>(`/api/v1/ingest?limit=${limit}`),

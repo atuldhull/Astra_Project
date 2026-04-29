@@ -81,6 +81,10 @@ class Detection(Base):
     # the MAR20 cascade result ({"airframe": "F-22", "airframe_confidence": 0.84})
     # and SAM OOD score; new producers can add keys without further migrations.
     extras_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # v3.0/T1.1 — Ed25519 provenance signature over canonical detection
+    # fields. NULL if signing was disabled or failed (never blocks ingest).
+    signature_b64: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    image_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     mission: Mapped[Mission] = relationship(back_populates="detections")
