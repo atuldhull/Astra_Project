@@ -149,6 +149,40 @@ export type AdversarialMetrics = {
   per_sample?: { sample: string; baseline: number; hardened: number }[];
 };
 
+// ── Sentinel WS payloads (D3.3) ──────────────────────────────────────
+export type SentinelDrone = {
+  id: string;
+  role: "friendly" | "foe";
+  state: "active" | "signal_lost" | "destroyed";
+  lat: number; lon: number;
+  vx_mps: number; vy_mps: number;
+  speed_mps: number;
+  signal: number;
+  trail: [number, number][];
+  range_km: number | null;
+  ttt_s: number | null;
+  category: "monitor" | "soft_kill" | "hard_kill" | null;
+  nearest_asset: string | null;
+  asset_value: number;
+};
+
+export type SentinelTick = {
+  type: "sentinel_tick";
+  t: number;
+  run_id: string;
+  scenario: string;
+  drones: SentinelDrone[];
+};
+
+export type SentinelAck = {
+  type: "sentinel_ack";
+  drone_id: string;
+  action: "soft_kill" | "hard_kill";
+  operator_id: string;
+  latency_ms: number;
+  ts: number;
+};
+
 export type ChatMessage = {
   id: number;
   mission_id: number | null;
@@ -300,6 +334,38 @@ export const api = {
     if (params.until) q.set("until", params.until);
     return `${BASE}/api/v1/audit/range-cert${q.toString() ? `?${q}` : ""}`;
   },
+  // ── Counter-Drone Sentinel (D3.3) ────────────────────────────────
+  sentinelScenarios: () =>
+    json<{
+      scenarios: Array<{
+        id: string; label: string; description: string;
+        n_drones: number; n_friendlies: number;
+      }>;
+    }>(`/api/v1/sentinel/scenarios`),
+  sentinelStatus: () =>
+    json<{
+      running: boolean;
+      run_id?: string;
+      scenario?: string;
+      started_at?: string;
+      n_drones?: number;
+      n_commands_signed?: number;
+      latency_p50_ms?: number | null;
+    }>(`/api/v1/sentinel/status`),
+  sentinelStart: (body: { scenario: string; n_drones?: number }) =>
+    json<{ run_id: string; scenario: string; n_drones: number; n_friendlies: number }>(
+      `/api/v1/sentinel/start`, { method: "POST", body: JSON.stringify(body) }
+    ),
+  sentinelStop: () =>
+    json<{ stopped: boolean; had_run: boolean }>(`/api/v1/sentinel/stop`, { method: "POST" }),
+  sentinelVerify: (drone_id: string) =>
+    json<{ ok: boolean; role?: string; drone_id?: string; reason?: string }>(
+      `/api/v1/sentinel/verify/${drone_id}`, { method: "POST" }
+    ),
+  sentinelEngage: (body: { drone_id: string; action: "soft_kill" | "hard_kill"; operator_id: string }) =>
+    json<{ ok: boolean; drone_id: string; action: string; latency_ms: number; new_state: string }>(
+      `/api/v1/sentinel/engage`, { method: "POST", body: JSON.stringify(body) }
+    ),
   ingest: async (file: File, name: string, aoi: AoiCorners) => {
     const fd = new FormData();
     fd.append("name", name);
@@ -348,6 +414,23 @@ export const DEFAULT_AOI: AoiCorners = {
 
 export function openLiveSocket(onMessage: (data: unknown) => void): WebSocket {
   const url = import.meta.env.VITE_WS_URL ?? `ws://${location.host}/ws/live`;
+  const ws = new WebSocket(url);
+  ws.onmessage = (ev) => {
+    try { onMessage(JSON.parse(ev.data)); } catch { /* ignore */ }
+  };
+  return ws;
+}
+
+/** Sentinel command-and-control feed (D3.3). 5 Hz `sentinel_tick` events
+ *  + on-demand `sentinel_ack` events. Falls back to a host-derived URL
+ *  when VITE_WS_URL is not set. */
+export function openC2Socket(onMessage: (data: unknown) => void): WebSocket {
+  // Compute the c2 URL from the configured live URL by replacing /ws/live
+  // → /ws/c2 if applicable, otherwise host-derived.
+  const liveUrl: string | undefined = import.meta.env.VITE_WS_URL;
+  const url = liveUrl
+    ? liveUrl.replace(/\/ws\/live$/, "/ws/c2")
+    : `ws://${location.host}/ws/c2`;
   const ws = new WebSocket(url);
   ws.onmessage = (ev) => {
     try { onMessage(JSON.parse(ev.data)); } catch { /* ignore */ }

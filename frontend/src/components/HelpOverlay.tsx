@@ -88,6 +88,16 @@ const ROUTE_HELP: Record<string, Section[]> = {
       "Useful for 'what changed in this AOI between yesterday and today?'",
     ]},
   ],
+  "/counter-drone": [
+    { title: "Counter-Drone Sentinel", lines: [
+      "Pick a scenario at the bottom (line-abreast / pincer / swarm-loiter) and Start.",
+      "Friendlies render green with valid Ed25519 IFF tokens; foes render red (no/expired/tampered).",
+      "Decision matrix on the right is sorted by time-to-target. <5s recommends hard-kill, <30s soft-kill.",
+      "vrfy / soft / hard buttons per row. Engage opens a confirmation modal; ack stamps server-side latency.",
+      "Every engage writes a chain-of-custody row to the audit ledger.",
+      "This is a SIMULATION. Real RF/kinetics are R4 hardware integration.",
+    ]},
+  ],
   "/chat": [
     { title: "Commander Q&A", lines: [
       "Mission-scoped: pick a mission to bind the thread.",

@@ -21,7 +21,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Activity, AlertTriangle, Anchor, GitCompareArrows, LayoutGrid, Map, MessageCircle,
+  Activity, AlertTriangle, Anchor, Crosshair, GitCompareArrows, LayoutGrid, Map, MessageCircle,
   Network, Search, Shield, ShieldCheck, ScrollText, Target, Zap, type LucideIcon,
 } from "lucide-react";
 import { api, type Alert, type Mission } from "../lib/api";
@@ -49,8 +49,9 @@ const PAGES: Array<{ to: string; label: string; sub: string; icon: LucideIcon; i
   { to: "/command",     label: "Command",       sub: "tactical wall · live overview",      icon: LayoutGrid,        ia: "operations" },
   { to: "/mission",     label: "Mission",       sub: "ingest drone image / video",         icon: Target,            ia: "operations" },
   { to: "/map",         label: "Map",           sub: "geo-pinned detections + heatmap",    icon: Map,               ia: "operations" },
-  { to: "/alerts",      label: "Threats",       sub: "threat queue + dual-control engage", icon: AlertTriangle,     ia: "operations" },
-  { to: "/audit",       label: "Audit Ledger",  sub: "hash-chained ops log",               icon: ScrollText,        ia: "operations" },
+  { to: "/alerts",         label: "Threats",        sub: "threat queue + dual-control engage", icon: AlertTriangle,    ia: "operations" },
+  { to: "/counter-drone",  label: "Counter-Drone",  sub: "Sentinel simulation · IFF + signed c2", icon: Crosshair,     ia: "operations" },
+  { to: "/audit",          label: "Audit Ledger",   sub: "hash-chained ops log",               icon: ScrollText,       ia: "operations" },
   { to: "/benchmark",   label: "Benchmark",     sub: "mAP, latency, cascade",              icon: Activity,          ia: "operations" },
   { to: "/adversarial", label: "Adversarial",   sub: "FGSM A/B with retention",            icon: Shield,            ia: "operations" },
   { to: "/federated",   label: "Federated",     sub: "FedAvg + FoolsGold dashboard",       icon: Network,           ia: "operations" },
@@ -148,6 +149,22 @@ export function CommandPalette() {
       run: () => {
         const v = toggleDemoMode();
         toast.info(`Demo mode ${v ? "ON" : "OFF"}`, v ? "operator chrome hidden" : "full UI restored");
+      },
+    });
+    list.push({
+      id: "act:sentinel-start",
+      label: "Start swarm-loiter scenario",
+      sub: "counter-drone · 13 drones · 5 friendlies",
+      icon: Crosshair,
+      group: "action", priority: 0,
+      run: async () => {
+        navigate("/counter-drone");
+        try {
+          const r = await api.sentinelStart({ scenario: "swarm-loiter" });
+          toast.success("Sentinel started", `${r.scenario} · ${r.n_drones} drones · ${r.n_friendlies} friendly`);
+        } catch (e) {
+          toast.crit("Sentinel start failed", (e as Error).message);
+        }
       },
     });
 

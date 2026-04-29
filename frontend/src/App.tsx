@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
-import { Activity, AlertTriangle, GitCompareArrows, LayoutGrid, Map, MessageCircle, Network, ScrollText, Shield, Target } from "lucide-react";
+import { Activity, AlertTriangle, Crosshair, GitCompareArrows, LayoutGrid, Map, MessageCircle, Network, ScrollText, Shield, Target } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import Command from "./pages/Command";
 import Mission from "./pages/Mission";
@@ -13,6 +13,7 @@ import Federated from "./pages/Federated";
 import MissionDiff from "./pages/MissionDiff";
 import Login from "./pages/Login";
 import Chat from "./pages/Chat";
+import CounterDrone from "./pages/CounterDrone";
 import { SplashBoot, shouldShowSplash } from "./components/SplashBoot";
 import { Sidebar } from "./components/Sidebar";
 import { TacticalBackground } from "./components/TacticalBackground";
@@ -43,8 +44,9 @@ export const NAV: NavGroup[] = [
       { to: "/command",     label: "Command",       icon: LayoutGrid },
       { to: "/mission",     label: "Mission",       icon: Target },
       { to: "/map",         label: "Map",           icon: Map },
-      { to: "/alerts",      label: "Threats",       icon: AlertTriangle },
-      { to: "/audit",       label: "Audit Ledger",  icon: ScrollText },
+      { to: "/alerts",         label: "Threats",            icon: AlertTriangle },
+      { to: "/counter-drone",  label: "Counter-Drone",      icon: Crosshair },
+      { to: "/audit",          label: "Audit Ledger",       icon: ScrollText },
       { to: "/adversarial", label: "Adversarial",   icon: Shield },
       { to: "/federated",   label: "Federated",     icon: Network },
       { to: "/benchmark",   label: "Benchmark",     icon: Activity },
@@ -86,6 +88,7 @@ export default function App() {
           <Route path="/diff" element={<ErrorBoundary scope="diff"><MissionDiff /></ErrorBoundary>} />
           <Route path="/login" element={<ErrorBoundary scope="login"><Login /></ErrorBoundary>} />
           <Route path="/chat" element={<ErrorBoundary scope="chat"><Chat /></ErrorBoundary>} />
+          <Route path="/counter-drone" element={<ErrorBoundary scope="counter-drone"><CounterDrone /></ErrorBoundary>} />
         </Routes>
       </main>
       {!demo && <OnboardingTour />}

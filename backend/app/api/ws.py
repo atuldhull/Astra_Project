@@ -41,6 +41,10 @@ class ConnectionPool:
 
 
 pool = ConnectionPool()
+# v3.0/D3.3 — separate fan-out pool for the Counter-Drone Sentinel
+# command-and-control channel. Kept distinct from /ws/live so a
+# subscriber to detections isn't pummelled by 5 Hz scenario ticks.
+c2_pool = ConnectionPool()
 
 
 @router.websocket("/ws/live")
@@ -54,3 +58,17 @@ async def live_feed(ws: WebSocket) -> None:
         await pool.disconnect(ws)
     except Exception:
         await pool.disconnect(ws)
+
+
+@router.websocket("/ws/c2")
+async def c2_feed(ws: WebSocket) -> None:
+    """Counter-Drone Sentinel state stream. 5 Hz `sentinel_tick` events
+    and on-demand `sentinel_ack` events. See app.services.sentinel."""
+    await c2_pool.connect(ws)
+    try:
+        while True:
+            _ = await ws.receive_text()
+    except WebSocketDisconnect:
+        await c2_pool.disconnect(ws)
+    except Exception:
+        await c2_pool.disconnect(ws)
