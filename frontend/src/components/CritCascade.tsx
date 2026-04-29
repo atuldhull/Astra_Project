@@ -32,19 +32,37 @@ type CritEvent = {
   at: number;        // unix ms
 };
 
+// D4.4 — alert action feed (op-2 sees op-1's confirm in real time).
+export type AlertAction = {
+  alert_id: number;
+  mission_id: number;
+  action: string;          // "engage" | "engage_partial" | "confirm" | "reject" | "reclassify" | "escalate"
+  operator_id: string;
+  status: string;          // alert.status after this action
+  confirmations?: string[];
+  needed?: number;
+  at: number;              // unix ms (client-side stamp for freshness)
+};
+
 type State = {
   // Most recent event drives the sweep animation.
   recent: CritEvent | null;
   // Acknowledged ids are dropped from the unack count.
   unack: Map<number, CritEvent>;   // keyed by alert_id (or detection_id when alert_id null)
   seen: Set<number>;                // alert_ids that have already triggered a sweep
+  // D4.4 — last action per (alert_id), 4-second freshness window enforced
+  // by the readers (no central timer to keep this lock-free).
+  actions: Map<number, AlertAction>;
 };
 
 const _state: State = {
   recent: null,
   unack: new Map(),
   seen: new Set(),
+  actions: new Map(),
 };
+
+const ACTION_FRESHNESS_MS = 4000;
 
 const listeners = new Set<(s: State) => void>();
 function emit() {
@@ -117,11 +135,32 @@ export const critCascade = {
     fn(_state);
     return () => { listeners.delete(fn); };
   },
+  /** D4.4 — push an alert_action event from the WS feed. */
+  pushAction(a: Omit<AlertAction, "at">) {
+    _state.actions.set(a.alert_id, { ...a, at: Date.now() });
+    emit();
+    // Auto-emit again after the freshness window so consumers re-render
+    // and drop the pulse — keeps the API stateless on consumers.
+    window.setTimeout(emit, ACTION_FRESHNESS_MS + 50);
+  },
+  /** Read the freshest alert_action for a given mission, if still within
+   *  the freshness window. Returns null otherwise. */
+  freshActionForMission(mission_id: number): AlertAction | null {
+    const now = Date.now();
+    let best: AlertAction | null = null;
+    for (const a of _state.actions.values()) {
+      if (a.mission_id !== mission_id) continue;
+      if (now - a.at > ACTION_FRESHNESS_MS) continue;
+      if (!best || a.at > best.at) best = a;
+    }
+    return best;
+  },
   /** Dev tool only — wipe seen so the demo can replay the same alert. */
   reset() {
     _state.recent = null;
     _state.unack.clear();
     _state.seen.clear();
+    _state.actions.clear();
     emit();
   },
 };
@@ -138,20 +177,48 @@ export function CritCascadeListener() {
       ws = openLiveSocket((msg) => {
         if (!msg || typeof msg !== "object") return;
         const m = msg as Record<string, unknown>;
-        if (m.type !== "detection") return;
-        const score = Number(m.threat_score ?? 0);
-        if (!Number.isFinite(score) || score < CRIT_THRESHOLD) return;
-        critCascade.push({
-          alert_id: (m.alert_id as number | null) ?? null,
-          detection_id: Number(m.detection_id ?? 0),
-          mission_id: Number(m.mission_id ?? 0),
-          class_name: String(m.class_name ?? "unknown"),
-          threat_score: score,
-        });
-        toast.crit(
-          `CRIT · ${m.class_name} ${score.toFixed(2)}`,
-          `Mission #${m.mission_id} · detection #${m.detection_id}`,
-        );
+        if (m.type === "detection") {
+          const score = Number(m.threat_score ?? 0);
+          if (!Number.isFinite(score) || score < CRIT_THRESHOLD) return;
+          critCascade.push({
+            alert_id: (m.alert_id as number | null) ?? null,
+            detection_id: Number(m.detection_id ?? 0),
+            mission_id: Number(m.mission_id ?? 0),
+            class_name: String(m.class_name ?? "unknown"),
+            threat_score: score,
+          });
+          toast.crit(
+            `CRIT · ${m.class_name} ${score.toFixed(2)}`,
+            `Mission #${m.mission_id} · detection #${m.detection_id}`,
+          );
+          return;
+        }
+        if (m.type === "alert_action") {
+          // D4.4 — relay op-1's action to op-2's screens.
+          const alert_id = Number(m.alert_id ?? 0);
+          const mission_id = Number(m.mission_id ?? 0);
+          const operator_id = String(m.operator_id ?? "?");
+          const action = String(m.action ?? "?");
+          if (!alert_id || !mission_id) return;
+          critCascade.pushAction({
+            alert_id,
+            mission_id,
+            action,
+            operator_id,
+            status: String(m.status ?? "?"),
+            confirmations: Array.isArray(m.confirmations) ? (m.confirmations as string[]) : undefined,
+            needed: typeof m.needed === "number" ? m.needed : undefined,
+          });
+          if (action === "engage" || action === "engage_partial") {
+            toast.warn(
+              `Alert #${alert_id} · ${operator_id} confirmed`,
+              action === "engage"
+                ? `dual-control complete — engaged`
+                : `awaiting second confirmation`,
+            );
+          }
+          return;
+        }
       });
       ws.addEventListener("close", () => {
         if (cancelled) return;
@@ -227,4 +294,32 @@ export function useCritAckOnMount() {
   useEffect(() => {
     critCascade.ackAll();
   }, []);
+}
+
+/** D4.4 — small pulsing pill that surfaces "ACKED BY <op>" on a mission
+ *  tile when an alert action lands within the freshness window. Pass
+ *  the mission_id; renders null when there's no fresh action. */
+export function AckedByPulse({ missionId }: { missionId: number }) {
+  // Re-renders whenever the cascade store emits, which it does on
+  // pushAction + the deferred timer that drops staleness.
+  const [, setN] = useState(0);
+  useEffect(() => critCascade.subscribe(() => setN((n) => n + 1)), []);
+  const action = critCascade.freshActionForMission(missionId);
+  if (!action) return null;
+  const partial = action.action === "engage_partial" && action.confirmations && action.needed
+    ? `${action.confirmations.length}/${action.needed}`
+    : null;
+  const tone =
+    action.action === "engage" ? "bg-threat-crit/20 text-threat-crit border-threat-crit/40"
+    : action.action === "engage_partial" ? "bg-amber-400/20 text-amber-300 border-amber-400/40"
+    : "bg-cyan/15 text-cyan border-cyan/40";
+  return (
+    <span
+      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider border animate-pulse ${tone}`}
+      title={`alert #${action.alert_id} · ${action.action} · ${action.operator_id}`}
+    >
+      ACKED BY {action.operator_id}
+      {partial && <span className="opacity-80">· {partial}</span>}
+    </span>
+  );
 }

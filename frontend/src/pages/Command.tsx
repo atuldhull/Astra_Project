@@ -27,6 +27,7 @@ import {
 import { api, type Alert, type AuditEvent, type Detection, type Mission } from "../lib/api";
 import { TacticalBackground } from "../components/TacticalBackground";
 import { PublicSubmitForm } from "../components/PublicSubmitForm";
+import { AckedByPulse } from "../components/CritCascade";
 import { StatusPill } from "../components/StatusPill";
 import { NumberTicker } from "../components/NumberTicker";
 import { absoluteIst, clockIst, relativeTime } from "../lib/time";
@@ -159,6 +160,7 @@ export default function Command() {
                 <li key={m.id} className="flex items-center gap-2 truncate">
                   <span className="font-mono text-muted2 shrink-0">#{m.id.toString().padStart(3, "0")}</span>
                   <span className="font-mono truncate flex-1">{m.name}</span>
+                  <AckedByPulse missionId={m.id} />
                   <span className="text-2xs text-muted2 font-mono shrink-0" title={absoluteIst(m.created_at)}>
                     {relativeTime(m.created_at)}
                   </span>

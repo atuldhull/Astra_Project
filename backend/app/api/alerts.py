@@ -18,6 +18,22 @@ router = APIRouter(prefix="/alerts", tags=["alerts"])
 ENGAGE_REQUIRED_CONFIRMATIONS = 2
 
 
+def _broadcast_action(payload: dict) -> None:
+    """v3.0/D4.4 — fire-and-forget broadcast on /ws/live so a second
+    operator's /command tile + crit cascade can show the action live.
+    Never raises — alert mutation must succeed even if the WS pool is dead."""
+    try:
+        import asyncio
+        from app.api.ws import pool as ws_pool
+        try:
+            loop = asyncio.get_running_loop()
+            loop.create_task(ws_pool.broadcast(payload))
+        except RuntimeError:
+            asyncio.run(ws_pool.broadcast(payload))
+    except Exception:  # noqa: BLE001
+        pass
+
+
 def _load_confirmations(alert: Alert) -> list[dict]:
     if not alert.confirmations_json:
         return []
@@ -122,6 +138,17 @@ def act_on_alert(
             )
         db.commit()
         db.refresh(alert)
+        _broadcast_action({
+            "type": "alert_action",
+            "alert_id": alert.id,
+            "mission_id": alert.mission_id,
+            "action": "engage" if alert.status == AlertStatus.ENGAGED else "engage_partial",
+            "operator_id": action.operator_id,
+            "status": alert.status.value,
+            "confirmations": sorted({c["operator_id"] for c in confirms}),
+            "needed": ENGAGE_REQUIRED_CONFIRMATIONS,
+            "ts": datetime.now(timezone.utc).isoformat(),
+        })
         return _to_out(alert)
 
     event_type_map = {
@@ -148,4 +175,13 @@ def act_on_alert(
     )
     db.commit()
     db.refresh(alert)
+    _broadcast_action({
+        "type": "alert_action",
+        "alert_id": alert.id,
+        "mission_id": alert.mission_id,
+        "action": action.action,
+        "operator_id": action.operator_id,
+        "status": alert.status.value,
+        "ts": datetime.now(timezone.utc).isoformat(),
+    })
     return _to_out(alert)
