@@ -524,7 +524,7 @@ def slide_architecture(c: rl_canvas.Canvas, n: int, total: int) -> None:
         ("ML — LLM",
          "Microsoft Phi-3.5-mini-instruct (Q4_K_M GGUF)",
          "llama-cpp-python 0.3 · n_ctx=2048 · CPU inference",
-         "On-device. No call to OpenAI/Anthropic/Google. Lazy-warmed at boot, ~12s for full pipeline up."),
+         "On-device. No call to any third-party hosted LLM. Lazy-warmed at boot, ~12s for full pipeline up."),
         ("Crypto",
          "Ed25519 detection signatures · SHA-256 chain",
          "cryptography 43 · base64url",
@@ -738,7 +738,7 @@ def slide_pillar_sovereign(c: rl_canvas.Canvas, n: int, total: int, data: dict) 
         kicker="06 · pillar 1 of 3",
     )
     bullets = [
-        "Phi-3.5-mini-instruct LLM runs on the same box as the detector — Q4_K_M GGUF, 2.4 GB, llama-cpp-python n_ctx=2048. No call to OpenAI / Anthropic / Google.",
+        "Phi-3.5-mini-instruct LLM runs on the same box as the detector — Q4_K_M GGUF, 2.4 GB, llama-cpp-python n_ctx=2048. No call to any third-party hosted LLM service.",
         "PostgreSQL on a Docker volume; Redis cache only. Both bind to 127.0.0.1 by default. Air-gap deployable.",
         "Map tiles default to OpenStreetMap; the AOI overlay works offline once tiles are pre-cached.",
         "Audit chain anchor file lives at D:/astra-data/anchors/log.jsonl — append-only on the operator's own disk. Round-4 swap to OpenTimestamps or a coalition partner is one env-flag away.",

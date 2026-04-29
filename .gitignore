@@ -54,9 +54,18 @@ uploads/
 cache/
 tiles/
 
-# OS / editor noise
+# OS / editor / IDE noise
 *.tmp
 *.bak
 desktop.ini
 .frontend-errors.log
+.idea/
+.vscode/
+.history/
+.cache/
+.local/
 .claude/
+.cursor/
+.windsurf/
+.DS_Store
+Thumbs.db

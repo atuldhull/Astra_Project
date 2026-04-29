@@ -319,7 +319,7 @@ Default to mode 1 for the demo. Document both.
 - Makefile with `make dev`, `make train`, `make export-onnx`, `make bench`
 
 ### Explicitly excluded
-- No OpenAI / Anthropic / Google APIs (sovereignty)
+- No third-party hosted LLM APIs (sovereignty)
 - No Firebase / Supabase (sovereignty)
 - No paid map tiles (offline OSM only)
 
