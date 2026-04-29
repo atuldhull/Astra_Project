@@ -17,6 +17,8 @@ import { Sidebar } from "./components/Sidebar";
 import { TacticalBackground } from "./components/TacticalBackground";
 import { OnboardingTour } from "./components/OnboardingTour";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { CommandPalette } from "./components/CommandPalette";
+import { HelpOverlay } from "./components/HelpOverlay";
 import { useDemoMode } from "./lib/demoMode";
 
 const nav = [
@@ -61,6 +63,8 @@ export default function App() {
         </Routes>
       </main>
       {!demo && <OnboardingTour />}
+      <CommandPalette />
+      <HelpOverlay />
       {demo && (
         <div className="fixed top-2 left-1/2 -translate-x-1/2 z-[10000] flex items-center gap-2 px-3 py-1 rounded-full glass-strong border border-accent/40 shadow-glow-accent text-2xs font-mono text-accent uppercase-wide tracking-wider pointer-events-none">
           <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
