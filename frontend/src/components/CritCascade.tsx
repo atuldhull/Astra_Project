@@ -72,6 +72,12 @@ function emit() {
 
 const CRIT_THRESHOLD = 0.75;
 const SWEEP_DURATION_MS = 1600;
+// D5.7 — per-layer cooldown so a 15-crit burst in 3s doesn't seizure
+// the UI. Each "recent" assignment honours the cooldown; subsequent
+// crits within the window still update unack/seen but don't re-fire
+// the cinematic stack.
+const CINEMATIC_COOLDOWN_MS = 1200;
+let _lastCinematicAt = 0;
 
 function _key(e: { alert_id: number | null; detection_id: number }): number {
   return e.alert_id ?? -e.detection_id; // separate namespaces
@@ -108,18 +114,27 @@ export const critCascade = {
     if (_state.seen.has(k)) return;
     _state.seen.add(k);
     const entry: CritEvent = { ...e, at: Date.now() };
-    _state.recent = entry;
+    // Always track unack (badge count must reflect every fresh crit) but
+    // only re-fire the cinematic layer when out of cooldown.
     _state.unack.set(k, entry);
-    emit();
-    _beep();
-    // Auto-clear the "recent" pointer after the sweep animation finishes
-    // so a second crit can re-trigger the sweep immediately.
-    window.setTimeout(() => {
-      if (_state.recent && _state.recent.at === entry.at) {
-        _state.recent = null;
-        emit();
-      }
-    }, SWEEP_DURATION_MS + 50);
+    const now = Date.now();
+    if (now - _lastCinematicAt >= CINEMATIC_COOLDOWN_MS) {
+      _state.recent = entry;
+      _lastCinematicAt = now;
+      emit();
+      _beep();
+      // Auto-clear the "recent" pointer after the sweep animation finishes
+      // so the next out-of-cooldown crit can re-trigger immediately.
+      window.setTimeout(() => {
+        if (_state.recent && _state.recent.at === entry.at) {
+          _state.recent = null;
+          emit();
+        }
+      }, SWEEP_DURATION_MS + 50);
+    } else {
+      // Still re-emit so the badge re-renders with the new unack count.
+      emit();
+    }
   },
   /** Acknowledge all unack crits — called on /alerts page mount. */
   ackAll() {

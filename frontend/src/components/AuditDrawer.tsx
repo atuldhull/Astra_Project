@@ -26,6 +26,9 @@ type Props = {
   scrubMs: number | null;
   /** Optional callback when a witness pulse is visible (for parent overlays). */
   onWitnessHighlight?: (peerIds: string[]) => void;
+  /** D5.7 — emits the snapshot events upward so the Mission page can
+   *  render pipeline-stage ticks on the ReplayScrubber. */
+  onSnapshot?: (snap: AuditSnapshot) => void;
 };
 
 function trunc(h: string | null | undefined, head = 8, tail = 6): string {
@@ -48,7 +51,7 @@ const EVENT_COLOURS: Record<string, string> = {
   public_report_pinned:    "#22d3ee",
 };
 
-export function AuditDrawer({ missionId, scrubMs, onWitnessHighlight }: Props) {
+export function AuditDrawer({ missionId, scrubMs, onWitnessHighlight, onSnapshot }: Props) {
   const [snapshot, setSnapshot] = useState<AuditSnapshot | null>(null);
   const [open, setOpen] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -68,6 +71,7 @@ export function AuditDrawer({ missionId, scrubMs, onWitnessHighlight }: Props) {
         const until = scrubMs != null ? new Date(scrubMs).toISOString() : undefined;
         const snap = await api.auditSnapshot(missionId, until);
         setSnapshot(snap);
+        if (onSnapshot) onSnapshot(snap);
         setErr(null);
 
         // Diff witnesses → pulse the just-arrived ones.
@@ -94,7 +98,7 @@ export function AuditDrawer({ missionId, scrubMs, onWitnessHighlight }: Props) {
       }
     }, 250); // debounce
     return () => window.clearTimeout(handle);
-  }, [missionId, scrubMs, onWitnessHighlight]);
+  }, [missionId, scrubMs, onWitnessHighlight, onSnapshot]);
 
   // When the missionId itself changes, reset the seen set so a fresh
   // mission gets fresh pulses.
@@ -179,6 +183,9 @@ export function AuditDrawer({ missionId, scrubMs, onWitnessHighlight }: Props) {
         {err && <span className="text-threat-crit normal-case tracking-normal">{err}</span>}
       </div>
 
+      {/* D5.7 — index of the last event with created_at <= scrubMs (the
+          "you are here" cursor in the chip strip). When scrubMs is null
+          we mark the rightmost; events come back ordered ascending. */}
       {/* Event chips row */}
       {open && snapshot && (
         <div
@@ -187,17 +194,29 @@ export function AuditDrawer({ missionId, scrubMs, onWitnessHighlight }: Props) {
         >
           {snapshot.events.length === 0 ? (
             <div className="text-2xs text-muted2 font-mono py-1">no audit events for this mission yet</div>
-          ) : (
-            snapshot.events.map((e) => {
+          ) : (() => {
+            const cursorIdx = (() => {
+              if (scrubMs == null) return snapshot.events.length - 1;
+              for (let i = snapshot.events.length - 1; i >= 0; i--) {
+                const ts = snapshot.events[i].created_at ? Date.parse(snapshot.events[i].created_at!) : NaN;
+                if (Number.isFinite(ts) && ts <= scrubMs) return i;
+              }
+              return -1;
+            })();
+            return snapshot.events.map((e, i) => {
               const colour = EVENT_COLOURS[e.event_type] ?? "#94a3b8";
               const witnesses = witnessByEventId[e.id] ?? [];
               const pulsing = witnesses.some((w) => pulsingIds.has(w.id));
+              const isCursor = i === cursorIdx;
               return (
                 <div
                   key={e.id}
-                  className="shrink-0 inline-flex items-center gap-1.5 px-2 py-1 rounded border bg-panel2/60 text-2xs font-mono"
-                  style={{ borderColor: colour + "40" }}
+                  className={`shrink-0 inline-flex items-center gap-1.5 px-2 py-1 rounded border bg-panel2/60 text-2xs font-mono ${
+                    isCursor ? "ring-2 ring-cyan/70 shadow-[0_0_8px_rgba(34,211,238,0.4)]" : ""
+                  }`}
+                  style={{ borderColor: isCursor ? "#22d3ee" : colour + "40" }}
                   title={[
+                    isCursor ? "▼ you are here (scrub cursor)" : "",
                     `#${e.id}  ${e.event_type}`,
                     e.operator_id ? `op: ${e.operator_id}` : "system",
                     e.row_hash ? `row_hash: ${e.row_hash}` : "",
@@ -227,8 +246,8 @@ export function AuditDrawer({ missionId, scrubMs, onWitnessHighlight }: Props) {
                   )}
                 </div>
               );
-            })
-          )}
+            });
+          })()}
         </div>
       )}
     </div>

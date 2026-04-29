@@ -45,9 +45,13 @@ cd "${BACKEND_DIR}"
 echo "[dev-restart] launching uvicorn on ${HOST}:${PORT}"
 cmd=("${PYTHON}" -m uvicorn app.main:app --host "${HOST}" --port "${PORT}" --reload)
 if ${bg}; then
+  # v3.0/D5.7 — truncate log on each restart so OpenBLAS/QueuePool spam
+  # from a previous broken session doesn't compound (the file otherwise
+  # grew into hundreds of KB of repeating errors during the rc3-rc5
+  # zombie sessions). Use `>` not `>>`.
   nohup "${cmd[@]}" >"${LOG_FILE}" 2>&1 &
   pid=$!
-  echo "[dev-restart] backend PID ${pid} (background; tail -f ${LOG_FILE})"
+  echo "[dev-restart] backend PID ${pid} (background; log truncated; tail -f ${LOG_FILE})"
 else
   exec "${cmd[@]}"
 fi

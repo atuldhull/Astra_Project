@@ -28,16 +28,32 @@ class ConnectionPool:
             self._sockets.discard(ws)
 
     async def broadcast(self, payload: dict) -> None:
+        """v3.0/D5.7 — concurrent fan-out with per-socket timeout.
+        Previous version awaited send_text serially under the lock, so
+        one slow client backed up every other subscriber. asyncio.gather
+        with a 1-second timeout per socket bounds worst-case latency."""
         text = json.dumps(payload)
+        # Snapshot under the lock; release before awaiting sends so a
+        # slow client can't block other broadcasts.
         async with self._lock:
-            dead: list[WebSocket] = []
-            for ws in self._sockets:
-                try:
-                    await ws.send_text(text)
-                except Exception:
-                    dead.append(ws)
-            for ws in dead:
-                self._sockets.discard(ws)
+            sockets = list(self._sockets)
+
+        if not sockets:
+            return
+
+        async def send_one(ws: WebSocket) -> WebSocket | None:
+            try:
+                await asyncio.wait_for(ws.send_text(text), timeout=1.0)
+                return None
+            except Exception:
+                return ws
+
+        results = await asyncio.gather(*(send_one(s) for s in sockets), return_exceptions=False)
+        dead = [s for s in results if s is not None]
+        if dead:
+            async with self._lock:
+                for ws in dead:
+                    self._sockets.discard(ws)
 
 
 pool = ConnectionPool()

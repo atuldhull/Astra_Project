@@ -51,6 +51,27 @@ function replayCounts(
   return `${visible} visible · ${ghost} ghost`;
 }
 
+// D5.7 — module-scope thumb cache. Keyed by fileUrl + totalMs so the
+// same video re-rendered after a tab switch reuses dataURLs (8 jpeg
+// dataURLs ≈ 80–120KB; cap to 8 entries for hygiene).
+const _thumbCache = new Map<string, { url: string; at: number }[]>();
+const _THUMB_CACHE_MAX = 8;
+const _thumbCacheLRU: string[] = [];
+function _cacheGet(k: string) { return _thumbCache.get(k); }
+function _cacheSet(k: string, v: { url: string; at: number }[]) {
+  _thumbCache.set(k, v);
+  const idx = _thumbCacheLRU.indexOf(k);
+  if (idx >= 0) _thumbCacheLRU.splice(idx, 1);
+  _thumbCacheLRU.push(k);
+  while (_thumbCacheLRU.length > _THUMB_CACHE_MAX) {
+    const old = _thumbCacheLRU.shift();
+    if (old) _thumbCache.delete(old);
+  }
+}
+// Re-export for the hook below; we use Map.get/set inline but keep
+// LRU eviction routed through these helpers when set.
+void _cacheGet; void _cacheSet;
+
 // Brand-aligned colors per class
 const CLASS_COLORS: Record<string, string> = {
   "small-vehicle":       "#4ade80",
@@ -130,6 +151,9 @@ export default function Mission() {
   // live-rendering logic plays. Bounds are derived below.
   const [scrubMs, setScrubMs] = useState<number | null>(null);
   const [replayPlaying, setReplayPlaying] = useState(false);
+  // D5.7 — pipeline-stage tick marks on the slider. Derived from the
+  // AuditDrawer's snapshot via onSnapshot callback.
+  const [stageMarkers, setStageMarkers] = useState<{ at: number; label: string; colour?: string }[]>([]);
 
   // Image-mode cascade results (MAR20 airframe IDs). The /predict response
   // is stage-1 only; the cascade runs in the ingest pipeline and lands in
@@ -478,13 +502,21 @@ export default function Mission() {
   // <video> element + a temp canvas because seeking the *visible* video
   // would interfere with the operator's playback. Only re-runs when the
   // file URL or the (computed) duration changes.
+  // D5.7 — module-scope cache keyed by (fileUrl, totalMs). Survives
+  // tab-switches and re-mounts so we don't regenerate every visit.
   const [thumbs, setThumbs] = useState<{ url: string; at: number }[]>([]);
   useEffect(() => {
-    setThumbs([]);
-    if (fileType !== "video" || !fileUrl || !replayBounds || replayBounds.mode !== "video") return;
+    if (fileType !== "video" || !fileUrl || !replayBounds || replayBounds.mode !== "video") {
+      setThumbs([]);
+      return;
+    }
     const N = 8;
     const totalMs = replayBounds.max - replayBounds.min;
-    if (totalMs < 2000) return;
+    if (totalMs < 2000) { setThumbs([]); return; }
+    const cacheKey = `${fileUrl}::${Math.round(totalMs)}`;
+    const cached = _thumbCache.get(cacheKey);
+    if (cached) { setThumbs(cached); return; }
+    setThumbs([]);
     let cancelled = false;
     const created: string[] = [];
     const out: { url: string; at: number }[] = [];
@@ -537,7 +569,10 @@ export default function Mission() {
           created.push(url);
           out.push({ url, at: t });
         }
-        if (!cancelled) setThumbs(out);
+        if (!cancelled) {
+          _cacheSet(cacheKey, out);
+          setThumbs(out);
+        }
       } catch { /* ignore — no thumbs is graceful */ }
     };
     run();
@@ -1134,6 +1169,7 @@ export default function Mission() {
               }
               subLabel={replayCounts(replayBounds.mode, scrubMs, videoDets, imageDbDets)}
               thumbnails={replayBounds.mode === "video" ? thumbs : undefined}
+              stageMarkers={stageMarkers}
             />
             {savedMissionId != null && (
               <AuditDrawer
@@ -1146,6 +1182,34 @@ export default function Mission() {
                     ? Date.parse(savedMission.created_at) + (scrubMs - replayBounds.min)
                     : scrubMs
                 }
+                onSnapshot={(snap) => {
+                  // D5.7 — derive stage markers in scrubber-space.
+                  const STAGE_COLOURS: Record<string, string> = {
+                    ingest_started:   "#60a5fa",
+                    ingest_completed: "#4ade80",
+                    alert_confirmed:  "#facc15",
+                    alert_escalated:  "#fb923c",
+                    alert_engaged:    "#ef4444",
+                  };
+                  const wallToScrub = (wallMs: number): number | null => {
+                    if (replayBounds.mode === "image") return wallMs;
+                    if (!savedMission?.created_at) return null;
+                    const base = Date.parse(savedMission.created_at);
+                    return replayBounds.min + (wallMs - base);
+                  };
+                  const ticks: { at: number; label: string; colour?: string }[] = [];
+                  for (const e of snap.events) {
+                    const colour = STAGE_COLOURS[e.event_type];
+                    if (!colour) continue;
+                    if (!e.created_at) continue;
+                    const wall = Date.parse(e.created_at);
+                    const at = wallToScrub(wall);
+                    if (at == null) continue;
+                    if (at < replayBounds.min || at > replayBounds.max) continue;
+                    ticks.push({ at, label: `${e.event_type} #${e.id}`, colour });
+                  }
+                  setStageMarkers(ticks);
+                }}
               />
             )}
           </>

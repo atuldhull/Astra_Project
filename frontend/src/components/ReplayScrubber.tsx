@@ -43,6 +43,10 @@ type Props = {
    *  data-URL (or http URL) + the absolute scrub position it represents.
    *  Clicking a thumb seeks to that position. */
   thumbnails?: { url: string; at: number }[];
+  /** D5.7 — optional pipeline-stage tick marks rendered above the slider.
+   *  Each tick = `{at, label, colour}`. Hovering shows the label, click
+   *  seeks. Tooltips use the formatLabel of the parent. */
+  stageMarkers?: { at: number; label: string; colour?: string }[];
 };
 
 export function ReplayScrubber({
@@ -50,7 +54,7 @@ export function ReplayScrubber({
   playing, onPlayingChange,
   formatLabel, subLabel,
   stepMs = 2000, intervalMs = 300, sliderStep = 100,
-  thumbnails,
+  thumbnails, stageMarkers,
 }: Props) {
   const valueRef = useRef(value);
   valueRef.current = value;
@@ -108,16 +112,45 @@ export function ReplayScrubber({
           reset
         </button>
 
-        <input
-          type="range"
-          min={min}
-          max={max}
-          step={sliderStep}
-          value={value}
-          onChange={(e) => onChange(Number(e.target.value))}
-          className="flex-1 accent-cyan-400 cursor-pointer"
-          aria-label="Replay scrubber"
-        />
+        <div className="flex-1 relative">
+          {/* D5.7 — pipeline stage tick marks above the slider track. */}
+          {stageMarkers && stageMarkers.length > 0 && max > min && (
+            <div className="absolute inset-x-0" style={{ top: -3, height: 6, pointerEvents: "none" }}>
+              {stageMarkers.map((m, i) => {
+                const pct = Math.max(0, Math.min(1, (m.at - min) / (max - min))) * 100;
+                const colour = m.colour ?? "#22d3ee";
+                return (
+                  <button
+                    key={i}
+                    onClick={() => onChange(m.at)}
+                    className="absolute -translate-x-1/2 transition-fast"
+                    style={{
+                      left: `${pct}%`,
+                      top: 0,
+                      width: 2,
+                      height: 6,
+                      background: colour,
+                      boxShadow: `0 0 4px ${colour}`,
+                      pointerEvents: "auto",
+                    }}
+                    title={`${m.label} · ${formatLabel(m.at)}`}
+                    aria-label={m.label}
+                  />
+                );
+              })}
+            </div>
+          )}
+          <input
+            type="range"
+            min={min}
+            max={max}
+            step={sliderStep}
+            value={value}
+            onChange={(e) => onChange(Number(e.target.value))}
+            className="w-full accent-cyan-400 cursor-pointer"
+            aria-label="Replay scrubber"
+          />
+        </div>
 
         <div className="shrink-0 min-w-[140px] text-right">
           <div className="font-mono tabular-nums text-xs text-text">
