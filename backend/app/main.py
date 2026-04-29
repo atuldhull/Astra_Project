@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api import router as api_router
 from app.api import ws_router
 from app.api import metrics_router
+from app.services.ops_metrics import metrics_middleware
 from app.config import settings
 from app.inference import detector
 
@@ -20,6 +21,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# v3.0/D5.5 — request counter + latency histogram. Must come AFTER CORS
+# so preflight OPTIONS land in the right order.
+app.middleware("http")(metrics_middleware)
 
 app.include_router(api_router)
 app.include_router(ws_router)

@@ -27,7 +27,7 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.db.models import (
-    Alert, AuditEvent, ChatMessage, Detection, MeshWitness, Mission,
+    Alert, AlertStatus, AuditEvent, ChatMessage, Detection, MeshWitness, Mission,
 )
 from app.db.session import get_db
 from app.inference import detector, ood_calib
@@ -306,6 +306,48 @@ def prometheus_metrics(db: Session = Depends(get_db)) -> Response:
             if isinstance(v, (int, float)):
                 lines.append(_ptype(f"astra_detector_{k}", "gauge", f"Detector {k} from the last capture."))
                 lines.append(f"astra_detector_{k} {v}\n")
+
+    # D5.5 — alerts by status (operationally interesting; built fresh each
+    # scrape so cancellation / status churn surfaces immediately).
+    try:
+        rows = db.execute(select(Alert.status, func.count()).group_by(Alert.status)).all()
+        if rows:
+            lines.append(_ptype(
+                "astra_alerts_by_status",
+                "gauge",
+                "Alert counts per status (pending, confirmed, rejected, escalated, engaged).",
+            ))
+            # Initialize zeros for every known status so a Grafana panel
+            # gets stable series even before any alert lands in that bucket.
+            counts: dict[str, int] = {s.value: 0 for s in AlertStatus}
+            for status, c in rows:
+                key = status.value if hasattr(status, "value") else str(status)
+                counts[key] = int(c or 0)
+            for k, v in counts.items():
+                lines.append(f'astra_alerts_by_status{{status="{k}"}} {v}\n')
+    except Exception:
+        pass
+
+    # D5.5 — request counter + latency histogram from middleware.
+    try:
+        from app.services.ops_metrics import get_state
+        state = get_state()
+        snap = list(state.snapshot_text())
+        if snap:
+            lines.append(_ptype(
+                "astra_request_total",
+                "counter",
+                "HTTP request count by endpoint, method, status.",
+            ))
+            lines.append(_ptype(
+                "astra_request_latency_seconds",
+                "histogram",
+                "HTTP request latency distribution per endpoint+method.",
+            ))
+            for line in snap:
+                lines.append(line + "\n")
+    except Exception:
+        pass
 
     body = "".join(lines)
     return FastResponse(content=body, media_type="text/plain; version=0.0.4")
