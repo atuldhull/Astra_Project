@@ -15,6 +15,7 @@ import { absoluteIst, relativeTime } from "../lib/time";
 import { useStallTimeout } from "../lib/useStallTimeout";
 import { SkeletonRow } from "../components/Skeleton";
 import { AnchorStrip } from "../components/AnchorStrip";
+import { MeshFeedPanel } from "../components/MeshFeedPanel";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 const RAIL_OPEN_KEY = "astra:auditRailOpen";
@@ -545,6 +546,11 @@ export default function Audit() {
           </div>
           <ChainVisual rows={events.slice(0, 8)} ok={chainStatus?.ok ?? null} />
         </div>
+      </div>
+
+      {/* D6.0 — Mesh witness feed (chronological, all peers) */}
+      <div className="px-6 pt-3">
+        <MeshFeedPanel />
       </div>
 
       {/* Filter chips + time-range scrubber */}

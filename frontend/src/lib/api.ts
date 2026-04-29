@@ -564,6 +564,22 @@ export const api = {
     json<RecentPublicRow[]>(`/api/v1/public/recent?limit=${limit}`),
   publicThumbnailUrl: (mission_id: number) =>
     `${BASE}/api/v1/public/thumbnail/${mission_id}`,
+  // ── Mission report PDF (D6.0 surface coverage) ───────────────────
+  missionReportUrl: (mission_id: number) =>
+    `${BASE}/api/v1/reports/mission/${mission_id}.pdf`,
+  // ── OOD calibration (T1.3) ───────────────────────────────────────
+  oodCalibration: () =>
+    json<{
+      backend: string;
+      heuristic_threshold: number;
+      available: boolean;
+      weights_path?: string;
+      captured_at?: string;
+      classes?: string[];
+      n_samples_per_class?: Record<string, number>;
+      thresholds?: Record<string, number>;
+      hint?: string;
+    }>(`/api/v1/ood/calibration`),
   // ── Health dashboard (D3.6) ──────────────────────────────────────
   healthDashboard: () => json<HealthDashboard>(`/api/v1/health/dashboard`),
   // ── Mission audit snapshot (D4.2) ────────────────────────────────

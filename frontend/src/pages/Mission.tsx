@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Upload, Play, Loader2, Zap, X, Eye, Radio, MapPin, Target, Cpu, Gauge, Layers, RotateCcw } from "lucide-react";
+import { Upload, Play, Loader2, Zap, X, Eye, Radio, MapPin, Target, Cpu, Gauge, Layers, RotateCcw, FileDown } from "lucide-react";
 import { DEFAULT_AOI, api, detectionLabel, type Detection as DbDetection, type Mission as DbMission } from "../lib/api";
 import { PageHeader } from "../components/PageHeader";
 import { HeroStat } from "../components/HeroStat";
@@ -1226,6 +1226,20 @@ export default function Mission() {
             <div className="text-xs text-muted uppercase tracking-wider mb-1">Device</div>
             <div className="font-mono text-sm">RTX 4050 Laptop · FP32</div>
           </div>
+
+          {/* D6.0 — Mission report PDF download. Only when a mission has
+              been ingested + saved (otherwise there's nothing to report on). */}
+          {savedMissionId != null && (
+            <a
+              href={api.missionReportUrl(savedMissionId)}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-center gap-2 bg-cyan/15 border border-cyan/40 text-cyan px-3 py-2 rounded text-sm font-mono uppercase-wide tracking-wider hover:bg-cyan/25 transition-fast"
+              title={`Download a per-mission PDF report for Mission #${savedMissionId} (timeline, detections summary, audit slice)`}
+            >
+              <FileDown size={14} /> mission report
+            </a>
+          )}
 
           {error && (
             <div className="bg-threat-crit/20 border border-threat-crit/40 text-threat-crit p-3 rounded text-xs">

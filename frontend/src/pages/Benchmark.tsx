@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from "recharts";
-import { Activity, Gauge, Layers, Target } from "lucide-react";
+import { Activity, Gauge, Layers, Target, ShieldQuestion } from "lucide-react";
 import { PageHeader } from "../components/PageHeader";
 import { HeroStat } from "../components/HeroStat";
 import { StatusPill } from "../components/StatusPill";
 import { api, type DetectorMetrics, type LatencyMetrics } from "../lib/api";
+import { absoluteIst, relativeTime } from "../lib/time";
 
 // R2 hardened-model numbers (kept until T3.1 PGD finetune ships).
 const R2_HARDENED_AP: Record<string, number> = {
@@ -37,13 +38,27 @@ const SHORT_NAME: Record<string, string> = {
   "aircraft-rotor":      "rotor",
 };
 
+type OodInfo = {
+  backend: string;
+  heuristic_threshold: number;
+  available: boolean;
+  weights_path?: string;
+  captured_at?: string;
+  classes?: string[];
+  n_samples_per_class?: Record<string, number>;
+  thresholds?: Record<string, number>;
+  hint?: string;
+};
+
 export default function Benchmark() {
   const [det, setDet] = useState<DetectorMetrics | null>(null);
   const [lat, setLat] = useState<LatencyMetrics | null>(null);
+  const [ood, setOod] = useState<OodInfo | null>(null);
 
   useEffect(() => {
     api.detectorMetrics().then(setDet).catch(() => setDet({ available: false }));
     api.latencyMetrics().then(setLat).catch(() => setLat({ available: false }));
+    api.oodCalibration().then(setOod).catch(() => setOod(null));
   }, []);
 
   // Per-class data: real v1 AP from API, R2 hardened constants (until T3.1).
@@ -213,6 +228,99 @@ export default function Benchmark() {
             Trained 57 min on RTX 4050 · 22,341 crops · 50 epochs (early-stop @ 46).
             <span className="block text-cyan font-mono mt-1">Best epoch: 34 · top-1 89.03%</span>
           </div>
+        </div>
+
+        {/* D6.0 — OOD calibration card (T1.3 Mahalanobis fit). Surfaced
+            here next to mAP + latency because it's the third operational
+            gate the operator should see when reading benchmarks. */}
+        <div
+          className="glass shadow-panel rounded-lg p-4 col-span-2"
+          title="Mahalanobis OOD calibration: per-class μ + pooled covariance + 99th-percentile τ. Detections with d² > τ are flagged as out-of-distribution. The system showing it knew it didn't know."
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <ShieldQuestion size={14} className="text-cyan" />
+              <div className="text-sm font-semibold">OOD calibration · "the model knows what it doesn't know"</div>
+            </div>
+            <div className="flex items-center gap-2">
+              <StatusPill
+                variant={ood?.available ? "ok" : "warn"}
+                size="sm"
+              >
+                {ood?.available ? `backend=${ood.backend ?? "mahalanobis"}` : "uncalibrated"}
+              </StatusPill>
+              {ood?.captured_at && (
+                <span
+                  className="text-2xs text-muted2 font-mono"
+                  title={absoluteIst(ood.captured_at)}
+                >
+                  fit {relativeTime(ood.captured_at)}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {!ood?.available ? (
+            <div className="text-2xs text-muted2 font-mono">
+              {ood?.hint ?? "no calibration on disk — run scripts/calibrate_ood.py"}
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-3 gap-3 mb-3">
+                <div className="bg-panel2 rounded px-3 py-2">
+                  <div className="text-2xs text-muted uppercase-wide tracking-wider">classes</div>
+                  <div className="text-xl font-mono tabular-nums">
+                    {ood.classes?.length ?? 0}
+                  </div>
+                </div>
+                <div className="bg-panel2 rounded px-3 py-2">
+                  <div className="text-2xs text-muted uppercase-wide tracking-wider">total samples</div>
+                  <div className="text-xl font-mono tabular-nums">
+                    {Object.values(ood.n_samples_per_class ?? {}).reduce((s, v) => s + v, 0)}
+                  </div>
+                </div>
+                <div className="bg-panel2 rounded px-3 py-2">
+                  <div className="text-2xs text-muted uppercase-wide tracking-wider">heuristic τ (fallback)</div>
+                  <div className="text-xl font-mono tabular-nums">
+                    {ood.heuristic_threshold.toFixed(2)}
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-2xs uppercase-wide tracking-wider text-muted2 font-mono mb-1.5">
+                per-class samples · 99th-percentile τ
+              </div>
+              <div className="space-y-1">
+                {Object.entries(ood.n_samples_per_class ?? {})
+                  .sort(([a], [b]) => a.localeCompare(b))
+                  .map(([cls, n]) => {
+                    const tau = ood.thresholds?.[cls] ?? 0;
+                    return (
+                      <div key={cls} className="flex items-center gap-3 text-2xs font-mono">
+                        <span className="text-text w-44 truncate">{cls}</span>
+                        <span className="tabular-nums text-cyan w-12 text-right">n={n}</span>
+                        <div className="flex-1 h-1.5 bg-panel rounded overflow-hidden">
+                          <div
+                            className="h-full bg-cyan/60"
+                            style={{
+                              width: `${Math.min(100, (n / Math.max(1, Math.max(...Object.values(ood.n_samples_per_class ?? {})))) * 100)}%`,
+                            }}
+                          />
+                        </div>
+                        <span className="tabular-nums text-muted w-20 text-right">τ={tau.toFixed(2)}</span>
+                      </div>
+                    );
+                  })}
+              </div>
+
+              <div className="mt-3 pt-3 border-t border-border text-2xs text-muted leading-snug">
+                Mahalanobis fit replaces the R2 conf+aspect heuristic. Detections whose
+                d² distance to class mean exceeds the per-class τ are flagged as OOD on
+                Mission/Map (dashed grey box, "?" prefix). The same fingerprint feeds
+                /health/dashboard's Calibration Freshness panel.
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
