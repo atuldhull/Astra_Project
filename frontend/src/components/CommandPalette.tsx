@@ -21,7 +21,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Activity, AlertTriangle, Anchor, Crosshair, GitCompareArrows, LayoutGrid, Map, MessageCircle,
+  Activity, AlertTriangle, Anchor, Crosshair, GitCompareArrows, Inbox, LayoutGrid, Map, MessageCircle,
   Network, Search, Shield, ShieldCheck, ScrollText, Target, Zap, type LucideIcon,
 } from "lucide-react";
 import { api, type Alert, type Mission } from "../lib/api";
@@ -56,7 +56,8 @@ const PAGES: Array<{ to: string; label: string; sub: string; icon: LucideIcon; i
   { to: "/adversarial", label: "Adversarial",   sub: "FGSM A/B with retention",            icon: Shield,            ia: "operations" },
   { to: "/federated",   label: "Federated",     sub: "FedAvg + FoolsGold dashboard",       icon: Network,           ia: "operations" },
   { to: "/chat",        label: "Brief",         sub: "commander Q&A · Phi-3.5 grounded",   icon: MessageCircle,     ia: "operations" },
-  { to: "/diff",        label: "Mission Diff",  sub: "compare two missions",               icon: GitCompareArrows,  ia: "operator"   },
+  { to: "/diff",            label: "Mission Diff",   sub: "compare two missions",                  icon: GitCompareArrows, ia: "operator"   },
+  { to: "/public-reports",  label: "Public Reports", sub: "citizen-tip triage queue · drop pin",   icon: Inbox,            ia: "operator"   },
 ];
 
 export function CommandPalette() {

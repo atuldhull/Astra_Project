@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { api, type Alert, type AuditEvent, type Detection, type Mission } from "../lib/api";
 import { TacticalBackground } from "../components/TacticalBackground";
+import { PublicSubmitForm } from "../components/PublicSubmitForm";
 import { StatusPill } from "../components/StatusPill";
 import { NumberTicker } from "../components/NumberTicker";
 import { absoluteIst, clockIst, relativeTime } from "../lib/time";
@@ -345,6 +346,11 @@ export default function Command() {
             Palantir Gotham · Anduril Lattice · TAK · generic CV vendors — none hit all three rows. ASTRA does.
           </div>
         </Tile>
+      </div>
+
+      {/* D3.5 — citizen submission flow visible on the OPERATIONS surface */}
+      <div className="px-5 pb-6">
+        <PublicSubmitForm />
       </div>
 
       {/* keep an extra background layer behind everything */}

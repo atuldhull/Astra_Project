@@ -88,6 +88,15 @@ const ROUTE_HELP: Record<string, Section[]> = {
       "Useful for 'what changed in this AOI between yesterday and today?'",
     ]},
   ],
+  "/public-reports": [
+    { title: "Public Reports · operator triage", lines: [
+      "Citizen submissions land here when no EXIF GPS is on the photo.",
+      "Click 'drop pin' on a row → world map modal → click anywhere → confirm pin.",
+      "Pinning kicks off the same pipeline as a normal /ingest.",
+      "EXIF-GPS submissions skip this queue and run automatically.",
+      "Submit form lives on /command (Operations) — drag a photo onto it.",
+    ]},
+  ],
   "/counter-drone": [
     { title: "Counter-Drone Sentinel", lines: [
       "Pick a scenario at the bottom (line-abreast / pincer / swarm-loiter) and Start.",

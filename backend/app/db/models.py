@@ -39,6 +39,9 @@ class AuditEventType(str, PyEnum):
     ALERT_CONFIRMATION = "alert_confirmation"   # Round-2: dual-control partial confirm
     ALERT_ENGAGED = "alert_engaged"              # Round-2: dual-control complete (2 ops)
     WEIGHTS_CHANGED = "weights_changed"
+    # v3.0/D3.5 — public report submission + operator-pin events.
+    PUBLIC_REPORT_SUBMITTED = "public_report_submitted"
+    PUBLIC_REPORT_PINNED = "public_report_pinned"
 
 
 class Mission(Base):
@@ -52,6 +55,15 @@ class Mission(Base):
     # Round-3 soft-delete: NULL = active, set timestamp = soft-deleted.
     # Hard-deleting would orphan detections/alerts and break the audit trail.
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
+    # v3.0/D3.5 — provenance of the mission. "operator" = uploaded via
+    # /ingest by an authorised operator (legacy default). "public-report"
+    # = submitted via /public/submit (citizen tip). reporter_id is the
+    # opaque submitter token; nullable for operator-uploaded missions.
+    source_kind: Mapped[str] = mapped_column(String(32), nullable=False, server_default="operator", index=True)
+    reporter_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    # NULL when GPS / explicit AOI is set. Set to a literal status string
+    # such as "awaiting_pin" by /public/submit when no GPS is found.
+    extras_json: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     detections: Mapped[list[Detection]] = relationship(back_populates="mission", cascade="all, delete-orphan")
     alerts: Mapped[list[Alert]] = relationship(back_populates="mission", cascade="all, delete-orphan")

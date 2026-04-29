@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
-import { Activity, AlertTriangle, Crosshair, GitCompareArrows, LayoutGrid, Map, MessageCircle, Network, ScrollText, Shield, Target } from "lucide-react";
+import { Activity, AlertTriangle, Crosshair, GitCompareArrows, Inbox, LayoutGrid, Map, MessageCircle, Network, ScrollText, Shield, Target } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import Command from "./pages/Command";
 import Mission from "./pages/Mission";
@@ -14,6 +14,7 @@ import MissionDiff from "./pages/MissionDiff";
 import Login from "./pages/Login";
 import Chat from "./pages/Chat";
 import CounterDrone from "./pages/CounterDrone";
+import PublicReports from "./pages/PublicReports";
 import { SplashBoot, shouldShowSplash } from "./components/SplashBoot";
 import { Sidebar } from "./components/Sidebar";
 import { TacticalBackground } from "./components/TacticalBackground";
@@ -57,7 +58,8 @@ export const NAV: NavGroup[] = [
     group: "operator",
     label: "OPERATOR",
     items: [
-      { to: "/diff", label: "Mission Diff", icon: GitCompareArrows },
+      { to: "/diff",            label: "Mission Diff",   icon: GitCompareArrows },
+      { to: "/public-reports",  label: "Public Reports", icon: Inbox },
     ],
   },
 ];
@@ -89,6 +91,7 @@ export default function App() {
           <Route path="/login" element={<ErrorBoundary scope="login"><Login /></ErrorBoundary>} />
           <Route path="/chat" element={<ErrorBoundary scope="chat"><Chat /></ErrorBoundary>} />
           <Route path="/counter-drone" element={<ErrorBoundary scope="counter-drone"><CounterDrone /></ErrorBoundary>} />
+          <Route path="/public-reports" element={<ErrorBoundary scope="public-reports"><PublicReports /></ErrorBoundary>} />
         </Routes>
       </main>
       {!demo && <OnboardingTour />}

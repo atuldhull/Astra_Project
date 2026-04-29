@@ -149,6 +149,32 @@ export type AdversarialMetrics = {
   per_sample?: { sample: string; baseline: number; hardened: number }[];
 };
 
+// ── Public reports (D3.5) ────────────────────────────────────────────
+export type PublicSubmitResult = {
+  mission_id: number;
+  has_gps: boolean;
+  aoi_source: string;
+  name: string;
+};
+
+export type TriageRow = {
+  mission_id: number;
+  name: string;
+  reporter_id: string | null;
+  source_path: string;
+  created_at: string;
+  caption: string | null;
+};
+
+export type RecentPublicRow = {
+  mission_id: number;
+  name: string;
+  reporter_id: string | null;
+  aoi_source: string | null;
+  status: string;       // awaiting | pinned | processing | complete
+  created_at: string;
+};
+
 // ── Mesh witnessing (D3.4) ───────────────────────────────────────────
 export type MeshPeer = {
   peer_id: string;
@@ -425,6 +451,26 @@ export const api = {
       `/api/v1/mesh/sync-demo${limit ? `?limit=${limit}` : ""}`,
       { method: "POST" },
     ),
+  // ── Public reports (D3.5) ────────────────────────────────────────
+  publicSubmit: async (file: File, reporter_id: string, caption?: string) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("reporter_id", reporter_id);
+    if (caption) fd.append("caption", caption);
+    const res = await fetch(`${BASE}/api/v1/public/submit`, { method: "POST", body: fd });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    return res.json() as Promise<PublicSubmitResult>;
+  },
+  publicPin: (mission_id: number, body: { lat: number; lon: number; operator_id: string }) =>
+    json<Mission>(`/api/v1/public/${mission_id}/pin`, {
+      method: "POST", body: JSON.stringify(body),
+    }),
+  publicTriage: (limit = 50) =>
+    json<TriageRow[]>(`/api/v1/public/triage?limit=${limit}`),
+  publicRecent: (limit = 20) =>
+    json<RecentPublicRow[]>(`/api/v1/public/recent?limit=${limit}`),
+  publicThumbnailUrl: (mission_id: number) =>
+    `${BASE}/api/v1/public/thumbnail/${mission_id}`,
   ingest: async (file: File, name: string, aoi: AoiCorners) => {
     const fd = new FormData();
     fd.append("name", name);
