@@ -21,6 +21,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import APIRouter, Depends
+from fastapi.responses import Response
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -212,3 +213,99 @@ def dashboard(
         "latency": _file_age_block(LATENCY_PATH),
         "map": _file_age_block(DETECTOR_VAL_PATH),
     }
+
+
+# ── D4.6 — Prometheus text-format metrics ────────────────────────────
+
+# Registered as a sibling at /metrics (no /health prefix) so a generic
+# Prometheus scraper can hit the conventional path. We re-export this
+# router from app.api.__init__ as a separate include without prefix.
+_metrics_router = APIRouter(tags=["metrics"])
+
+
+def _ptype(name: str, kind: str, help_text: str) -> str:
+    return f"# HELP {name} {help_text}\n# TYPE {name} {kind}\n"
+
+
+@_metrics_router.get("/metrics")
+def prometheus_metrics(db: Session = Depends(get_db)) -> Response:
+    """Prometheus exposition (text format).
+
+    Reuses the same blocks the Health page consumes — no new aggregation
+    logic. Numeric fields only; ISO timestamps + hashes are skipped.
+    The endpoint is intentionally NOT auth-gated: scrapers run as their
+    own user-agent, and the data exposed is non-sensitive operational
+    counters (no operator IDs, no audit row hashes, no detection coords).
+    """
+    from fastapi.responses import Response as FastResponse
+
+    backend = _backend_block()
+    models = _models_block()
+    db_block = _db_block(db)
+    chain = _chain_block(db)
+    ood = _ood_block()
+    errors = _errors_block()
+    latency = _file_age_block(LATENCY_PATH)
+    mapb = _file_age_block(DETECTOR_VAL_PATH)
+
+    lines: list[str] = []
+
+    # Backend
+    lines.append(_ptype("astra_uptime_seconds", "gauge", "Uptime in seconds since uvicorn boot."))
+    lines.append(f"astra_uptime_seconds {backend['uptime_s']}\n")
+    lines.append(_ptype("astra_cuda_available", "gauge", "1 if torch.cuda.is_available()."))
+    lines.append(f"astra_cuda_available {1 if backend['cuda_available'] else 0}\n")
+
+    # Models
+    lines.append(_ptype("astra_model_ready", "gauge", "Per-model readiness (1=loaded, 0=absent)."))
+    lines.append(f'astra_model_ready{{model="detector"}} {1 if models["detector_ready"] else 0}\n')
+    lines.append(f'astra_model_ready{{model="cascade"}}  {1 if models["cascade_ready"] else 0}\n')
+    lines.append(f'astra_model_ready{{model="llm"}}      {1 if models["llm_ready"] else 0}\n')
+
+    # DB rows
+    lines.append(_ptype("astra_db_rows", "gauge", "Row counts per table."))
+    for table in ("mission_count", "deleted_mission_count", "detection_count",
+                  "alert_count", "audit_count", "chat_message_count",
+                  "peer_witness_count"):
+        label = table.replace("_count", "")
+        lines.append(f'astra_db_rows{{table="{label}"}} {db_block[table]}\n')
+
+    # Chain
+    lines.append(_ptype("astra_audit_tip_id", "gauge", "Latest audit row id (chain tip)."))
+    lines.append(f"astra_audit_tip_id {chain['tip_id'] or 0}\n")
+    lines.append(_ptype("astra_anchor_total", "gauge", "Number of anchor entries in the local-file backend."))
+    lines.append(f"astra_anchor_total {chain['anchor_total']}\n")
+
+    # OOD
+    lines.append(_ptype("astra_ood_available", "gauge", "1 if a Mahalanobis OOD calibration is loaded."))
+    lines.append(f"astra_ood_available {1 if ood.get('available') else 0}\n")
+
+    # Errors
+    lines.append(_ptype("astra_frontend_errors_24h", "gauge", "Frontend ErrorBoundary reports in the last 24h."))
+    lines.append(f"astra_frontend_errors_24h {errors['count_24h']}\n")
+
+    # Latency
+    if latency and latency.get("data"):
+        d = latency["data"]
+        lines.append(_ptype("astra_ingest_latency_ms", "gauge", "Ingest→alert pipeline latency from the last capture."))
+        for q in ("p50_ms", "p95_ms", "p99_ms", "mean_ms"):
+            v = d.get(q)
+            if isinstance(v, (int, float)):
+                lines.append(f'astra_ingest_latency_ms{{quantile="{q[:-3]}"}} {v}\n')
+
+    # mAP
+    if mapb and mapb.get("data"):
+        d = mapb["data"]
+        lines.append(_ptype("astra_detector_map", "gauge", "Detector mAP from the last capture."))
+        for k, key in (("0.5", "map_50"), ("0.5_0.95", "map_50_95")):
+            v = d.get(key)
+            if isinstance(v, (int, float)):
+                lines.append(f'astra_detector_map{{iou="{k}"}} {v}\n')
+        for k in ("precision", "recall"):
+            v = d.get(k)
+            if isinstance(v, (int, float)):
+                lines.append(_ptype(f"astra_detector_{k}", "gauge", f"Detector {k} from the last capture."))
+                lines.append(f"astra_detector_{k} {v}\n")
+
+    body = "".join(lines)
+    return FastResponse(content=body, media_type="text/plain; version=0.0.4")

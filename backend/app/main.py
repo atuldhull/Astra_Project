@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import router as api_router
 from app.api import ws_router
+from app.api import metrics_router
 from app.config import settings
 from app.inference import detector
 
@@ -22,6 +23,7 @@ app.add_middleware(
 
 app.include_router(api_router)
 app.include_router(ws_router)
+app.include_router(metrics_router)
 
 
 @app.on_event("startup")

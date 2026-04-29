@@ -15,9 +15,11 @@
  * dragging the slider doesn't spam the backend.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronUp, ScrollText, ShieldCheck, Users } from "lucide-react";
+import { ChevronDown, ChevronUp, FileDown, ScrollText, ShieldCheck, Users } from "lucide-react";
 import { api, type AuditSnapshot, type AuditSnapshotWitness } from "../lib/api";
 import { absoluteIst, relativeTime } from "../lib/time";
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
 type Props = {
   missionId: number;
@@ -156,7 +158,25 @@ export function AuditDrawer({ missionId, scrubMs, onWitnessHighlight }: Props) {
           {snapshot ? `${snapshot.events.length} events` : (loading ? "loading…" : "—")}
         </span>
 
-        {err && <span className="ml-auto text-threat-crit normal-case tracking-normal">{err}</span>}
+        {/* D4.6 — Export replay clip PDF */}
+        <a
+          href={(() => {
+            const q = new URLSearchParams({ mission_id: String(missionId) });
+            if (snapshot?.events.length && snapshot.events[0].created_at) {
+              q.set("since", snapshot.events[0].created_at);
+            }
+            if (snapshot?.until_ts) q.set("until", snapshot.until_ts);
+            return `${API_BASE}/api/v1/audit/range-cert?${q}`;
+          })()}
+          target="_blank"
+          rel="noreferrer"
+          className="ml-auto inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider bg-cyan/15 text-cyan border border-cyan/40 hover:bg-cyan/25 transition-fast"
+          title="Download a tamper-evident PDF certificate covering this mission up to the scrubbed moment"
+        >
+          <FileDown size={11} /> export clip
+        </a>
+
+        {err && <span className="text-threat-crit normal-case tracking-normal">{err}</span>}
       </div>
 
       {/* Event chips row */}

@@ -238,18 +238,25 @@ def operator_activity(
 def audit_range_cert(
     since: Optional[datetime] = Query(None, description="inclusive lower bound"),
     until: Optional[datetime] = Query(None, description="inclusive upper bound"),
+    mission_id: Optional[int] = Query(None, description="optional mission filter — D4.6 replay-clip"),
     db: Session = Depends(get_db),
 ) -> Response:
     """Generate a self-contained certificate PDF for the [since, until]
     window. Either bound may be omitted (open-ended). Always renders
     chronologically (ascending by id) so the start_hash / end_hash
     bookend the range correctly.
+
+    D4.6: passing mission_id narrows the certificate to a single
+    mission's events — used as the "Export replay clip" download from
+    the Mission Replay Scrubber.
     """
     stmt = select(AuditEvent).order_by(AuditEvent.id.asc())
     if since is not None:
         stmt = stmt.where(AuditEvent.created_at >= since)
     if until is not None:
         stmt = stmt.where(AuditEvent.created_at <= until)
+    if mission_id is not None:
+        stmt = stmt.where(AuditEvent.mission_id == mission_id)
     rows = db.execute(stmt).scalars().all()
     if not rows:
         raise HTTPException(404, "no events in this window")
@@ -278,10 +285,15 @@ def audit_range_cert(
         by_event_type=by_event_type,
         generated_by="astra-backend",
     )
+    fname = (
+        f"astra-replay-clip-mission-{mission_id}.pdf"
+        if mission_id is not None
+        else "astra-audit-range-cert.pdf"
+    )
     return Response(
         content=pdf,
         media_type="application/pdf",
         headers={
-            "Content-Disposition": 'inline; filename="astra-audit-range-cert.pdf"',
+            "Content-Disposition": f'inline; filename="{fname}"',
         },
     )
