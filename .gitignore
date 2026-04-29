@@ -59,3 +59,4 @@ tiles/
 *.bak
 desktop.ini
 .frontend-errors.log
+.claude/
