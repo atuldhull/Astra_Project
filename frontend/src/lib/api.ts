@@ -175,6 +175,32 @@ export type RecentPublicRow = {
   created_at: string;
 };
 
+// ── Mission audit snapshot (D4.2) ────────────────────────────────────
+export type AuditSnapshotEvent = {
+  id: number;
+  event_type: string;
+  operator_id: string | null;
+  mission_id: number | null;
+  alert_id: number | null;
+  row_hash: string | null;
+  prev_hash: string | null;
+  created_at: string | null;
+};
+export type AuditSnapshotWitness = {
+  id: number;
+  peer_id: string;
+  audit_row_id: number | null;
+  row_hash: string;
+  witnessed_at: string | null;
+};
+export type AuditSnapshot = {
+  mission_id: number;
+  until_ts: string;
+  events: AuditSnapshotEvent[];
+  tip: { id: number | null; row_hash: string | null; created_at: string | null };
+  witnesses: AuditSnapshotWitness[];
+};
+
 // ── Health dashboard (D3.6) ──────────────────────────────────────────
 export type HealthDashboard = {
   captured_at: string;
@@ -531,6 +557,12 @@ export const api = {
     `${BASE}/api/v1/public/thumbnail/${mission_id}`,
   // ── Health dashboard (D3.6) ──────────────────────────────────────
   healthDashboard: () => json<HealthDashboard>(`/api/v1/health/dashboard`),
+  // ── Mission audit snapshot (D4.2) ────────────────────────────────
+  auditSnapshot: (mission_id: number, until_ts?: string) => {
+    const q = new URLSearchParams({ mission_id: String(mission_id) });
+    if (until_ts) q.set("until_ts", until_ts);
+    return json<AuditSnapshot>(`/api/v1/audit/snapshot?${q}`);
+  },
   ingest: async (file: File, name: string, aoi: AoiCorners) => {
     const fd = new FormData();
     fd.append("name", name);

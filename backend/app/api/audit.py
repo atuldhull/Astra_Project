@@ -97,6 +97,94 @@ def verify_audit_row(row_id: int, db: Session = Depends(get_db)) -> dict:
     return verify_row(db, row_id)
 
 
+# ── Mission snapshot (D4.2) ──────────────────────────────────────────
+
+@router.get("/snapshot")
+def audit_snapshot(
+    mission_id: int = Query(..., description="mission to snapshot"),
+    until_ts: datetime | None = Query(None, description="cutoff (inclusive); default = now"),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Return the audit-chain state *as of* `until_ts` for one mission.
+
+    Used by the Mission Replay Scrubber (D4.2). When the operator scrubs
+    to time T, the UI fetches:
+      • events: the mission's audit rows where created_at <= T
+      • tip:    the LATEST audit row (mission-scoped or otherwise) at
+                or before T — that's the chain head the system would
+                report at that moment
+      • witnesses: mesh_witnesses whose witnessed_at <= T, joined to
+                   the events in this snapshot
+
+    The frontend renders this as a "ledger drawer" + "tip-as-of-T" badge
+    + a witness pulse animation when scrubbing past a witness event.
+    """
+    from app.db.models import MeshWitness  # local import to avoid cycle in tests
+
+    until = until_ts or datetime.now(timezone.utc)
+
+    # Mission-scoped events ≤ T
+    ev_stmt = (
+        select(AuditEvent)
+        .where(AuditEvent.mission_id == mission_id)
+        .where(AuditEvent.created_at <= until)
+        .order_by(AuditEvent.id.asc())
+    )
+    events = db.execute(ev_stmt).scalars().all()
+
+    # Tip-as-of-T: the latest audit row (any mission) ≤ T. The tip the
+    # system would have reported at exactly that moment.
+    tip_stmt = (
+        select(AuditEvent.id, AuditEvent.row_hash, AuditEvent.created_at)
+        .where(AuditEvent.created_at <= until)
+        .order_by(AuditEvent.id.desc()).limit(1)
+    )
+    tip_row = db.execute(tip_stmt).first()
+
+    # Witnesses pinned to any event in this snapshot, witnessed by ≤ T.
+    event_ids = [e.id for e in events]
+    witnesses: list[dict] = []
+    if event_ids:
+        w_stmt = (
+            select(MeshWitness)
+            .where(MeshWitness.audit_row_id.in_(event_ids))
+            .where(MeshWitness.witnessed_at <= until)
+            .order_by(MeshWitness.witnessed_at.asc())
+        )
+        for w in db.execute(w_stmt).scalars().all():
+            witnesses.append({
+                "id": w.id,
+                "peer_id": w.peer_id,
+                "audit_row_id": w.audit_row_id,
+                "row_hash": w.row_hash,
+                "witnessed_at": w.witnessed_at.isoformat() if w.witnessed_at else None,
+            })
+
+    return {
+        "mission_id": mission_id,
+        "until_ts": until.isoformat(),
+        "events": [
+            {
+                "id": e.id,
+                "event_type": e.event_type.value if hasattr(e.event_type, "value") else str(e.event_type),
+                "operator_id": e.operator_id,
+                "mission_id": e.mission_id,
+                "alert_id": e.alert_id,
+                "row_hash": e.row_hash,
+                "prev_hash": e.prev_hash,
+                "created_at": e.created_at.isoformat() if e.created_at else None,
+            }
+            for e in events
+        ],
+        "tip": {
+            "id": int(tip_row[0]) if tip_row else None,
+            "row_hash": tip_row[1] if tip_row else None,
+            "created_at": tip_row[2].isoformat() if tip_row and tip_row[2] else None,
+        },
+        "witnesses": witnesses,
+    }
+
+
 # ── Operator activity (histogram inside a window) ────────────────────
 
 @router.get("/operator-activity")

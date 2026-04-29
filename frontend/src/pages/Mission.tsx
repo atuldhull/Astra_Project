@@ -9,6 +9,7 @@ import { toast } from "../components/Toast";
 import { Bezel } from "../components/Bezel";
 import { HudCornerStat, HudRecBadge, HudCrosshair, HudThreatBar } from "../components/HudOverlay";
 import { ReplayScrubber } from "../components/ReplayScrubber";
+import { AuditDrawer } from "../components/AuditDrawer";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -1029,20 +1030,35 @@ export default function Mission() {
         </div></Bezel>
 
         {replayBounds && scrubMs != null && (
-          <ReplayScrubber
-            min={replayBounds.min}
-            max={replayBounds.max}
-            value={scrubMs}
-            onChange={setScrubMs}
-            playing={replayPlaying}
-            onPlayingChange={setReplayPlaying}
-            formatLabel={(v) =>
-              replayBounds.mode === "video"
-                ? formatVideoClock(v - replayBounds.min, replayBounds.max - replayBounds.min)
-                : new Date(v).toLocaleTimeString("en-IN", { hour12: false, timeZone: "Asia/Kolkata" }) + " IST"
-            }
-            subLabel={replayCounts(replayBounds.mode, scrubMs, videoDets, imageDbDets)}
-          />
+          <>
+            <ReplayScrubber
+              min={replayBounds.min}
+              max={replayBounds.max}
+              value={scrubMs}
+              onChange={setScrubMs}
+              playing={replayPlaying}
+              onPlayingChange={setReplayPlaying}
+              formatLabel={(v) =>
+                replayBounds.mode === "video"
+                  ? formatVideoClock(v - replayBounds.min, replayBounds.max - replayBounds.min)
+                  : new Date(v).toLocaleTimeString("en-IN", { hour12: false, timeZone: "Asia/Kolkata" }) + " IST"
+              }
+              subLabel={replayCounts(replayBounds.mode, scrubMs, videoDets, imageDbDets)}
+            />
+            {savedMissionId != null && (
+              <AuditDrawer
+                missionId={savedMissionId}
+                scrubMs={
+                  // Video bounds are 0..duration (relative); map to wall-clock by
+                  // anchoring at the mission's created_at. Image bounds are already
+                  // wall-clock ms.
+                  replayBounds.mode === "video" && savedMission?.created_at
+                    ? Date.parse(savedMission.created_at) + (scrubMs - replayBounds.min)
+                    : scrubMs
+                }
+              />
+            )}
+          </>
         )}
 
         </div>
