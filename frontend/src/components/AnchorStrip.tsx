@@ -12,7 +12,7 @@
  *   • Hover to see last anchor timestamp + tip
  */
 import { useEffect, useState } from "react";
-import { Anchor, Loader2, ShieldCheck, ShieldAlert } from "lucide-react";
+import { Anchor, Loader2, ShieldCheck, ShieldAlert, Network } from "lucide-react";
 import { api } from "../lib/api";
 import { absoluteIst, relativeTime } from "../lib/time";
 
@@ -30,16 +30,35 @@ export function AnchorStrip() {
   const [busyAnchor, setBusyAnchor] = useState(false);
   const [busyVerify, setBusyVerify] = useState(false);
   const [verifyResult, setVerifyResult] = useState<VerifyResult | null>(null);
+  // D3.4 — peer count for the inline metric (read-only here; actual sync
+  // lives on the Audit page header).
+  const [peerCount, setPeerCount] = useState<number | null>(null);
+  const [lastMeshSync, setLastMeshSync] = useState<string | null>(null);
 
   async function refreshStatus() {
     try {
       const s = await api.anchorStatus();
       setStatus(s);
     } catch { /* ignore */ }
+    try {
+      const p = await api.meshPeers();
+      setPeerCount(p.n_peers);
+    } catch { /* mesh is optional */ }
   }
 
   useEffect(() => {
     refreshStatus();
+    // localStorage receives the last sync ts from the Audit page when
+    // syncMesh runs there — read it here for the strip.
+    try {
+      const ts = localStorage.getItem("astra:meshLastSync");
+      if (ts) setLastMeshSync(ts);
+    } catch { /* noop */ }
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "astra:meshLastSync" && e.newValue) setLastMeshSync(e.newValue);
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
   }, []);
 
   async function anchorNow() {
@@ -90,6 +109,16 @@ export function AnchorStrip() {
           last: <span className="text-text">{relativeTime(last.ts)}</span> ·
           tip <span className="text-text">{last.tip.slice(0, 10)}…{last.tip.slice(-6)}</span> ·
           @ count <span className="text-text">{last.count}</span>
+        </div>
+      )}
+
+      {peerCount != null && (
+        <div className="text-muted2 font-mono flex items-center gap-1.5" title="Cross-agency peers configured to witness the audit chain">
+          <Network size={11} className="text-cyan" />
+          <span>peers witnessing: <span className="text-text tabular-nums">{peerCount}</span></span>
+          {lastMeshSync && (
+            <span className="opacity-60" title={absoluteIst(lastMeshSync)}>· last sync {relativeTime(lastMeshSync)}</span>
+          )}
         </div>
       )}
 

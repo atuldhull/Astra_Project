@@ -43,6 +43,19 @@ ROUND2_COLUMNS: list[tuple[str, str, str]] = [
     ("detections", "image_sha256",  "ALTER TABLE detections ADD COLUMN image_sha256 VARCHAR(64)"),
 ]
 
+# v3.0/D3.4 — additive index on the new mesh_witnesses table. The table
+# itself is created by Base.metadata.create_all (declarative); we add the
+# composite-unique index here because SQLAlchemy declarative is finicky
+# with table_args under our import-order pattern, and this is the simpler
+# idempotent path.
+ROUND3_INDEXES: list[tuple[str, str]] = [
+    (
+        "uq_mesh_witnesses_row_peer",
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_mesh_witnesses_row_peer "
+        "ON mesh_witnesses (audit_row_id, peer_id)",
+    ),
+]
+
 # Round-2 Postgres enum value additions: (enum_type, new_value).
 # Postgres enums are static — `Base.metadata.create_all` won't add new
 # values to a pre-existing type. Each is wrapped in a separate transaction
@@ -75,6 +88,15 @@ def main() -> None:
                 continue
             print(f"  [add]  {table}.{column}")
             conn.execute(text(ddl))
+
+    print("\nApplying Round-3 index additions (if absent)...")
+    with engine.begin() as conn:
+        for name, ddl in ROUND3_INDEXES:
+            try:
+                conn.execute(text(ddl))
+                print(f"  [ok]   {name} ensured")
+            except Exception as exc:
+                print(f"  [warn] {name}: {exc}")
 
     print("\nApplying Round-2 enum value additions (if absent)...")
     # Postgres-only — no-op on SQLite/MySQL where enums are different.

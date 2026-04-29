@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Loader2, RefreshCw, Search, FileDown, ShieldCheck, ShieldAlert, Link2,
-  ScrollText, Database, Hash, Users, FileText, ChevronsLeft, ChevronsRight,
+  ScrollText, Database, Hash, Users, FileText, ChevronsLeft, ChevronsRight, Network,
 } from "lucide-react";
-import { api, type AuditEvent, type Mission } from "../lib/api";
+import { api, type AuditEvent, type Mission, type MeshWitness } from "../lib/api";
 import { PageHeader } from "../components/PageHeader";
 import { HeroStat } from "../components/HeroStat";
 import { StatusPill } from "../components/StatusPill";
@@ -135,6 +135,10 @@ export default function Audit() {
     system_events: number;
     total: number;
   } | null>(null);
+  // D3.4 — mesh witness state
+  const [witnessesByRow, setWitnessesByRow] = useState<Record<number, MeshWitness[]>>({});
+  const [meshPeerCount, setMeshPeerCount] = useState<number>(0);
+  const [syncingMesh, setSyncingMesh] = useState(false);
   const pollRef = useRef<number | null>(null);
 
   // Persist rail toggle
@@ -168,12 +172,50 @@ export default function Audit() {
     }
   }, [buildParams]);
 
+  // D3.4 — pull witnesses for the events we just rendered.
+  const loadWitnesses = useCallback(async (eventIds: number[]) => {
+    if (eventIds.length === 0) {
+      setWitnessesByRow({});
+      return;
+    }
+    try {
+      const r = await api.meshWitnesses(eventIds);
+      const next: Record<number, MeshWitness[]> = {};
+      for (const [k, v] of Object.entries(r.by_row)) next[Number(k)] = v;
+      setWitnessesByRow(next);
+      setMeshPeerCount(r.n_peers);
+    } catch { /* silent — mesh is optional */ }
+  }, []);
+
+  async function syncMesh() {
+    setSyncingMesh(true);
+    try {
+      const r = await api.meshSyncDemo(100);
+      toast.success(
+        "Mesh sync complete",
+        `${r.witnesses_added} added · ${r.skipped} cached · ${r.refused_due_to_tampering} refused`,
+      );
+      try { localStorage.setItem("astra:meshLastSync", r.last_sync_ts); } catch { /* noop */ }
+      await load();
+      await loadWitnesses(events.map((e) => e.id).slice(0, 200));
+    } catch (e) {
+      toast.crit("Mesh sync failed", (e as Error).message);
+    } finally {
+      setSyncingMesh(false);
+    }
+  }
+
   const loadActivity = useCallback(async () => {
     try {
       const a = await api.operatorActivity({ since: since || undefined, until: until || undefined });
       setActivity(a);
     } catch { /* rail is optional — don't pollute the error banner */ }
   }, [since, until]);
+
+  // Whenever the visible events list changes, refresh witness pills.
+  useEffect(() => {
+    loadWitnesses(events.map((e) => e.id).slice(0, 200));
+  }, [events, loadWitnesses]);
 
   // Initial + poll. Filter changes reset the poll loop.
   useEffect(() => {
@@ -399,6 +441,15 @@ export default function Audit() {
               verify chain
             </button>
             <button
+              onClick={syncMesh}
+              disabled={syncingMesh}
+              className="flex items-center gap-1 glass border border-border px-3 py-1.5 rounded text-xs hover:bg-panel2 disabled:opacity-50 transition-fast"
+              title="Trigger demo peer agencies to pull, verify, and witness the chain"
+            >
+              {syncingMesh ? <Loader2 size={12} className="animate-spin" /> : <Network size={12} />}
+              sync mesh
+            </button>
+            <button
               onClick={downloadCert}
               disabled={!since && !until}
               className="flex items-center gap-1 bg-cyan/20 border border-cyan/40 text-cyan px-3 py-1.5 rounded text-xs hover:bg-cyan/30 disabled:opacity-40 disabled:cursor-not-allowed transition-fast"
@@ -596,10 +647,16 @@ export default function Audit() {
           ) : (
             filtered.map((e) => {
               const rv = rowVerify[e.id] ?? { state: "idle" as const };
+              const w = witnessesByRow[e.id] ?? [];
+              const wTotal = meshPeerCount || 2;
+              const wTone = w.length === 0 ? "muted" : w.length < wTotal ? "warn" : "ok";
+              const wTooltip = w.length === 0
+                ? `No peers have witnessed this row yet. Click 'sync mesh' to trigger demo peers.`
+                : w.map((x) => `${x.peer_id} · ${x.witnessed_at?.slice(0, 19) ?? "—"}`).join("\n");
               return (
                 <div
                   key={e.id}
-                  className="border-b border-border last:border-0 px-4 py-2.5 grid grid-cols-[160px_90px_180px_1fr_auto] gap-3 hover:bg-panel2 items-center"
+                  className="border-b border-border last:border-0 px-4 py-2.5 grid grid-cols-[160px_90px_180px_1fr_auto_auto] gap-3 hover:bg-panel2 items-center"
                 >
                   <span className="text-muted" title={absoluteIst(e.created_at)}>{relativeTime(e.created_at)}</span>
                   <span className="text-accent">{e.operator_id ?? "system"}</span>
@@ -607,6 +664,19 @@ export default function Audit() {
                     {e.event_type}
                   </span>
                   <span className="text-text truncate">{describe(e)}</span>
+                  <span
+                    className={`text-2xs font-mono uppercase-wide tracking-wider px-2 py-0.5 rounded border shrink-0 ${
+                      wTone === "ok"
+                        ? "border-threat-low/40 bg-threat-low/10 text-threat-low"
+                        : wTone === "warn"
+                        ? "border-threat-high/40 bg-threat-high/10 text-threat-high"
+                        : "border-border text-muted2 bg-panel2/40"
+                    }`}
+                    title={wTooltip}
+                  >
+                    <Network size={9} className="inline mr-1" />
+                    {w.length}/{wTotal}
+                  </span>
                   <button
                     onClick={() => verifyRow(e.id)}
                     disabled={rv.state === "loading"}

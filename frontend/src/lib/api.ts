@@ -149,6 +149,19 @@ export type AdversarialMetrics = {
   per_sample?: { sample: string; baseline: number; hardened: number }[];
 };
 
+// ── Mesh witnessing (D3.4) ───────────────────────────────────────────
+export type MeshPeer = {
+  peer_id: string;
+  key_present: boolean;
+  public_key_pem: string;
+};
+
+export type MeshWitness = {
+  peer_id: string;
+  witnessed_at: string | null;
+  row_hash: string;
+};
+
 // ── Sentinel WS payloads (D3.3) ──────────────────────────────────────
 export type SentinelDrone = {
   id: string;
@@ -365,6 +378,52 @@ export const api = {
   sentinelEngage: (body: { drone_id: string; action: "soft_kill" | "hard_kill"; operator_id: string }) =>
     json<{ ok: boolean; drone_id: string; action: string; latency_ms: number; new_state: string }>(
       `/api/v1/sentinel/engage`, { method: "POST", body: JSON.stringify(body) }
+    ),
+  // ── Mesh (D3.4) ──────────────────────────────────────────────────
+  meshPeers: () =>
+    json<{ peers: MeshPeer[]; peers_dir: string; n_peers: number; peer_ids: string[] }>(
+      `/api/v1/mesh/peers`,
+    ),
+  meshFeed: (params?: { since_id?: number; limit?: number }) => {
+    const q = new URLSearchParams();
+    if (params?.since_id != null) q.set("since_id", String(params.since_id));
+    if (params?.limit != null) q.set("limit", String(params.limit));
+    const qs = q.toString();
+    return json<{
+      since_id: number;
+      count: number;
+      events: Array<{
+        id: number;
+        event_type: string;
+        operator_id: string | null;
+        mission_id: number | null;
+        alert_id: number | null;
+        payload: Record<string, unknown> | null;
+        prev_hash: string | null;
+        row_hash: string | null;
+        created_at: string | null;
+      }>;
+    }>(`/api/v1/mesh/feed${qs ? `?${qs}` : ""}`);
+  },
+  meshWitnesses: (audit_row_ids: number[]) => {
+    const ids = audit_row_ids.join(",");
+    return json<{
+      by_row: Record<string, MeshWitness[]>;
+      n_peers: number;
+    }>(`/api/v1/mesh/witnesses?audit_row_ids=${encodeURIComponent(ids)}`);
+  },
+  meshSyncDemo: (limit?: number) =>
+    json<{
+      ok: boolean;
+      rows_seen: number;
+      peers: string[];
+      witnesses_added: number;
+      skipped: number;
+      refused_due_to_tampering: number;
+      last_sync_ts: string;
+    }>(
+      `/api/v1/mesh/sync-demo${limit ? `?limit=${limit}` : ""}`,
+      { method: "POST" },
     ),
   ingest: async (file: File, name: string, aoi: AoiCorners) => {
     const fd = new FormData();

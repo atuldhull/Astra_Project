@@ -139,6 +139,28 @@ class ChatMessage(Base):
     )
 
 
+class MeshWitness(Base):
+    """v3.0/T D3.4 — cross-agency audit witnessing.
+
+    Peer agencies pull our chain, verify locally with the same _row_hash
+    primitive we use, and post Ed25519 signatures over (peer_id ||
+    audit_row_id || row_hash). One row per (audit_row, peer) pair —
+    re-witnessing is a no-op (idempotent on the unique index).
+    """
+    __tablename__ = "mesh_witnesses"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    peer_id: Mapped[str] = mapped_column(String(64), index=True)
+    audit_row_id: Mapped[int | None] = mapped_column(
+        ForeignKey("audit_events.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    row_hash: Mapped[str] = mapped_column(String(64), index=True)
+    peer_signature_b64: Mapped[str] = mapped_column(String(128))
+    witnessed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), index=True
+    )
+
+
 class AuditEvent(Base):
     """Append-only log. Never UPDATE or DELETE rows here.
 
