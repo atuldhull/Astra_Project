@@ -7,7 +7,7 @@ import { StatusPill } from "../components/StatusPill";
 import { EmptyState } from "../components/EmptyState";
 import { toast } from "../components/Toast";
 import { useCritAckOnMount, useEngageHandoff } from "../components/CritCascade";
-import { AlertVerifyBadge } from "../components/AlertVerifyBadge";
+import { AlertVerifyBadge, seedAlertVerifyRows } from "../components/AlertVerifyBadge";
 import { AlertRowPulse } from "../components/CritCascade";
 import { ThreatWaveform } from "../components/ThreatWaveform";
 import { ExportMenu } from "../components/ExportMenu";
@@ -119,6 +119,14 @@ export default function Alerts() {
         const m = new Map<number, DetClass>();
         for (const d of dets) m.set(d.id, { class_id: d.class_id, class_name: d.class_name, confidence: d.confidence });
         setDetMap(m);
+        // D5.7b — pre-fetch the latest audit row id per alert in one call so
+        // every AlertVerifyBadge skips its list-fetch step. Falls back to
+        // per-badge fetch on error (the badge handles cold path itself).
+        if (a.length > 0) {
+          api.auditLatestByAlert(a.map((x) => x.id))
+            .then((r) => { if (!cancelled) seedAlertVerifyRows(r.by_alert); })
+            .catch(() => { /* per-badge cold fetch still works */ });
+        }
       } catch (e) {
         if (!cancelled) setError(`alerts: ${(e as Error).message}`);
       } finally {

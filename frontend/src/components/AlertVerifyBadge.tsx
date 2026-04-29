@@ -32,6 +32,29 @@ type Props = {
 
 const _cache = new Map<number, { row: AuditEvent | null; verify: VerifyResult | null }>();
 
+/** D5.7b — seed the cache with an alert→row_id mapping pre-fetched in
+ *  one batch by the parent. The verify popover will still call the
+ *  chain-walk endpoint on click, but the list-fetch step is skipped. */
+export function seedAlertVerifyRows(map: Record<string, number | null>) {
+  for (const [k, v] of Object.entries(map)) {
+    const id = Number(k);
+    if (!Number.isFinite(id)) continue;
+    // Don't blast over an already-populated entry that has a verify result.
+    if (_cache.has(id) && _cache.get(id)?.verify != null) continue;
+    if (v == null) {
+      _cache.set(id, { row: null, verify: null });
+    } else {
+      // We only know the row id; the actual AuditEvent shape isn't here.
+      // Stash a partial row stub; ensure() below will fall through to a
+      // direct verify-row/{id} call instead of listAudit.
+      _cache.set(id, {
+        row: { id: v, event_type: "?", operator_id: null, mission_id: null, alert_id: id, payload_json: null, prev_hash: null, row_hash: null, created_at: "" } as unknown as AuditEvent,
+        verify: null,
+      });
+    }
+  }
+}
+
 function trunc(h: string | null | undefined, head = 8, tail = 6): string {
   if (!h) return "—";
   if (h.length <= head + tail + 1) return h;
@@ -47,11 +70,33 @@ export function AlertVerifyBadge({ alertId, size = "xs" }: Props) {
   const popRef = useRef<HTMLDivElement>(null);
 
   const ensure = async () => {
-    if (_cache.has(alertId)) {
-      const c = _cache.get(alertId)!;
-      setRow(c.row); setVerify(c.verify);
+    const cached = _cache.get(alertId);
+    // Fully resolved (row + verify) → just sync.
+    if (cached && cached.verify != null) {
+      setRow(cached.row); setVerify(cached.verify);
       return;
     }
+    // Partial (seeded row, no verify) → skip listAudit, go straight to walk.
+    if (cached && cached.row && cached.verify == null && cached.row.id) {
+      setLoading(true);
+      try {
+        const v = await api.verifyAuditRow(cached.row.id);
+        _cache.set(alertId, { row: cached.row, verify: v });
+        setRow(cached.row); setVerify(v);
+        setErr(null);
+      } catch (e) {
+        setErr((e as Error).message);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+    // Seeded as known-empty (alert has no audit row) → no-op.
+    if (cached && cached.row == null) {
+      setRow(null); setVerify(null);
+      return;
+    }
+    // Cold path — fetch list + walk.
     setLoading(true);
     try {
       const rows = await api.listAudit({ alert_id: alertId, limit: 1 });

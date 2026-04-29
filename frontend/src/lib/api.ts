@@ -427,6 +427,11 @@ export const api = {
     const qs = q.toString();
     return json<AuditEvent[]>(`/api/v1/audit${qs ? `?${qs}` : ""}`);
   },
+  // v3.0/D5.7b — batch latest-row-id lookup per alert (pre-fetch helper)
+  auditLatestByAlert: (alert_ids: number[]) =>
+    json<{ by_alert: Record<string, number | null> }>(
+      `/api/v1/audit/latest-by-alert?alert_ids=${alert_ids.join(",")}`,
+    ),
   // v3.0/D3.2 — chain operations
   verifyAuditRow: (row_id: number) =>
     json<{

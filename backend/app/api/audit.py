@@ -93,6 +93,36 @@ def verify_audit_chain(db: Session = Depends(get_db)) -> dict:
     return verify_chain(db)
 
 
+@router.get("/latest-by-alert")
+def latest_by_alert(
+    alert_ids: str = Query(..., description="comma-separated alert ids"),
+    db: Session = Depends(get_db),
+) -> dict:
+    """v3.0/D5.7b — batch lookup of the latest audit row id per alert id.
+    Used by /alerts to pre-fetch verify-target row ids on page load
+    instead of firing 50 individual /audit?alert_id=N requests when the
+    operator hovers each badge."""
+    try:
+        ids = [int(x) for x in alert_ids.split(",") if x.strip()]
+    except ValueError:
+        raise HTTPException(400, "alert_ids must be comma-separated integers")
+    if not ids:
+        return {"by_alert": {}}
+    if len(ids) > 200:
+        raise HTTPException(400, "too many alert ids; max 200")
+    # max(id) per alert in one query.
+    from sqlalchemy import func as _f
+    rows = db.execute(
+        select(AuditEvent.alert_id, _f.max(AuditEvent.id))
+        .where(AuditEvent.alert_id.in_(ids))
+        .group_by(AuditEvent.alert_id)
+    ).all()
+    out: dict[str, int | None] = {str(i): None for i in ids}
+    for alert_id, max_row in rows:
+        out[str(alert_id)] = int(max_row) if max_row else None
+    return {"by_alert": out}
+
+
 @router.get("/verify-row/{row_id}")
 def verify_audit_row(row_id: int, db: Session = Depends(get_db)) -> dict:
     """Walk the chain from genesis to (and including) row_id only.
