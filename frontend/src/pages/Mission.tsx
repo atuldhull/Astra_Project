@@ -8,8 +8,46 @@ import { StatusPill } from "../components/StatusPill";
 import { toast } from "../components/Toast";
 import { Bezel } from "../components/Bezel";
 import { HudCornerStat, HudRecBadge, HudCrosshair, HudThreatBar } from "../components/HudOverlay";
+import { ReplayScrubber } from "../components/ReplayScrubber";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
+
+// D4.1 helpers — format the scrubber label for video (relative HH:MM:SS)
+// vs image (wall-clock IST).
+function formatVideoClock(elapsedMs: number, totalMs: number): string {
+  const fmt = (ms: number) => {
+    const s = Math.max(0, Math.floor(ms / 1000));
+    const hh = Math.floor(s / 3600);
+    const mm = Math.floor((s % 3600) / 60);
+    const ss = s % 60;
+    const pad = (n: number) => n.toString().padStart(2, "0");
+    return hh > 0 ? `${pad(hh)}:${pad(mm)}:${pad(ss)}` : `${pad(mm)}:${pad(ss)}`;
+  };
+  return `${fmt(elapsedMs)} / ${fmt(totalMs)}`;
+}
+
+function replayCounts(
+  mode: "video" | "image",
+  scrubMs: number,
+  videoDets: import("../lib/api").Detection[],
+  imageDbDets: import("../lib/api").Detection[],
+): string {
+  const GHOST_MS = 10_000;
+  if (mode === "video") {
+    const visible = videoDets.filter((d) => Math.abs(d.frame_timestamp_ms - scrubMs) <= 250).length;
+    const ghost = videoDets.filter((d) => {
+      const dt = scrubMs - d.frame_timestamp_ms;
+      return dt > 250 && dt <= GHOST_MS;
+    }).length;
+    return `${visible} visible · ${ghost} ghost`;
+  }
+  const visible = imageDbDets.filter((d) => Date.parse(d.created_at) <= scrubMs).length;
+  const ghost = imageDbDets.filter((d) => {
+    const t = Date.parse(d.created_at);
+    return t > scrubMs - GHOST_MS && t <= scrubMs - 250;
+  }).length;
+  return `${visible} visible · ${ghost} ghost`;
+}
 
 // Brand-aligned colors per class
 const CLASS_COLORS: Record<string, string> = {
@@ -84,6 +122,12 @@ export default function Mission() {
   const [videoDets, setVideoDets] = useState<DbDetection[]>(_cache.videoDets);
   const [videoPolling, setVideoPolling] = useState(false);
   const [videoCurrentTime, setVideoCurrentTime] = useState(0);
+
+  // D4.1 — Mission Replay Scrubber. scrubMs is the canonical "where am I"
+  // pointer for replay; when null, replay is inactive and the existing
+  // live-rendering logic plays. Bounds are derived below.
+  const [scrubMs, setScrubMs] = useState<number | null>(null);
+  const [replayPlaying, setReplayPlaying] = useState(false);
 
   // Image-mode cascade results (MAR20 airframe IDs). The /predict response
   // is stage-1 only; the cascade runs in the ingest pipeline and lands in
@@ -368,6 +412,65 @@ export default function Mission() {
     };
   }, [fileType, fileUrl]);
 
+  // D4.1 — replay bounds. Returns null when there's not enough temporal
+  // spread to scrub (single-frame image, no detections, etc).
+  //   • video → 0..duration (or det timestamp range if duration unknown)
+  //   • image → spread of created_at across imageDbDets (must be ≥ 1s
+  //              and ≥ 2 distinct timestamps to be useful)
+  const replayBounds = useMemo<{ min: number; max: number; mode: "video" | "image" } | null>(() => {
+    if (fileType === "video") {
+      // Prefer the video element's own duration when available; falls back
+      // to detection timestamps (frame_timestamp_ms) for the rare case where
+      // duration is NaN (some MP4 muxers).
+      const v = videoRef.current;
+      if (v && Number.isFinite(v.duration) && v.duration > 0) {
+        return { min: 0, max: v.duration * 1000, mode: "video" };
+      }
+      if (videoDets.length >= 2) {
+        const ts = videoDets.map((d) => d.frame_timestamp_ms);
+        const min = Math.min(...ts);
+        const max = Math.max(...ts);
+        if (max - min >= 500) return { min, max, mode: "video" };
+      }
+      return null;
+    }
+    if (fileType === "image" && imageDbDets.length >= 2) {
+      const ts = imageDbDets
+        .map((d) => Date.parse(d.created_at))
+        .filter((t) => Number.isFinite(t));
+      if (ts.length < 2) return null;
+      const min = Math.min(...ts);
+      const max = Math.max(...ts);
+      if (max - min < 1000) return null; // need ≥ 1s spread to be useful
+      return { min, max, mode: "image" };
+    }
+    return null;
+  }, [fileType, videoDets, imageDbDets, fileUrl, videoCurrentTime]);
+
+  // Init scrubMs to the end of the timeline when bounds first appear; clear
+  // when bounds disappear (e.g. New Mission button).
+  useEffect(() => {
+    if (replayBounds && scrubMs == null) {
+      setScrubMs(replayBounds.max);
+    } else if (!replayBounds && scrubMs != null) {
+      setScrubMs(null);
+      setReplayPlaying(false);
+    }
+  }, [replayBounds, scrubMs]);
+
+  // VIDEO: when scrubMs changes, seek the video. Tolerance avoids fighting
+  // with normal play (which itself drives videoCurrentTime → not scrubMs).
+  useEffect(() => {
+    if (replayBounds?.mode !== "video") return;
+    if (scrubMs == null) return;
+    const v = videoRef.current;
+    if (!v) return;
+    const targetSec = scrubMs / 1000;
+    if (Math.abs(v.currentTime - targetSec) > 0.08) {
+      try { v.currentTime = targetSec; } catch { /* seek before metadata loaded */ }
+    }
+  }, [scrubMs, replayBounds?.mode]);
+
   // Analyze current frame from video
   async function analyzeVideoFrame() {
     const v = videoRef.current;
@@ -404,6 +507,15 @@ export default function Mission() {
       ctx.font = "12px ui-monospace, Consolas, monospace";
       ctx.lineWidth = 2;
 
+      // D4.1 — image-mode replay. When scrubMs is set, gate every box on
+      // the matching DbDetection's created_at:
+      //   visible: created_at <= scrubMs            → full opacity, colour border
+      //   ghost:   in [scrubMs - 10s, scrubMs]      → 20% opacity, grey, no label
+      //   hidden:  created_at  >  scrubMs           → skip
+      // When scrubMs is null (no replay), the legacy all-at-once logic plays.
+      const replayActive = replayBounds?.mode === "image" && scrubMs != null;
+      const GHOST_WINDOW_MS = 10_000;
+
       // Match each /predict result box to a saved DbDetection by IoU so
       // we can swap the generic label for the MAR20 cascade airframe ID
       // (e.g. "F-22 0.91" instead of "aircraft-fixed-wing 0.78").
@@ -418,21 +530,48 @@ export default function Mission() {
       const dbAircraft = imageDbDets.filter((d) => d.extras?.airframe);
 
       for (const d of result.detections) {
+        // Match to any DbDetection (not just airframe) so we have a created_at
+        // for replay gating. Then narrow to the airframe match for labelling.
+        let bestAny: DbDetection | null = null;
+        let bestAnyIou = 0.4;
+        for (const dbd of imageDbDets) {
+          const j = iou(d, dbd);
+          if (j > bestAnyIou) { bestAnyIou = j; bestAny = dbd; }
+        }
+
+        // Replay gating — applies only when the image timeline is engaged.
+        let mode: "visible" | "ghost" | "hidden" = "visible";
+        if (replayActive && scrubMs != null) {
+          const ts = bestAny ? Date.parse(bestAny.created_at) : NaN;
+          if (Number.isFinite(ts)) {
+            if (ts > scrubMs) mode = "hidden";
+            else if (ts < scrubMs - GHOST_WINDOW_MS) mode = "visible";
+            else if (ts <= scrubMs - 250) mode = "ghost";
+            else mode = "visible";
+          }
+        }
+        if (mode === "hidden") continue;
+
         const color = CLASS_COLORS[d.class_name] ?? "#ff7a1a";
         const x = d.x1 * scaleX;
         const y = d.y1 * scaleY;
         const w = (d.x2 - d.x1) * scaleX;
         const h = (d.y2 - d.y1) * scaleY;
+
+        if (mode === "ghost") {
+          ctx.save();
+          ctx.globalAlpha = 0.2;
+          ctx.strokeStyle = "#888";
+          ctx.strokeRect(x, y, w, h);
+          ctx.restore();
+          continue;
+        }
+
         ctx.strokeStyle = color;
         ctx.strokeRect(x, y, w, h);
 
         // If we have a cascade match, prefer the airframe name + cascade conf.
-        let best: DbDetection | null = null;
-        let bestIou = 0.4;  // threshold
-        for (const dbd of dbAircraft) {
-          const j = iou(d, dbd);
-          if (j > bestIou) { bestIou = j; best = dbd; }
-        }
+        const best = bestAny && bestAny.extras?.airframe ? bestAny : null;
         const label = best && best.extras?.airframe
           ? `${best.extras.airframe} ${(best.extras.airframe_confidence ?? 0).toFixed(2)}`
           : `${d.class_name} ${d.confidence.toFixed(2)}`;
@@ -442,6 +581,8 @@ export default function Mission() {
         ctx.fillStyle = "#0a0f14";
         ctx.fillText(label, x + 4, y - 4);
       }
+      // Suppress the dbAircraft-only loop now that we already used imageDbDets.
+      void dbAircraft;
       return;
     }
 
@@ -466,6 +607,31 @@ export default function Mission() {
       const current = videoDets.filter(
         (d) => Math.abs(d.frame_timestamp_ms - currentMs) <= WINDOW_MS
       );
+
+      // D4.1 — ghost-trail boxes: detections that were live in the last
+      // 10 seconds before "now" but aren't current. Renders a faded box
+      // for each (independent of the per-track polyline trail below) so
+      // operators can see exactly *where* something was, not just *that*
+      // it moved. The polyline trails still draw.
+      const GHOST_WINDOW_MS_VID = 10_000;
+      const ghostDets = videoDets.filter((d) => {
+        const dt = currentMs - d.frame_timestamp_ms;
+        return dt > WINDOW_MS && dt <= GHOST_WINDOW_MS_VID;
+      });
+
+      // Ghost boxes — faded, grey-bordered rectangles for last-10s dets.
+      ctx.save();
+      ctx.globalAlpha = 0.2;
+      ctx.strokeStyle = "#888";
+      ctx.lineWidth = 1.5;
+      for (const d of ghostDets) {
+        const gx = d.x1 * scaleX;
+        const gy = d.y1 * scaleY;
+        const gw = (d.x2 - d.x1) * scaleX;
+        const gh = (d.y2 - d.y1) * scaleY;
+        ctx.strokeRect(gx, gy, gw, gh);
+      }
+      ctx.restore();
 
       // Draw trails for tracked detections (all past points up to now, per track)
       const trackGroups: Record<number, DbDetection[]> = {};
@@ -537,7 +703,7 @@ export default function Mission() {
     // Fallback: no data — clear
     const ctx = canvas.getContext("2d")!;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-  }, [result, fileUrl, fileType, videoDets, videoCurrentTime, imageDbDets]);
+  }, [result, fileUrl, fileType, videoDets, videoCurrentTime, imageDbDets, scrubMs, replayBounds]);
 
   const classCounts: Record<string, number> = {};
   for (const d of result?.detections ?? []) {
@@ -716,8 +882,9 @@ export default function Mission() {
       </div>
 
       <div className="flex-1 p-6 pt-4 grid grid-cols-[1fr_320px] gap-6 overflow-hidden">
+        <div className="flex flex-col gap-3 min-h-0 overflow-hidden">
         <Bezel
-          className="relative"
+          className="relative flex-1 min-h-0"
           topBar={
             <>
               <span className="text-accent">ASTRA·1</span>
@@ -772,7 +939,7 @@ export default function Mission() {
                 <video
                   ref={videoRef}
                   src={fileUrl}
-                  controls
+                  controls={!replayBounds}
                   className="max-h-full max-w-full"
                 />
               )}
@@ -860,6 +1027,25 @@ export default function Mission() {
             </>
           )}
         </div></Bezel>
+
+        {replayBounds && scrubMs != null && (
+          <ReplayScrubber
+            min={replayBounds.min}
+            max={replayBounds.max}
+            value={scrubMs}
+            onChange={setScrubMs}
+            playing={replayPlaying}
+            onPlayingChange={setReplayPlaying}
+            formatLabel={(v) =>
+              replayBounds.mode === "video"
+                ? formatVideoClock(v - replayBounds.min, replayBounds.max - replayBounds.min)
+                : new Date(v).toLocaleTimeString("en-IN", { hour12: false, timeZone: "Asia/Kolkata" }) + " IST"
+            }
+            subLabel={replayCounts(replayBounds.mode, scrubMs, videoDets, imageDbDets)}
+          />
+        )}
+
+        </div>
 
         <aside className="glass rounded-lg p-4 space-y-4 overflow-auto shadow-panel">
           <div>
