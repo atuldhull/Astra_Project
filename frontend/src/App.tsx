@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { Activity, AlertTriangle, GitCompareArrows, LayoutGrid, Map, MessageCircle, Network, ScrollText, Shield, Target } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import Command from "./pages/Command";
 import Mission from "./pages/Mission";
 import MapView from "./pages/MapView";
@@ -21,17 +22,42 @@ import { CommandPalette } from "./components/CommandPalette";
 import { HelpOverlay } from "./components/HelpOverlay";
 import { useDemoMode } from "./lib/demoMode";
 
-const nav = [
-  { to: "/command", label: "Command", icon: LayoutGrid },
-  { to: "/mission", label: "Mission", icon: Target },
-  { to: "/map", label: "Map", icon: Map },
-  { to: "/alerts", label: "Alerts", icon: AlertTriangle },
-  { to: "/audit", label: "Audit", icon: ScrollText },
-  { to: "/benchmark", label: "Benchmark", icon: Activity },
-  { to: "/adversarial", label: "Adversarial", icon: Shield },
-  { to: "/federated", label: "Federated", icon: Network },
-  { to: "/diff", label: "Diff", icon: GitCompareArrows },
-  { to: "/chat", label: "Chat", icon: MessageCircle },
+// v3.0/D3.1 — Two-group navigation IA.
+// "operations" = the operational story arc (always visible).
+// "operator"   = internal/admin pages, hidden when Demo Mode is ON.
+// Routes are intentionally unchanged — only display labels and grouping
+// are adjusted. OnboardingTour selectors (a[href="/command"] etc.) keep
+// resolving because the routes themselves are stable.
+export type NavItem = { to: string; label: string; icon: LucideIcon };
+export type NavGroup = {
+  group: "operations" | "operator";
+  label: string;
+  items: NavItem[];
+};
+
+export const NAV: NavGroup[] = [
+  {
+    group: "operations",
+    label: "OPERATIONS",
+    items: [
+      { to: "/command",     label: "Command",       icon: LayoutGrid },
+      { to: "/mission",     label: "Mission",       icon: Target },
+      { to: "/map",         label: "Map",           icon: Map },
+      { to: "/alerts",      label: "Threats",       icon: AlertTriangle },
+      { to: "/audit",       label: "Audit Ledger",  icon: ScrollText },
+      { to: "/adversarial", label: "Adversarial",   icon: Shield },
+      { to: "/federated",   label: "Federated",     icon: Network },
+      { to: "/benchmark",   label: "Benchmark",     icon: Activity },
+      { to: "/chat",        label: "Brief",         icon: MessageCircle },
+    ],
+  },
+  {
+    group: "operator",
+    label: "OPERATOR",
+    items: [
+      { to: "/diff", label: "Mission Diff", icon: GitCompareArrows },
+    ],
+  },
 ];
 
 export default function App() {
@@ -44,7 +70,7 @@ export default function App() {
   return (
     <div className="h-full flex relative">
       <TacticalBackground intensity={1} />
-      <Sidebar items={nav} />
+      <Sidebar groups={NAV} />
 
       <main className="flex-1 overflow-auto">
         <Routes>

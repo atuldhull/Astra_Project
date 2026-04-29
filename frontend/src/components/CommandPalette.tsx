@@ -25,8 +25,14 @@ import {
   Network, Search, Shield, ShieldCheck, ScrollText, Target, Zap, type LucideIcon,
 } from "lucide-react";
 import { api, type Alert, type Mission } from "../lib/api";
-import { toggleDemoMode } from "../lib/demoMode";
+import { toggleDemoMode, useDemoMode } from "../lib/demoMode";
 import { toast } from "./Toast";
+
+// IA group tag carried alongside the existing Item.group taxonomy. Items
+// of group="page" additionally carry which IA section they live in
+// ("operations" | "operator"). Operator items are filtered out when
+// Demo Mode is ON, mirroring the sidebar.
+type IaGroup = "operations" | "operator";
 
 type Item = {
   id: string;
@@ -34,25 +40,28 @@ type Item = {
   sub?: string;
   icon: LucideIcon;
   group: "action" | "page" | "mission" | "alert";
+  ia?: IaGroup;     // only set for group="page"
   priority: number;
   run: () => void | Promise<void>;
 };
 
-const PAGES: Array<{ to: string; label: string; sub: string; icon: LucideIcon }> = [
-  { to: "/command",     label: "Command",     sub: "tactical wall · live overview",      icon: LayoutGrid },
-  { to: "/mission",     label: "Mission",     sub: "ingest drone image / video",         icon: Target },
-  { to: "/map",         label: "Map",         sub: "geo-pinned detections + heatmap",    icon: Map },
-  { to: "/alerts",      label: "Alerts",      sub: "threat queue + dual-control engage", icon: AlertTriangle },
-  { to: "/audit",       label: "Audit",       sub: "hash-chained ops log",               icon: ScrollText },
-  { to: "/benchmark",   label: "Benchmark",   sub: "mAP, latency, cascade",              icon: Activity },
-  { to: "/adversarial", label: "Adversarial", sub: "FGSM A/B with retention",            icon: Shield },
-  { to: "/federated",   label: "Federated",   sub: "FedAvg + FoolsGold dashboard",       icon: Network },
-  { to: "/diff",        label: "Diff",        sub: "compare two missions",               icon: GitCompareArrows },
-  { to: "/chat",        label: "Chat",        sub: "commander Q&A · Phi-3.5 grounded",   icon: MessageCircle },
+const PAGES: Array<{ to: string; label: string; sub: string; icon: LucideIcon; ia: IaGroup }> = [
+  { to: "/command",     label: "Command",       sub: "tactical wall · live overview",      icon: LayoutGrid,        ia: "operations" },
+  { to: "/mission",     label: "Mission",       sub: "ingest drone image / video",         icon: Target,            ia: "operations" },
+  { to: "/map",         label: "Map",           sub: "geo-pinned detections + heatmap",    icon: Map,               ia: "operations" },
+  { to: "/alerts",      label: "Threats",       sub: "threat queue + dual-control engage", icon: AlertTriangle,     ia: "operations" },
+  { to: "/audit",       label: "Audit Ledger",  sub: "hash-chained ops log",               icon: ScrollText,        ia: "operations" },
+  { to: "/benchmark",   label: "Benchmark",     sub: "mAP, latency, cascade",              icon: Activity,          ia: "operations" },
+  { to: "/adversarial", label: "Adversarial",   sub: "FGSM A/B with retention",            icon: Shield,            ia: "operations" },
+  { to: "/federated",   label: "Federated",     sub: "FedAvg + FoolsGold dashboard",       icon: Network,           ia: "operations" },
+  { to: "/chat",        label: "Brief",         sub: "commander Q&A · Phi-3.5 grounded",   icon: MessageCircle,     ia: "operations" },
+  { to: "/diff",        label: "Mission Diff",  sub: "compare two missions",               icon: GitCompareArrows,  ia: "operator"   },
 ];
 
 export function CommandPalette() {
   const navigate = useNavigate();
+  // Subscribe so the indexed item list rebuilds when demo mode toggles.
+  const [demo] = useDemoMode();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
@@ -142,12 +151,14 @@ export function CommandPalette() {
       },
     });
 
-    // Pages (priority 1)
+    // Pages (priority 1). Operator-section pages are filtered when Demo
+    // Mode is ON, mirroring the sidebar.
     for (const p of PAGES) {
+      if (demo && p.ia === "operator") continue;
       list.push({
         id: `page:${p.to}`,
         label: p.label, sub: p.sub, icon: p.icon,
-        group: "page", priority: 1,
+        group: "page", ia: p.ia, priority: 1,
         run: () => { navigate(p.to); },
       });
     }
@@ -180,7 +191,7 @@ export function CommandPalette() {
     }
 
     return list;
-  }, [navigate, missions, alerts]);
+  }, [navigate, missions, alerts, demo]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -268,6 +279,7 @@ export function CommandPalette() {
                 </div>
                 <span className="text-2xs font-mono uppercase-wide tracking-wider text-muted2 shrink-0">
                   {it.group}
+                  {it.ia && <span className="opacity-60"> · {it.ia}</span>}
                 </span>
               </button>
             );

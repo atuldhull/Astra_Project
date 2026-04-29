@@ -30,7 +30,15 @@ type NavItem = {
   badge?: () => string | number | null;   // optional bottom-right pill on the row
 };
 
-type Props = { items: NavItem[] };
+// v3.0/D3.1 — sidebar now accepts grouped navigation. Each group can be
+// hidden in demo mode (the "operator" group disappears entirely).
+export type SidebarGroup = {
+  group: "operations" | "operator";
+  label: string;
+  items: NavItem[];
+};
+
+type Props = { groups: SidebarGroup[] };
 
 type HealthState = {
   ok: boolean;
@@ -39,7 +47,7 @@ type HealthState = {
   lastSyncMs: number | null;
 };
 
-export function Sidebar({ items }: Props) {
+export function Sidebar({ groups }: Props) {
   const navigate = useNavigate();
   const [demo, setDemo] = useDemoMode();
   // Default to expanded; user can collapse and we remember.
@@ -148,42 +156,53 @@ export function Sidebar({ items }: Props) {
         </button>
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 py-3 overflow-y-auto">
-        {items.map(({ to, label, icon: Icon, badge }) => {
-          const badgeVal = badge?.() ?? null;
-          return (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                `relative flex items-center gap-3 px-4 py-2.5 text-sm transition-fast group ${
-                  isActive
-                    ? "bg-panel2 text-accent"
-                    : "text-muted hover:text-text hover:bg-panel2/60"
-                }`
-              }
-              title={collapsed ? label : undefined}
-            >
-              {({ isActive }) => (
-                <>
-                  {isActive && (
-                    <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-accent rounded-r shadow-glow-accent" />
-                  )}
-                  <Icon size={16} className="shrink-0" />
-                  {!collapsed && (
-                    <>
-                      <span className="flex-1 truncate">{label}</span>
-                      {badgeVal != null && badgeVal !== "" && (
-                        <span className="text-2xs text-muted font-mono tabular-nums">{badgeVal}</span>
-                      )}
-                    </>
-                  )}
-                </>
+      {/* Nav — grouped. Operator group disappears in demo mode. */}
+      <nav className="flex-1 py-2 overflow-y-auto">
+        {groups
+          .filter((g) => !(demo && g.group === "operator"))
+          .map((g, gIdx) => (
+            <div key={g.group} className={gIdx === 0 ? "" : "mt-2 pt-2 border-t border-border/60"}>
+              {!collapsed && (
+                <div className="px-4 pb-1.5 pt-1 text-[10px] font-mono uppercase-wide tracking-[0.2em] text-muted2 select-none">
+                  {g.label}
+                </div>
               )}
-            </NavLink>
-          );
-        })}
+              {g.items.map(({ to, label, icon: Icon, badge }) => {
+                const badgeVal = badge?.() ?? null;
+                return (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    className={({ isActive }) =>
+                      `relative flex items-center gap-3 px-4 py-2.5 text-sm transition-fast group ${
+                        isActive
+                          ? "bg-panel2 text-accent"
+                          : "text-muted hover:text-text hover:bg-panel2/60"
+                      }`
+                    }
+                    title={collapsed ? label : undefined}
+                  >
+                    {({ isActive }) => (
+                      <>
+                        {isActive && (
+                          <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-accent rounded-r shadow-glow-accent" />
+                        )}
+                        <Icon size={16} className="shrink-0" />
+                        {!collapsed && (
+                          <>
+                            <span className="flex-1 truncate">{label}</span>
+                            {badgeVal != null && badgeVal !== "" && (
+                              <span className="text-2xs text-muted font-mono tabular-nums">{badgeVal}</span>
+                            )}
+                          </>
+                        )}
+                      </>
+                    )}
+                  </NavLink>
+                );
+              })}
+            </div>
+          ))}
       </nav>
 
       {/* Status block — bottom */}
