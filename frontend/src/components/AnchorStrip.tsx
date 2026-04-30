@@ -30,7 +30,7 @@ export function AnchorStrip() {
   const [busyAnchor, setBusyAnchor] = useState(false);
   const [busyVerify, setBusyVerify] = useState(false);
   const [verifyResult, setVerifyResult] = useState<VerifyResult | null>(null);
-  // D3.4 — peer count for the inline metric (read-only here; actual sync
+  // peer count for the inline metric (read-only here; actual sync
   // lives on the Audit page header).
   const [peerCount, setPeerCount] = useState<number | null>(null);
   const [lastMeshSync, setLastMeshSync] = useState<string | null>(null);

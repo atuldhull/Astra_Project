@@ -30,6 +30,6 @@ router.include_router(health.router)
 # Websocket router is mounted separately (no /api/v1 prefix).
 ws_router = ws.router
 
-# v3.0/D4.6 — Prometheus /metrics is also mounted top-level (no /api/v1
+# Prometheus /metrics is also mounted top-level (no /api/v1
 # prefix) so a generic scraper can hit the conventional path.
 metrics_router = health._metrics_router

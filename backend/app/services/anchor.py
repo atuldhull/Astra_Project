@@ -1,5 +1,5 @@
 """
-Chain anchor service (T1.2).
+Chain anchor service.
 
 The hash-chained audit log is tamper-evident in isolation, but a
 single-controlled chain has one weakness: an admin who controls both

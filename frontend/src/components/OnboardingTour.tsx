@@ -82,7 +82,7 @@ const STEPS: Step[] = [
   {
     target: null,
     title: "You're set",
-    body: "Press ? on any page for the contextual help overlay. Run scripts/preflight.sh before any demo to confirm ALL GREEN. Welcome to v3.0 — let's go.",
+    body: "Press ? on any page for the contextual help overlay. Run scripts/preflight.sh before any demo to confirm ALL GREEN. Welcome to let's go.",
   },
 ];
 

@@ -1,4 +1,4 @@
-"""D5.8 — ops_metrics primitives.
+"""ops_metrics primitives.
 
 Covers the things that would silently break /metrics:
   * normalize_path collapses ids correctly

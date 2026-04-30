@@ -1,5 +1,5 @@
 """
-/mesh — cross-agency audit witnessing endpoints (D3.4).
+/mesh — cross-agency audit witnessing endpoints.
 
 GET  /mesh/peers                   list registered peer agencies
 GET  /mesh/feed?since_id=&limit=   read-only audit feed for peers

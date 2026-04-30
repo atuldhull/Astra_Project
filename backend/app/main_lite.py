@@ -7,7 +7,7 @@ all 23 routers eagerly — which would trigger torch via the
 inference-heavy ones.
 
 Used when the host is RAM-constrained and a full `app.main` boot would
-deadlock on `import torch`. Lets us still verify rc5.1's defining
+deadlock on `import torch`. Lets us still verify 's defining
 surfaces:
 
   * /health                    (lite-version)

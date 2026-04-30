@@ -5,8 +5,8 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.config import settings
 
-# v3.0/D5.7 — pool sizing for the recurring "QueuePool limit reached"
-# zombie state seen across rc3 → rc5 closes. The default 5 + 10 overflow
+# pool sizing for the recurring "QueuePool limit reached"
+# zombie state seen across  →  closes. The default 5 + 10 overflow
 # is exhausted within minutes by accumulated chrome dev-tab keep-alives
 # polling /audit/verify, /alerts, /health every few seconds.
 #

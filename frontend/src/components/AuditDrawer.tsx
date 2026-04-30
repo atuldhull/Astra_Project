@@ -1,5 +1,5 @@
 /**
- * AuditDrawer (D4.2) — collapsible mission-scoped audit ledger that
+ * AuditDrawer — collapsible mission-scoped audit ledger that
  * follows the Replay Scrubber.
  *
  * Renders three things in one compact strip:
@@ -26,7 +26,7 @@ type Props = {
   scrubMs: number | null;
   /** Optional callback when a witness pulse is visible (for parent overlays). */
   onWitnessHighlight?: (peerIds: string[]) => void;
-  /** D5.7 — emits the snapshot events upward so the Mission page can
+  /** emits the snapshot events upward so the Mission page can
    *  render pipeline-stage ticks on the ReplayScrubber. */
   onSnapshot?: (snap: AuditSnapshot) => void;
 };
@@ -162,7 +162,7 @@ export function AuditDrawer({ missionId, scrubMs, onWitnessHighlight, onSnapshot
           {snapshot ? `${snapshot.events.length} events` : (loading ? "loading…" : "—")}
         </span>
 
-        {/* D4.6 — Export replay clip PDF */}
+        {/* Export replay clip PDF */}
         <a
           href={(() => {
             const q = new URLSearchParams({ mission_id: String(missionId) });
@@ -183,7 +183,7 @@ export function AuditDrawer({ missionId, scrubMs, onWitnessHighlight, onSnapshot
         {err && <span className="text-threat-crit normal-case tracking-normal">{err}</span>}
       </div>
 
-      {/* D5.7 — index of the last event with created_at <= scrubMs (the
+      {/* index of the last event with created_at <= scrubMs (the
           "you are here" cursor in the chip strip). When scrubMs is null
           we mark the rightmost; events come back ordered ascending. */}
       {/* Event chips row */}

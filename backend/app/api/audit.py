@@ -59,7 +59,7 @@ def list_events(
     operator_id: str | None = Query(None),
     since: datetime | None = Query(None),
     until: datetime | None = Query(None),
-    alert_id: int | None = Query(None, description="D5.2 — filter to events tied to one alert"),
+    alert_id: int | None = Query(None, description="filter to events tied to one alert"),
     mission_id: int | None = Query(None, description="optional mission filter"),
     limit: int = Query(500, ge=1, le=5000),
     db: Session = Depends(get_db),
@@ -98,7 +98,7 @@ def latest_by_alert(
     alert_ids: str = Query(..., description="comma-separated alert ids"),
     db: Session = Depends(get_db),
 ) -> dict:
-    """v3.0/D5.7b — batch lookup of the latest audit row id per alert id.
+    """batch lookup of the latest audit row id per alert id.
     Used by /alerts to pre-fetch verify-target row ids on page load
     instead of firing 50 individual /audit?alert_id=N requests when the
     operator hovers each badge."""
@@ -133,7 +133,7 @@ def verify_audit_row(row_id: int, db: Session = Depends(get_db)) -> dict:
     return verify_row(db, row_id)
 
 
-# ── Mission snapshot (D4.2) ──────────────────────────────────────────
+# ── Mission snapshot ──────────────────────────────────────────
 
 @router.get("/snapshot")
 def audit_snapshot(
@@ -143,7 +143,7 @@ def audit_snapshot(
 ) -> dict:
     """Return the audit-chain state *as of* `until_ts` for one mission.
 
-    Used by the Mission Replay Scrubber (D4.2). When the operator scrubs
+    Used by the Mission Replay Scrubber. When the operator scrubs
     to time T, the UI fetches:
       • events: the mission's audit rows where created_at <= T
       • tip:    the LATEST audit row (mission-scoped or otherwise) at

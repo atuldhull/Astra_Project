@@ -350,7 +350,7 @@ export default function Command() {
         </Tile>
       </div>
 
-      {/* D3.5 — citizen submission flow visible on the OPERATIONS surface */}
+      {/* citizen submission flow visible on the OPERATIONS surface */}
       <div className="px-5 pb-6">
         <PublicSubmitForm />
       </div>

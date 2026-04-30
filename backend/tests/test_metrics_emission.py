@@ -1,4 +1,4 @@
-"""D5.9 — /metrics text emission round-trip.
+"""/metrics text emission round-trip.
 
 Builds the exact text body the prometheus scraper sees, without
 touching the DB. We feed observe() with synthetic samples and assert

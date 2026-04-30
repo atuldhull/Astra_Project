@@ -1,5 +1,5 @@
 /**
- * AlertVerifyBadge (D5.2) — tiny "verified" pill on each alert row.
+ * AlertVerifyBadge — tiny "verified" pill on each alert row.
  *
  * On hover/click:
  *   1. Fetches /api/v1/audit?alert_id=N&limit=1 — grabs the most recent
@@ -32,7 +32,7 @@ type Props = {
 
 const _cache = new Map<number, { row: AuditEvent | null; verify: VerifyResult | null }>();
 
-/** D5.7b — seed the cache with an alert→row_id mapping pre-fetched in
+/** seed the cache with an alert→row_id mapping pre-fetched in
  *  one batch by the parent. The verify popover will still call the
  *  chain-walk endpoint on click, but the list-fetch step is skipped. */
 export function seedAlertVerifyRows(map: Record<string, number | null>) {

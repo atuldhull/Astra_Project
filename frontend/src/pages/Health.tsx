@@ -1,5 +1,5 @@
 /**
- * Health (D3.6) — single-pane System Metrics for the operator.
+ * Health — single-pane System Metrics for the operator.
  *
  * Reads /api/v1/health/dashboard once on mount + every 10s. Each block
  * (models / chain / errors / calibration freshness) is independently

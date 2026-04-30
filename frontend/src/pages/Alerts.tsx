@@ -54,9 +54,9 @@ function rerankScore(a: Alert, w: Weights): number {
 type DetClass = { class_id: number; class_name: string; confidence: number };
 
 export default function Alerts() {
-  // D4.3 — visiting /alerts acks all unack crit alerts (sidebar badge clears).
+  // visiting /alerts acks all unack crit alerts (sidebar badge clears).
   useCritAckOnMount();
-  // D5.4 — one-shot handoff from CritEngagePrompt: pre-select the alert's
+  // one-shot handoff from CritEngagePrompt: pre-select the alert's
   // mission and scroll to its row.
   const handoff = useEngageHandoff();
   const [missions, setMissions] = useState<Mission[]>([]);
@@ -91,7 +91,7 @@ export default function Alerts() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // D5.4 — once alerts load and the handoff is for this mission, scroll
+  // once alerts load and the handoff is for this mission, scroll
   // the matching row into view + flash it briefly.
   useEffect(() => {
     if (!handoff || alerts.length === 0) return;
@@ -119,7 +119,7 @@ export default function Alerts() {
         const m = new Map<number, DetClass>();
         for (const d of dets) m.set(d.id, { class_id: d.class_id, class_name: d.class_name, confidence: d.confidence });
         setDetMap(m);
-        // D5.7b — pre-fetch the latest audit row id per alert in one call so
+        // pre-fetch the latest audit row id per alert in one call so
         // every AlertVerifyBadge skips its list-fetch step. Falls back to
         // per-badge fetch on error (the badge handles cold path itself).
         if (a.length > 0) {

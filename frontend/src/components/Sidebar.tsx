@@ -31,7 +31,7 @@ type NavItem = {
   badge?: () => string | number | null;   // optional bottom-right pill on the row
 };
 
-// v3.0/D3.1 — sidebar now accepts grouped navigation. Each group can be
+// sidebar now accepts grouped navigation. Each group can be
 // hidden in demo mode (the "operator" group disappears entirely).
 export type SidebarGroup = {
   group: "operations" | "operator";
@@ -51,7 +51,7 @@ type HealthState = {
 export function Sidebar({ groups }: Props) {
   const navigate = useNavigate();
   const [demo, setDemo] = useDemoMode();
-  // D5.3 — when a fresh crit lands, flash the whole Threats row red.
+  // when a fresh crit lands, flash the whole Threats row red.
   const critFlashing = useRecentCritFlash();
   // Default to expanded; user can collapse and we remember.
   const [collapsed, setCollapsed] = useState<boolean>(() => {
@@ -182,7 +182,7 @@ export function Sidebar({ groups }: Props) {
                           ? "bg-panel2 text-accent"
                           : "text-muted hover:text-text hover:bg-panel2/60"
                       } ${
-                        // D5.3 — Threats row flashes red on fresh crit arrival
+                        // Threats row flashes red on fresh crit arrival
                         to === "/alerts" && critFlashing ? "crit-row-flash" : ""
                       }`
                     }
@@ -197,7 +197,7 @@ export function Sidebar({ groups }: Props) {
                         {!collapsed && (
                           <>
                             <span className="flex-1 truncate">{label}</span>
-                            {/* D4.3 — surface the unack-crit count next to Threats. */}
+                            {/* surface the unack-crit count next to Threats. */}
                             {to === "/alerts" && <CritUnackBadge />}
                             {badgeVal != null && badgeVal !== "" && (
                               <span className="text-2xs text-muted font-mono tabular-nums">{badgeVal}</span>

@@ -1,5 +1,5 @@
 /**
- * ReplayScrubber (D4.1) — timeline scrubber bar for the Mission page.
+ * ReplayScrubber — timeline scrubber bar for the Mission page.
  *
  * Drives a single scalar `value` (ms) between [min, max]. Used by:
  *   • Video missions — value is video.currentTime in ms; advancing the
@@ -39,11 +39,11 @@ type Props = {
   intervalMs?: number;
   /** Slider step. Default 100ms — fine for both video + audit timelines. */
   sliderStep?: number;
-  /** D5.1 — optional thumbnail strip below the slider. Each entry is a
+  /** optional thumbnail strip below the slider. Each entry is a
    *  data-URL (or http URL) + the absolute scrub position it represents.
    *  Clicking a thumb seeks to that position. */
   thumbnails?: { url: string; at: number }[];
-  /** D5.7 — optional pipeline-stage tick marks rendered above the slider.
+  /** optional pipeline-stage tick marks rendered above the slider.
    *  Each tick = `{at, label, colour}`. Hovering shows the label, click
    *  seeks. Tooltips use the formatLabel of the parent. */
   stageMarkers?: { at: number; label: string; colour?: string }[];
@@ -113,7 +113,7 @@ export function ReplayScrubber({
         </button>
 
         <div className="flex-1 relative">
-          {/* D5.7 — pipeline stage tick marks above the slider track. */}
+          {/* pipeline stage tick marks above the slider track. */}
           {stageMarkers && stageMarkers.length > 0 && max > min && (
             <div className="absolute inset-x-0" style={{ top: -3, height: 6, pointerEvents: "none" }}>
               {stageMarkers.map((m, i) => {
@@ -169,7 +169,7 @@ export function ReplayScrubber({
         </div>
       </div>
 
-      {/* D5.1 — frame thumbnail strip. Active thumb = the one whose `at`
+      {/* frame thumbnail strip. Active thumb = the one whose `at`
           is closest to the current value. Click any to seek. */}
       {thumbnails && thumbnails.length > 0 && (
         <div className="mt-2 flex gap-1 overflow-x-auto" style={{ scrollbarWidth: "thin" }}>

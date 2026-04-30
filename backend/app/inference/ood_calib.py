@@ -1,5 +1,5 @@
 """
-Mahalanobis OOD calibration (T1.3).
+Mahalanobis OOD calibration.
 
 Per-class Gaussian model over a 9-dimensional model-agnostic feature
 vector extracted from each detection's bbox crop:

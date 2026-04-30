@@ -28,7 +28,7 @@ class ConnectionPool:
             self._sockets.discard(ws)
 
     async def broadcast(self, payload: dict) -> None:
-        """v3.0/D5.7 — concurrent fan-out with per-socket timeout.
+        """concurrent fan-out with per-socket timeout.
         Previous version awaited send_text serially under the lock, so
         one slow client backed up every other subscriber. asyncio.gather
         with a 1-second timeout per socket bounds worst-case latency."""
@@ -57,7 +57,7 @@ class ConnectionPool:
 
 
 pool = ConnectionPool()
-# v3.0/D3.3 — separate fan-out pool for the Counter-Drone Sentinel
+# separate fan-out pool for the Counter-Drone Sentinel
 # command-and-control channel. Kept distinct from /ws/live so a
 # subscriber to detections isn't pummelled by 5 Hz scenario ticks.
 c2_pool = ConnectionPool()

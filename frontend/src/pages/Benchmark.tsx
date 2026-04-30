@@ -146,7 +146,7 @@ export default function Benchmark() {
               <YAxis stroke="var(--muted)" fontSize={10} domain={[0, 1]} />
               <Tooltip contentStyle={{ background: "var(--panel)", border: "1px solid var(--border)", fontSize: 11 }} />
               <Bar dataKey="v1" fill="var(--accent)" name="v1 (live)" isAnimationActive animationDuration={1200} />
-              <Bar dataKey="hardened" fill="var(--cyan)" name="v1-hardened (R2)" isAnimationActive animationDuration={1200} />
+              <Bar dataKey="hardened" fill="var(--cyan)" name="v1-hardened" isAnimationActive animationDuration={1200} />
             </BarChart>
           </ResponsiveContainer>
           <div className="text-2xs text-muted mt-2 leading-snug">
@@ -230,7 +230,7 @@ export default function Benchmark() {
           </div>
         </div>
 
-        {/* D6.0 — OOD calibration card (T1.3 Mahalanobis fit). Surfaced
+        {/* OOD calibration card (T1.3 Mahalanobis fit). Surfaced
             here next to mAP + latency because it's the third operational
             gate the operator should see when reading benchmarks. */}
         <div

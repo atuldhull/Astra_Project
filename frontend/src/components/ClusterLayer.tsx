@@ -1,5 +1,5 @@
 /**
- * ClusterLayer (D4.5) — zoom-aware grid clustering for the Map page.
+ * ClusterLayer — zoom-aware grid clustering for the Map page.
  *
  * Pure-JS, no dep beyond what's already shipped (react-leaflet +
  * leaflet). At higher zooms the grid cell shrinks; clusters with
@@ -20,7 +20,7 @@ export type ClusterPoint = {
   lon: number;
   /** Optional severity / class colour hint for the cluster halo. */
   hint?: string;
-  /** D5.2 — per-point threat score 0..1. Cluster halo colour = max
+  /** per-point threat score 0..1. Cluster halo colour = max
    *  threat in the bucket so a 30-marker cluster with one crit reads
    *  red, not cyan. */
   threat?: number;
@@ -91,7 +91,7 @@ export function ClusterLayer({ points, renderPoint, cellPx = 60, minPointsToClus
         const cLon = sumLon / bucket.length;
         const ids = bucket.map((b) => b.id).join(":");
         const radius = Math.min(28, 12 + Math.log2(bucket.length) * 4);
-        // D5.2 — colour by worst threat in the bucket.
+        // colour by worst threat in the bucket.
         const worst = bucket.reduce((m, b) => Math.max(m, b.threat ?? 0), 0);
         const colour =
           worst >= 0.75 ? "#ef4444"     // crit

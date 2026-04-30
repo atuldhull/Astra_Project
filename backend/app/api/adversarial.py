@@ -55,7 +55,7 @@ class AdversarialResponse(BaseModel):
     original: DetectionsSummary
     perturbed: DetectionsSummary
     perturbed_image_base64: str
-    # Round-2: retention metric for the A/B narrative.
+    # retention metric for the A/B narrative.
     # retention = perturbed_count / max(original_count, 1)
     retention: float
 

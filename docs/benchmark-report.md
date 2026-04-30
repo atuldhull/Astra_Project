@@ -1,4 +1,4 @@
-# ASTRA Round-2 — Benchmark Report
+# ASTRA Benchmark Report
 
 > Stat-dense reference for the pitch deck and judge Q&A. Every number below
 > is reproducible by running the corresponding script in this repo. Numbers
@@ -107,8 +107,7 @@ RAID 2020). Synthetic 5-class non-IID partition for fast convergence.
 
 ### Sybil attack (3 honest + 2 colluding label-flip Sybils, 5 rounds)
 - 2 attackers receive aggregation weight **0.000** each (correctly flagged)
-- 3 honest clients aggregate; global accuracy reaches **76%** at round 4
-- Without FoolsGold (measured pre-fix): attackers dominated → **0% accuracy**
+- 3 honest clients aggregate; global accuracy reaches **76%** at Without FoolsGold (measured pre-fix): attackers dominated → **0% accuracy**
 - **Δ from FoolsGold: +76 pp** under attack
 
 ### Per-round telemetry exposed to UI

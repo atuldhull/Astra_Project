@@ -164,7 +164,7 @@ def process_mission(mission_id: int) -> dict:
         if not src.exists():
             return {"ok": False, "reason": f"source_missing: {src}"}
 
-        # v3.0/T1.1 — content-hash the source file once for provenance.
+        # content-hash the source file once for provenance.
         # Image+video paths share this; signature attribution is per-source.
         try:
             import hashlib
@@ -268,7 +268,7 @@ def process_mission(mission_id: int) -> dict:
                 db.flush()
                 detection_count += 1
 
-                # v3.0/T1.1 — sign provenance after flush so created_at is set.
+                # sign provenance after flush so created_at is set.
                 # Failures never break ingest (sign_detection swallows + logs).
                 if image_sha256:
                     try:

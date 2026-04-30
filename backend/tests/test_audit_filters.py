@@ -1,4 +1,4 @@
-"""D5.8 — audit filter parsing.
+"""audit filter parsing.
 
 _parse_event_types is the gateway between query strings and the
 AuditEventType enum. A regression here = silent filter drops on /audit.

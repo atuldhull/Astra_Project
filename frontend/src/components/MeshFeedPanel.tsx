@@ -1,5 +1,5 @@
 /**
- * MeshFeedPanel (D6.0 — surface coverage) — chronological "what each
+ * MeshFeedPanel (surface coverage) — chronological "what each
  * peer witnessed when" feed for the Audit page.
  *
  * The /api/v1/mesh/witnesses endpoint returns witnesses keyed by

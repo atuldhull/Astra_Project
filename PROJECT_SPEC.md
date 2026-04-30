@@ -407,33 +407,33 @@ astra/
 
 > Assumes 3-person team. Adjust if solo.
 
-### Day 1 — Foundation
+### Foundation
 - Init git repo, set up docker-compose skeleton (Postgres + Redis + backend stub + frontend stub)
 - Download DOTA subset (~3GB)
 - Write `prepare_dota.py` → converts to YOLO format, 8-class remap
 - Verify: `python train.py --smoke-test` runs 1 epoch end-to-end on a tiny subset
 
-### Day 2 — Model
+### Model
 - Full training run (overnight if needed)
 - Evaluate on held-out test set, generate confusion matrix + PR curves
 - Export ONNX, benchmark CPU + GPU latency
 - Freeze `weights/astra-v1.onnx` as the demo artifact
 
-### Day 3 — Backend core
+### Backend core
 - FastAPI: `/ingest`, `/detections`, `/alerts`, `/audit`
 - DB models + migrations
 - Inference worker (consumes upload → runs model → writes detections)
 - ByteTrack integration
 - Threat scoring formula
 
-### Day 4 — Frontend
+### Frontend
 - React scaffold with 5 pages
 - Mission page with video + canvas overlay
 - Map page with Leaflet + offline tiles
 - Alerts page with table + weight sliders
 - WebSocket live feed wired up
 
-### Day 5 — Polish + Pitch
+### Polish + Pitch
 - Grad-CAM endpoint + UI
 - Local LLM narrator (if time)
 - Benchmark page with real numbers

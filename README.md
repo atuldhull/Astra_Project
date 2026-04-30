@@ -5,7 +5,7 @@
 Built for the **ASTRA Defence-Tech Expo 2026, BMSIT&M Bengaluru**.
 Track: *AI & Machine Learning in Defence Technology*.
 
-**Current release: `v3.0.0-rc2` (Day 2 of v3.0 sprint).**
+**Current release: `v3.0.0-` (Day 2 of v3.0 sprint).**
 Round 1, Round 2, Round 3 all shipped (`v0.3.0-round3`); v3.0 "sovereign" branch adds detection-level signatures, chain anchoring, calibrated OOD, command palette, and grounded LLM Q&A.
 
 See [docs/V3.0-DAYLOG.md](docs/V3.0-DAYLOG.md) for the day-by-day shipping log,
@@ -94,7 +94,7 @@ The Chat page now talks to a real LLM when `D:/astra-data/models/phi-3.5-mini-in
 ### Tamper-evident audit
 * SHA-256 hash chain from a genesis row.
 * `verify_chain()` re-walks every row; mismatch identifies the tampered row.
-* Chain anchors (T1.2) extend protection beyond the chain itself.
+* Chain anchors extend protection beyond the chain itself.
 
 ### Dual-control engagement
 * `ESCALATED → ENGAGED` requires 2 distinct operator IDs to confirm.

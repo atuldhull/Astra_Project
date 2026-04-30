@@ -36,18 +36,18 @@ ROUND2_COLUMNS: list[tuple[str, str, str]] = [
     ("alerts", "confirmations_json", "ALTER TABLE alerts ADD COLUMN confirmations_json TEXT"),
     ("audit_events", "prev_hash", "ALTER TABLE audit_events ADD COLUMN prev_hash VARCHAR(64)"),
     ("audit_events", "row_hash", "ALTER TABLE audit_events ADD COLUMN row_hash VARCHAR(64)"),
-    # v3.0/T0.13 — soft-delete on missions; NULL means active.
+    # soft-delete on missions; NULL means active.
     ("missions", "deleted_at", "ALTER TABLE missions ADD COLUMN deleted_at TIMESTAMP WITH TIME ZONE"),
-    # v3.0/T1.1 — provenance signatures + image content hash on detections.
+    # provenance signatures + image content hash on detections.
     ("detections", "signature_b64", "ALTER TABLE detections ADD COLUMN signature_b64 VARCHAR(128)"),
     ("detections", "image_sha256",  "ALTER TABLE detections ADD COLUMN image_sha256 VARCHAR(64)"),
-    # v3.0/D3.5 — public-report fields on Mission.
+    # public-report fields on Mission.
     ("missions", "source_kind", "ALTER TABLE missions ADD COLUMN source_kind VARCHAR(32) NOT NULL DEFAULT 'operator'"),
     ("missions", "reporter_id", "ALTER TABLE missions ADD COLUMN reporter_id VARCHAR(64)"),
     ("missions", "extras_json", "ALTER TABLE missions ADD COLUMN extras_json TEXT"),
 ]
 
-# v3.0/D3.4 — additive index on the new mesh_witnesses table. The table
+# additive index on the new mesh_witnesses table. The table
 # itself is created by Base.metadata.create_all (declarative); we add the
 # composite-unique index here because SQLAlchemy declarative is finicky
 # with table_args under our import-order pattern, and this is the simpler
@@ -69,7 +69,7 @@ ROUND2_ENUM_VALUES: list[tuple[str, str]] = [
     ("auditeventtype", "alert_confirmation"),
     ("auditeventtype", "alert_engaged"),
     ("alertstatus", "engaged"),
-    # v3.0/D3.5 — public-report audit events.
+    # public-report audit events.
     ("auditeventtype", "public_report_submitted"),
     ("auditeventtype", "public_report_pinned"),
 ]

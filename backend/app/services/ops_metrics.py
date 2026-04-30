@@ -1,5 +1,5 @@
 """
-Ops metrics (D5.5) — request counters + latency histograms surfaced
+Ops metrics — request counters + latency histograms surfaced
 on the existing /metrics endpoint.
 
 Single in-process MetricsState. No prometheus_client dep — the existing

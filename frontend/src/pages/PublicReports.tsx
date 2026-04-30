@@ -1,5 +1,5 @@
 /**
- * Public Reports (D3.5) — citizen-submission triage with manual-pin fallback.
+ * Public Reports — citizen-submission triage with manual-pin fallback.
  *
  * Lives in the OPERATOR group at /public-reports. The public-facing
  * submit form is embedded on /command (OPERATIONS) so judges see the

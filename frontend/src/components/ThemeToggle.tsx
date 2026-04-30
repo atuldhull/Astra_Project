@@ -3,7 +3,7 @@
  *   dark    : slate + orange accent (R3 production default)
  *   command : NORAD green-on-black for the deep-cinematic mode
  *
- * Light theme was removed in v3.0 — it failed contrast audit on key
+ * Light theme was removed in it failed contrast audit on key
  * defence-genre chrome (corner brackets, telemetry strips, scan lines)
  * and shipping it half-broken hurt more than skipping it. If you had
  * `astra:theme:v1=light` saved, you'll be migrated to dark on next

@@ -22,7 +22,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# v3.0/D5.5 — request counter + latency histogram. Must come AFTER CORS
+# request counter + latency histogram. Must come AFTER CORS
 # so preflight OPTIONS land in the right order.
 app.middleware("http")(metrics_middleware)
 
@@ -45,8 +45,8 @@ async def warmup() -> None:
     cannot prevent the server from starting — the rest of the app is
     still useful, and the operator may not have run training yet.
 
-    v3.0/rc5.1-debug — env flags to skip individual stages when one
-    silently hangs the worker (the recurring rc3-rc5 zombie pattern):
+    v3.0/env flags to skip individual stages when one
+    silently hangs the worker (the recurring  zombie pattern):
 
       ASTRA_SKIP_WARMUP=1     skip everything → fastest boot, ~no models
       ASTRA_SKIP_LLM=1        skip Phi-3.5 only (most common hang on Win)

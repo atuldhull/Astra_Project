@@ -1,8 +1,7 @@
 /**
  * Commander Q&A page.
  *
- * Round-3:
- *   * Threads are persisted in Postgres (chat_messages table), scoped
+ * *   * Threads are persisted in Postgres (chat_messages table), scoped
  *     to the active mission. Refresh, switch tabs, or reopen — same
  *     conversation comes back.
  *   * Active mission picked via localStorage 'astra:lastMissionId' (set

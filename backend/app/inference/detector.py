@@ -1,6 +1,6 @@
 """
 Thin wrapper around Ultralytics YOLO. Lazy-loaded so the backend can boot
-even before the trained weights exist (useful during Day 1-2 of the build).
+even before the trained weights exist (useful during 2 of the build).
 
 Round-2 addition: support multiple model variants (e.g. v1 baseline vs
 v1-hardened with FGSM-augmented training) cached per variant. Adversarial

@@ -136,7 +136,7 @@ export default function Audit() {
     system_events: number;
     total: number;
   } | null>(null);
-  // D3.4 — mesh witness state
+  // mesh witness state
   const [witnessesByRow, setWitnessesByRow] = useState<Record<number, MeshWitness[]>>({});
   const [meshPeerCount, setMeshPeerCount] = useState<number>(0);
   const [syncingMesh, setSyncingMesh] = useState(false);
@@ -173,7 +173,7 @@ export default function Audit() {
     }
   }, [buildParams]);
 
-  // D3.4 — pull witnesses for the events we just rendered.
+  // pull witnesses for the events we just rendered.
   const loadWitnesses = useCallback(async (eventIds: number[]) => {
     if (eventIds.length === 0) {
       setWitnessesByRow({});
@@ -548,7 +548,7 @@ export default function Audit() {
         </div>
       </div>
 
-      {/* D6.0 — Mesh witness feed (chronological, all peers) */}
+      {/* Mesh witness feed (chronological, all peers) */}
       <div className="px-6 pt-3">
         <MeshFeedPanel />
       </div>

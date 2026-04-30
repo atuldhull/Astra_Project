@@ -10,7 +10,7 @@
  *   2. localStorage — astra:demoMode=1 (persists across reloads)
  *   3. env — VITE_DEMO_MODE=true (compile-time default)
  *
- * Toggle from Sidebar (T1.10) or programmatically via setDemoMode().
+ * Toggle from Sidebar or programmatically via setDemoMode().
  */
 
 const KEY = "astra:demoMode";

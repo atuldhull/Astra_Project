@@ -1,5 +1,5 @@
 /**
- * CritCascade (D4.3) — layered visual signal for ≥0.75 threat detections.
+ * CritCascade — layered visual signal for ≥0.75 threat detections.
  *
  * Subscribes to /ws/live for the lifetime of the app. When a detection
  * with threat_score >= 0.75 arrives:
@@ -33,7 +33,7 @@ type CritEvent = {
   at: number;        // unix ms
 };
 
-// D4.4 — alert action feed (op-2 sees op-1's confirm in real time).
+// alert action feed (op-2 sees op-1's confirm in real time).
 export type AlertAction = {
   alert_id: number;
   mission_id: number;
@@ -51,7 +51,7 @@ type State = {
   // Acknowledged ids are dropped from the unack count.
   unack: Map<number, CritEvent>;   // keyed by alert_id (or detection_id when alert_id null)
   seen: Set<number>;                // alert_ids that have already triggered a sweep
-  // D4.4 — last action per (alert_id), 4-second freshness window enforced
+  // last action per (alert_id), 4-second freshness window enforced
   // by the readers (no central timer to keep this lock-free).
   actions: Map<number, AlertAction>;
 };
@@ -72,7 +72,7 @@ function emit() {
 
 const CRIT_THRESHOLD = 0.75;
 const SWEEP_DURATION_MS = 1600;
-// D5.7 — per-layer cooldown so a 15-crit burst in 3s doesn't seizure
+// per-layer cooldown so a 15-crit burst in 3s doesn't seizure
 // the UI. Each "recent" assignment honours the cooldown; subsequent
 // crits within the window still update unack/seen but don't re-fire
 // the cinematic stack.
@@ -151,7 +151,7 @@ export const critCascade = {
     fn(_state);
     return () => { listeners.delete(fn); };
   },
-  /** D4.4 — push an alert_action event from the WS feed. */
+  /** push an alert_action event from the WS feed. */
   pushAction(a: Omit<AlertAction, "at">) {
     _state.actions.set(a.alert_id, { ...a, at: Date.now() });
     emit();
@@ -171,20 +171,20 @@ export const critCascade = {
     }
     return best;
   },
-  /** D5.3 — is `recent` a crit for this mission? Lasts SWEEP_DURATION_MS. */
+  /** is `recent` a crit for this mission? Lasts SWEEP_DURATION_MS. */
   recentCritForMission(mission_id: number): CritEvent | null {
     if (!_state.recent) return null;
     if (_state.recent.mission_id !== mission_id) return null;
     if (Date.now() - _state.recent.at > 1600) return null;
     return _state.recent;
   },
-  /** D5.3 — is there ANY recent crit (for sidebar flash)? */
+  /** is there ANY recent crit (for sidebar flash)? */
   recentCritGlobal(): CritEvent | null {
     if (!_state.recent) return null;
     if (Date.now() - _state.recent.at > 1600) return null;
     return _state.recent;
   },
-  /** D5.3 — fresh alert_action for a specific alert id, used by row pulse. */
+  /** fresh alert_action for a specific alert id, used by row pulse. */
   freshActionForAlert(alert_id: number): AlertAction | null {
     const a = _state.actions.get(alert_id);
     if (!a) return null;
@@ -230,7 +230,7 @@ export function CritCascadeListener() {
           return;
         }
         if (m.type === "alert_action") {
-          // D4.4 — relay op-1's action to op-2's screens.
+          // relay op-1's action to op-2's screens.
           const alert_id = Number(m.alert_id ?? 0);
           const mission_id = Number(m.mission_id ?? 0);
           const operator_id = String(m.operator_id ?? "?");
@@ -332,14 +332,14 @@ export function useCritAckOnMount() {
   }, []);
 }
 
-/** D5.3 — returns true while a recent crit is active (within 1.6s). */
+/** returns true while a recent crit is active (within 1.6s). */
 export function useRecentCritFlash(): boolean {
   const [, setN] = useState(0);
   useEffect(() => critCascade.subscribe(() => setN((n) => n + 1)), []);
   return critCascade.recentCritGlobal() != null;
 }
 
-/** D5.4 — Engage prompt banner. When a fresh crit lands AND it has an
+/** Engage prompt banner. When a fresh crit lands AND it has an
  *  alert_id, render a fixed banner top-center with an "Engage →" button
  *  for 6s. Click → write a one-shot handoff blob to localStorage and
  *  navigate to /alerts. The Alerts page reads the blob on mount,
@@ -397,7 +397,7 @@ export function CritEngagePrompt() {
 
 export const CRIT_ENGAGE_HANDOFF_KEY = ENGAGE_HANDOFF_KEY;
 
-/** D5.4 — drop-in hook for /alerts. On mount: read the handoff blob, if
+/** drop-in hook for /alerts. On mount: read the handoff blob, if
  *  fresh (<30s old) return its payload so the page can pre-select the
  *  mission + scroll to the alert. The blob is consumed immediately
  *  (cleared) so repeated /alerts visits don't re-trigger the flow. */
@@ -418,7 +418,7 @@ export function useEngageHandoff(): { alert_id: number; mission_id: number } | n
   return payload;
 }
 
-/** D5.3 — corner-bracket flash overlay for the Mission Bezel when a crit
+/** corner-bracket flash overlay for the Mission Bezel when a crit
  *  lands on the currently-displayed mission. Renders inside its parent
  *  (parent must be position:relative). 1.6s ease-out. */
 export function CritCornerFlash({ missionId }: { missionId: number | null }) {
@@ -458,7 +458,7 @@ export function CritCornerFlash({ missionId }: { missionId: number | null }) {
   );
 }
 
-/** D5.3 — left-border pulse for an alert table row. Only fires when an
+/** left-border pulse for an alert table row. Only fires when an
  *  alert action just landed for *this* alert id. */
 export function AlertRowPulse({ alertId }: { alertId: number }) {
   const [, setN] = useState(0);
@@ -492,7 +492,7 @@ export function AlertRowPulse({ alertId }: { alertId: number }) {
   );
 }
 
-/** D4.4 — small pulsing pill that surfaces "ACKED BY <op>" on a mission
+/** small pulsing pill that surfaces "ACKED BY <op>" on a mission
  *  tile when an alert action lands within the freshness window. Pass
  *  the mission_id; renders null when there's no fresh action. */
 export function AckedByPulse({ missionId }: { missionId: number }) {

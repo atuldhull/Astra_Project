@@ -26,7 +26,7 @@ import { HelpOverlay } from "./components/HelpOverlay";
 import { CritCascadeListener, CritSweep, CritEngagePrompt } from "./components/CritCascade";
 import { useDemoMode } from "./lib/demoMode";
 
-// v3.0/D3.1 — Two-group navigation IA.
+// Two-group navigation IA.
 // "operations" = the operational story arc (always visible).
 // "operator"   = internal/admin pages, hidden when Demo Mode is ON.
 // Routes are intentionally unchanged — only display labels and grouping

@@ -19,7 +19,7 @@ ENGAGE_REQUIRED_CONFIRMATIONS = 2
 
 
 def _broadcast_action(payload: dict) -> None:
-    """v3.0/D4.4 — fire-and-forget broadcast on /ws/live so a second
+    """fire-and-forget broadcast on /ws/live so a second
     operator's /command tile + crit cascade can show the action live.
     Never raises — alert mutation must succeed even if the WS pool is dead."""
     try:

@@ -26,7 +26,7 @@ class AlertStatus(str, PyEnum):
     CONFIRMED = "confirmed"
     REJECTED = "rejected"
     ESCALATED = "escalated"
-    ENGAGED = "engaged"   # Round-2: escalated + 2 distinct operator confirmations
+    ENGAGED = "engaged"   # escalated + 2 distinct operator confirmations
 
 
 class AuditEventType(str, PyEnum):
@@ -36,10 +36,10 @@ class AuditEventType(str, PyEnum):
     ALERT_REJECTED = "alert_rejected"
     ALERT_RECLASSIFIED = "alert_reclassified"
     ALERT_ESCALATED = "alert_escalated"
-    ALERT_CONFIRMATION = "alert_confirmation"   # Round-2: dual-control partial confirm
-    ALERT_ENGAGED = "alert_engaged"              # Round-2: dual-control complete (2 ops)
+    ALERT_CONFIRMATION = "alert_confirmation"   # dual-control partial confirm
+    ALERT_ENGAGED = "alert_engaged"              # dual-control complete (2 ops)
     WEIGHTS_CHANGED = "weights_changed"
-    # v3.0/D3.5 — public report submission + operator-pin events.
+    # public report submission + operator-pin events.
     PUBLIC_REPORT_SUBMITTED = "public_report_submitted"
     PUBLIC_REPORT_PINNED = "public_report_pinned"
 
@@ -55,7 +55,7 @@ class Mission(Base):
     # Round-3 soft-delete: NULL = active, set timestamp = soft-deleted.
     # Hard-deleting would orphan detections/alerts and break the audit trail.
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
-    # v3.0/D3.5 — provenance of the mission. "operator" = uploaded via
+    # provenance of the mission. "operator" = uploaded via
     # /ingest by an authorised operator (legacy default). "public-report"
     # = submitted via /public/submit (citizen tip). reporter_id is the
     # opaque submitter token; nullable for operator-uploaded missions.
@@ -93,7 +93,7 @@ class Detection(Base):
     # the MAR20 cascade result ({"airframe": "F-22", "airframe_confidence": 0.84})
     # and SAM OOD score; new producers can add keys without further migrations.
     extras_json: Mapped[str | None] = mapped_column(Text, nullable=True)
-    # v3.0/T1.1 — Ed25519 provenance signature over canonical detection
+    # Ed25519 provenance signature over canonical detection
     # fields. NULL if signing was disabled or failed (never blocks ingest).
     signature_b64: Mapped[str | None] = mapped_column(String(128), nullable=True)
     image_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
@@ -152,7 +152,7 @@ class ChatMessage(Base):
 
 
 class MeshWitness(Base):
-    """v3.0/T D3.4 — cross-agency audit witnessing.
+    """v3.0/T cross-agency audit witnessing.
 
     Peer agencies pull our chain, verify locally with the same _row_hash
     primitive we use, and post Ed25519 signatures over (peer_id ||

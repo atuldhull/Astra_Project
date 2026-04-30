@@ -51,7 +51,7 @@ function replayCounts(
   return `${visible} visible · ${ghost} ghost`;
 }
 
-// D5.7 — module-scope thumb cache. Keyed by fileUrl + totalMs so the
+// module-scope thumb cache. Keyed by fileUrl + totalMs so the
 // same video re-rendered after a tab switch reuses dataURLs (8 jpeg
 // dataURLs ≈ 80–120KB; cap to 8 entries for hygiene).
 const _thumbCache = new Map<string, { url: string; at: number }[]>();
@@ -146,12 +146,12 @@ export default function Mission() {
   const [videoPolling, setVideoPolling] = useState(false);
   const [videoCurrentTime, setVideoCurrentTime] = useState(0);
 
-  // D4.1 — Mission Replay Scrubber. scrubMs is the canonical "where am I"
+  // Mission Replay Scrubber. scrubMs is the canonical "where am I"
   // pointer for replay; when null, replay is inactive and the existing
   // live-rendering logic plays. Bounds are derived below.
   const [scrubMs, setScrubMs] = useState<number | null>(null);
   const [replayPlaying, setReplayPlaying] = useState(false);
-  // D5.7 — pipeline-stage tick marks on the slider. Derived from the
+  // pipeline-stage tick marks on the slider. Derived from the
   // AuditDrawer's snapshot via onSnapshot callback.
   const [stageMarkers, setStageMarkers] = useState<{ at: number; label: string; colour?: string }[]>([]);
 
@@ -438,7 +438,7 @@ export default function Mission() {
     };
   }, [fileType, fileUrl]);
 
-  // D4.1 — replay bounds. Returns null when there's not enough temporal
+  // replay bounds. Returns null when there's not enough temporal
   // spread to scrub (single-frame image, no detections, etc).
   //   • video → 0..duration (or det timestamp range if duration unknown)
   //   • image → spread of created_at across imageDbDets (must be ≥ 1s
@@ -497,12 +497,12 @@ export default function Mission() {
     }
   }, [scrubMs, replayBounds?.mode]);
 
-  // D5.1 — replay thumbnails. Sample N frames from the video at evenly-
+  // replay thumbnails. Sample N frames from the video at evenly-
   // spaced timestamps once the video metadata is loaded. We use a hidden
   // <video> element + a temp canvas because seeking the *visible* video
   // would interfere with the operator's playback. Only re-runs when the
   // file URL or the (computed) duration changes.
-  // D5.7 — module-scope cache keyed by (fileUrl, totalMs). Survives
+  // module-scope cache keyed by (fileUrl, totalMs). Survives
   // tab-switches and re-mounts so we don't regenerate every visit.
   const [thumbs, setThumbs] = useState<{ url: string; at: number }[]>([]);
   useEffect(() => {
@@ -583,7 +583,7 @@ export default function Mission() {
     };
   }, [fileUrl, fileType, replayBounds?.min, replayBounds?.max, replayBounds?.mode]);
 
-  // D5.1 — live-tail. When scrubber is parked at the current max AND new
+  // live-tail. When scrubber is parked at the current max AND new
   // detections arrive (videoDets / imageDbDets grow with later timestamps),
   // advance scrubMs to the new max so the operator stays on "live".
   useEffect(() => {
@@ -631,7 +631,7 @@ export default function Mission() {
       ctx.font = "12px ui-monospace, Consolas, monospace";
       ctx.lineWidth = 2;
 
-      // D4.1 — image-mode replay. When scrubMs is set, gate every box on
+      // image-mode replay. When scrubMs is set, gate every box on
       // the matching DbDetection's created_at:
       //   visible: created_at <= scrubMs            → full opacity, colour border
       //   ghost:   in [scrubMs - 10s, scrubMs]      → 20% opacity, grey, no label
@@ -732,7 +732,7 @@ export default function Mission() {
         (d) => Math.abs(d.frame_timestamp_ms - currentMs) <= WINDOW_MS
       );
 
-      // D4.1 — ghost-trail boxes: detections that were live in the last
+      // ghost-trail boxes: detections that were live in the last
       // 10 seconds before "now" but aren't current. Renders a faded box
       // for each (independent of the per-track polyline trail below) so
       // operators can see exactly *where* something was, not just *that*
@@ -1183,7 +1183,7 @@ export default function Mission() {
                     : scrubMs
                 }
                 onSnapshot={(snap) => {
-                  // D5.7 — derive stage markers in scrubber-space.
+                  // derive stage markers in scrubber-space.
                   const STAGE_COLOURS: Record<string, string> = {
                     ingest_started:   "#60a5fa",
                     ingest_completed: "#4ade80",
@@ -1227,7 +1227,7 @@ export default function Mission() {
             <div className="font-mono text-sm">RTX 4050 Laptop · FP32</div>
           </div>
 
-          {/* D6.0 — Mission report PDF download. Only when a mission has
+          {/* Mission report PDF download. Only when a mission has
               been ingested + saved (otherwise there's nothing to report on). */}
           {savedMissionId != null && (
             <a

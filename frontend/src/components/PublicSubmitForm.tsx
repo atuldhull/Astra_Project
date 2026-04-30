@@ -1,5 +1,5 @@
 /**
- * PublicSubmitForm (D3.5) — drag-drop target for citizen tip submissions.
+ * PublicSubmitForm — drag-drop target for citizen tip submissions.
  *
  * Embedded on /command (OPERATIONS) so the public-input flow is visible
  * in the Operations surface; the operator-side triage lives at

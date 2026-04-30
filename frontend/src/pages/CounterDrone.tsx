@@ -1,5 +1,5 @@
 /**
- * Counter-Drone Sentinel (D3.3) — synthetic swarm + IFF + signed c2.
+ * Counter-Drone Sentinel — synthetic swarm + IFF + signed c2.
  *
  * Self-contained simulation. Honest framing visible at the top: no real
  * RF emission, no real kinetics. The Ed25519 IFF + the latency-stamped
@@ -468,7 +468,7 @@ export default function CounterDrone() {
           >
             <div className="px-4 py-3 text-xs text-muted">
               Every <code className="text-text">/sentinel/engage</code> request is signed with the same Ed25519
-              key that signs detections (T1.1) and stamps server-side latency_ms on the
+              key that signs detections and stamps server-side latency_ms on the
               <code className="text-text"> sentinel_ack</code> WebSocket event. The audit chain captures
               chain-of-custody as <code className="text-text">weights_changed</code> rows tagged
               <code className="text-text"> sentinel.engage</code>.

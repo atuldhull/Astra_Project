@@ -1,5 +1,5 @@
 """
-Provenance signatures (T1.1) — Ed25519 per-detection signatures.
+Provenance signatures — Ed25519 per-detection signatures.
 
 Every Detection row is cryptographically signed by ASTRA's server key
 at commit time. The signature covers a canonical serialization of:

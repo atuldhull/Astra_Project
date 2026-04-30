@@ -1,5 +1,5 @@
 """
-/health/dashboard (D3.6) — single aggregated readout for the operator's
+/health/dashboard — single aggregated readout for the operator's
 Health page.
 
 This rolls up every "is the system actually working?" signal that's
@@ -57,7 +57,7 @@ def _read_json_safely(path: Path) -> dict | None:
 def _backend_block() -> dict:
     return {
         "uptime_s": round(time.time() - _BOOT_TS, 1),
-        "version": "3.0.0-rc3",
+        "version": "3.0.0-",
         "device": settings.inference_device,
         "model_path": str(settings.model_path),
         "cuda_available": _cuda_available(),
@@ -215,7 +215,7 @@ def dashboard(
     }
 
 
-# ── D4.6 — Prometheus text-format metrics ────────────────────────────
+# ── Prometheus text-format metrics ────────────────────────────
 
 # Registered as a sibling at /metrics (no /health prefix) so a generic
 # Prometheus scraper can hit the conventional path. We re-export this
@@ -307,7 +307,7 @@ def prometheus_metrics(db: Session = Depends(get_db)) -> Response:
                 lines.append(_ptype(f"astra_detector_{k}", "gauge", f"Detector {k} from the last capture."))
                 lines.append(f"astra_detector_{k} {v}\n")
 
-    # D5.5 — alerts by status (operationally interesting; built fresh each
+    # alerts by status (operationally interesting; built fresh each
     # scrape so cancellation / status churn surfaces immediately).
     try:
         rows = db.execute(select(Alert.status, func.count()).group_by(Alert.status)).all()
@@ -328,7 +328,7 @@ def prometheus_metrics(db: Session = Depends(get_db)) -> Response:
     except Exception:
         pass
 
-    # D5.5 — request counter + latency histogram from middleware.
+    # request counter + latency histogram from middleware.
     try:
         from app.services.ops_metrics import get_state
         state = get_state()

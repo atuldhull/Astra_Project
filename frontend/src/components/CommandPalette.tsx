@@ -1,5 +1,5 @@
 /**
- * CommandPalette (T1.7) — global keyboard launcher (⌘K / Ctrl+K).
+ * CommandPalette — global keyboard launcher (⌘K / Ctrl+K).
  *
  * Indexes:
  *   • every sidebar page (deterministic, hard-coded)
@@ -177,7 +177,7 @@ export function CommandPalette() {
         toast.info(`Demo mode ${v ? "ON" : "OFF"}`, v ? "operator chrome hidden" : "full UI restored");
       },
     });
-    // D3.6 — operator-only capture toggles. Hidden in demo mode (mirrors
+    // operator-only capture toggles. Hidden in demo mode (mirrors
     // sidebar). They toast + copy the command to clipboard, no automation.
     if (!demo) {
       for (const a of HEALTH_CAPTURE_ACTIONS) {

@@ -33,7 +33,7 @@ export type Detection = {
   lat: number | null; lon: number | null;
   track_id: number | null;
   extras?: AirframeExtra | null;
-  // v3.0/T1.1 — Ed25519 provenance signature; presence enables the verify badge.
+  // Ed25519 provenance signature; presence enables the verify badge.
   signature_b64?: string | null;
   image_sha256?: string | null;
   created_at: string;
@@ -149,7 +149,7 @@ export type AdversarialMetrics = {
   per_sample?: { sample: string; baseline: number; hardened: number }[];
 };
 
-// ── Public reports (D3.5) ────────────────────────────────────────────
+// ── Public reports ────────────────────────────────────────────
 export type PublicSubmitResult = {
   mission_id: number;
   has_gps: boolean;
@@ -175,7 +175,7 @@ export type RecentPublicRow = {
   created_at: string;
 };
 
-// ── Mission audit snapshot (D4.2) ────────────────────────────────────
+// ── Mission audit snapshot ────────────────────────────────────
 export type AuditSnapshotEvent = {
   id: number;
   event_type: string;
@@ -201,7 +201,7 @@ export type AuditSnapshot = {
   witnesses: AuditSnapshotWitness[];
 };
 
-// ── Health dashboard (D3.6) ──────────────────────────────────────────
+// ── Health dashboard ──────────────────────────────────────────
 export type HealthDashboard = {
   captured_at: string;
   operator: { id: string; role: string };
@@ -259,7 +259,7 @@ export type HealthDashboard = {
   } | null;
 };
 
-// ── Mesh witnessing (D3.4) ───────────────────────────────────────────
+// ── Mesh witnessing ───────────────────────────────────────────
 export type MeshPeer = {
   peer_id: string;
   key_present: boolean;
@@ -272,7 +272,7 @@ export type MeshWitness = {
   row_hash: string;
 };
 
-// ── Sentinel WS payloads (D3.3) ──────────────────────────────────────
+// ── Sentinel WS payloads ──────────────────────────────────────
 export type SentinelDrone = {
   id: string;
   role: "friendly" | "foe";
@@ -427,12 +427,12 @@ export const api = {
     const qs = q.toString();
     return json<AuditEvent[]>(`/api/v1/audit${qs ? `?${qs}` : ""}`);
   },
-  // v3.0/D5.7b — batch latest-row-id lookup per alert (pre-fetch helper)
+  // batch latest-row-id lookup per alert (pre-fetch helper)
   auditLatestByAlert: (alert_ids: number[]) =>
     json<{ by_alert: Record<string, number | null> }>(
       `/api/v1/audit/latest-by-alert?alert_ids=${alert_ids.join(",")}`,
     ),
-  // v3.0/D3.2 — chain operations
+  // chain operations
   verifyAuditRow: (row_id: number) =>
     json<{
       ok: boolean;
@@ -466,7 +466,7 @@ export const api = {
     if (params.until) q.set("until", params.until);
     return `${BASE}/api/v1/audit/range-cert${q.toString() ? `?${q}` : ""}`;
   },
-  // ── Counter-Drone Sentinel (D3.3) ────────────────────────────────
+  // ── Counter-Drone Sentinel ────────────────────────────────
   sentinelScenarios: () =>
     json<{
       scenarios: Array<{
@@ -498,7 +498,7 @@ export const api = {
     json<{ ok: boolean; drone_id: string; action: string; latency_ms: number; new_state: string }>(
       `/api/v1/sentinel/engage`, { method: "POST", body: JSON.stringify(body) }
     ),
-  // ── Mesh (D3.4) ──────────────────────────────────────────────────
+  // ── Mesh ──────────────────────────────────────────────────
   meshPeers: () =>
     json<{ peers: MeshPeer[]; peers_dir: string; n_peers: number; peer_ids: string[] }>(
       `/api/v1/mesh/peers`,
@@ -544,7 +544,7 @@ export const api = {
       `/api/v1/mesh/sync-demo${limit ? `?limit=${limit}` : ""}`,
       { method: "POST" },
     ),
-  // ── Public reports (D3.5) ────────────────────────────────────────
+  // ── Public reports ────────────────────────────────────────
   publicSubmit: async (file: File, reporter_id: string, caption?: string) => {
     const fd = new FormData();
     fd.append("file", file);
@@ -567,7 +567,7 @@ export const api = {
   // ── Mission report PDF (D6.0 surface coverage) ───────────────────
   missionReportUrl: (mission_id: number) =>
     `${BASE}/api/v1/reports/mission/${mission_id}.pdf`,
-  // ── OOD calibration (T1.3) ───────────────────────────────────────
+  // ── OOD calibration ───────────────────────────────────────
   oodCalibration: () =>
     json<{
       backend: string;
@@ -580,9 +580,9 @@ export const api = {
       thresholds?: Record<string, number>;
       hint?: string;
     }>(`/api/v1/ood/calibration`),
-  // ── Health dashboard (D3.6) ──────────────────────────────────────
+  // ── Health dashboard ──────────────────────────────────────
   healthDashboard: () => json<HealthDashboard>(`/api/v1/health/dashboard`),
-  // ── Mission audit snapshot (D4.2) ────────────────────────────────
+  // ── Mission audit snapshot ────────────────────────────────
   auditSnapshot: (mission_id: number, until_ts?: string) => {
     const q = new URLSearchParams({ mission_id: String(mission_id) });
     if (until_ts) q.set("until_ts", until_ts);
@@ -643,7 +643,7 @@ export function openLiveSocket(onMessage: (data: unknown) => void): WebSocket {
   return ws;
 }
 
-/** Sentinel command-and-control feed (D3.3). 5 Hz `sentinel_tick` events
+/** Sentinel command-and-control feed. 5 Hz `sentinel_tick` events
  *  + on-demand `sentinel_ack` events. Falls back to a host-derived URL
  *  when VITE_WS_URL is not set. */
 export function openC2Socket(onMessage: (data: unknown) => void): WebSocket {

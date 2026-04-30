@@ -1,4 +1,4 @@
-"""D5.8 — anchor primitives that don't need the DB.
+"""anchor primitives that don't need the DB.
 
 AnchorEntry round-trip + maybe_anchor cadence threshold logic.
 """

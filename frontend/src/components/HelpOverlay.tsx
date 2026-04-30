@@ -1,5 +1,5 @@
 /**
- * HelpOverlay (T1.8) — press `?` to open a context-sensitive cheat sheet.
+ * HelpOverlay — press `?` to open a context-sensitive cheat sheet.
  *
  * Listens globally for the `?` keypress (Shift+/). Esc dismisses.
  * Content adapts to the current route via window.location.pathname so

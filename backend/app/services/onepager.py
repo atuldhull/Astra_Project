@@ -6,7 +6,7 @@ Pulls live numbers from benchmarks/*.json so the metrics on the page
 are always the most recent capture.
 
 Layout (A4 portrait, single page):
-  HEADER  ASTRA v3.0 - Sovereign / On-Device / Defensible
+  HEADER  ASTRA Sovereign / On-Device / Defensible
   PILLARS three side-by-side cards
   METRICS table: mAP, latency, cascade top-1, audit chain rows
   DELTA   one-line what makes ASTRA different
@@ -77,7 +77,7 @@ def render_onepager() -> bytes:
         rightMargin=14 * mm,
         topMargin=12 * mm,
         bottomMargin=12 * mm,
-        title="ASTRA v3.0 — One-Pager",
+        title="ASTRA One-Pager",
     )
 
     styles = getSampleStyleSheet()

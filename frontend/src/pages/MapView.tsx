@@ -67,7 +67,7 @@ export default function MapView() {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [showTracks, setShowTracks] = useState(true);
   const [showHeatmap, setShowHeatmap] = useState(false);
-  // D4.5 — cluster mode persists across navigations.
+  // cluster mode persists across navigations.
   const [showCluster, setShowCluster] = useState<boolean>(() => {
     try { return localStorage.getItem("astra:mapCluster") === "1"; } catch { return false; }
   });
@@ -99,7 +99,7 @@ export default function MapView() {
       .catch((e) => setError(`missions: ${(e as Error).message}`));
   }, []);
 
-  // D5.2 — alert threat-score lookup for the selected mission, used as
+  // alert threat-score lookup for the selected mission, used as
   // the per-detection threat hint feeding ClusterLayer's halo colour.
   const [alertsByDetId, setAlertsByDetId] = useState<Map<number, number>>(new Map());
 

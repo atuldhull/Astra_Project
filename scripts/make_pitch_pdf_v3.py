@@ -192,7 +192,7 @@ def page_chrome(c: rl_canvas.Canvas, slide_no: int, total: int, footer: str) -> 
     c.setFont("Helvetica", 7.5)
     c.drawString(0.5 * inch, 0.3 * inch, footer)
     c.drawRightString(SLIDE_W - 0.5 * inch, 0.3 * inch,
-                      "release/3.0 · v3.0.0-rc5.2")
+                      "release/3.0 · v3.0.0-")
 
 
 def title_block(c: rl_canvas.Canvas, title: str, subtitle: str,
