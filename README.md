@@ -1,5 +1,9 @@
 # ASTRA — aerial detection with a tamper-evident audit trail
 
+[![CI](https://github.com/atuldhull/Astra_Project/actions/workflows/ci.yml/badge.svg?branch=release%2F3.0)](https://github.com/atuldhull/Astra_Project/actions/workflows/ci.yml)
+![Tests](https://img.shields.io/badge/tests-46-success?style=flat-square)
+![mAP](https://img.shields.io/badge/mAP%4050%3A95-0.29-orange?style=flat-square)
+
 Detects aircraft in aerial imagery on a local GPU, and — the part I actually care about —
 makes it hard to lie about what was detected afterwards. Every detection is Ed25519-signed at
 ingest, and the audit log is a SHA-256 hash chain you can re-walk from genesis to prove no row
