@@ -1,76 +1,86 @@
-# ASTRA — Aerial Surveillance & Threat Recognition Assistant
+# ASTRA — aerial detection with a tamper-evident audit trail
 
-> **Sovereign · on-device · defensible.** Defence-grade aerial recognition that runs end-to-end on a 6 GB laptop GPU. Three pillars no other product hits all of: open architecture, no cloud, every claim cryptographically signed.
+Detects aircraft in aerial imagery on a local GPU, and — the part I actually care about —
+makes it hard to lie about what was detected afterwards. Every detection is Ed25519-signed at
+ingest, and the audit log is a SHA-256 hash chain you can re-walk from genesis to prove no row
+was edited or removed.
 
-Built for the **ASTRA Defence-Tech Expo 2026, BMSIT&M Bengaluru**.
-Track: *AI & Machine Learning in Defence Technology*.
+Built for the ASTRA Defence-Tech Expo 2026 at BMSIT&M. It is a prototype, not a product, and
+the honest disclosures below are part of the README on purpose.
 
-**Current release: `v3.0.0-` (Day 2 of v3.0 sprint).**
-Round 1, Round 2, Round 3 all shipped (`v0.3.0-round3`); v3.0 "sovereign" branch adds detection-level signatures, chain anchoring, calibrated OOD, command palette, and grounded LLM Q&A.
+## What's real, and how well it works
 
-See [docs/V3.0-DAYLOG.md](docs/V3.0-DAYLOG.md) for the day-by-day shipping log,
-[docs/V3.0-DECISIONS.md](docs/V3.0-DECISIONS.md) for binding architecture decisions,
-[docs/RELEASE-R3.md](docs/RELEASE-R3.md) for the prior R3 feature matrix.
+**The provenance layer — this is the piece worth reviewing.**
+Each detection is signed over a canonical payload (`model_hash · image_sha256 · mission_id ·
+class_id · confidence · bbox · timestamp`), so altering any field in the database makes the next
+verify fail. The audit log chains each row's hash into the next (`sha256(prev_hash ||
+canonical_json(fields))`, genesis `0`×64), so you cannot quietly rewrite history — editing an
+old row breaks every hash after it.
 
----
+Real `cryptography` primitives, not a stub. It's covered by
+[`backend/tests/test_provenance_and_audit.py`](backend/tests/test_provenance_and_audit.py):
+sign/verify round-trips, key persistence across restart, eight tamper cases, wrong-key
+rejection, and chain-tamper detection.
 
-## What's new in v3.0
+Worth knowing how that test file came about: my first version of it passed even when I
+deliberately broke the chain — I sabotaged the row-hash function so it stopped folding in
+`prev_hash`, turning the chain into a bag of unrelated hashes, and every test stayed green.
+`verify_chain()` recomputes hashes with the same function that wrote them, so it happily
+verifies against its own bug. The tests now pin the SHA-256 preimage independently.
 
-### Defensibility layer (every claim cryptographically attested)
+**The detector — real, and not very good yet.**
+Two-stage cascade: YOLOv11n locates objects, a second classifier identifies the airframe.
+Measured on my validation split ([`benchmarks/detector_val.json`](benchmarks/detector_val.json)):
 
-* **T1.1 · Detection provenance signatures (Ed25519)** — every Detection signed at ingest over `model_hash · image_sha256 · mission_id · class_id · confidence · bbox · timestamp`. Tamper any field in the DB → next verify fails. Click any detection's signed badge → modal walks the canonical payload + runs verify live.
-* **T1.2 · Chain anchor** — every audit-chain tip is captured to an append-only `anchors/log.jsonl`. The Audit page's `Verify anchors` button re-walks every historical anchor against the live chain and surfaces any tip mismatch. Path to OpenTimestamps / coalition-partner anchoring is built in.
-* **T1.3 · Calibrated Mahalanobis OOD** — replaces the R2 heuristic. 9-D feature vector → per-class Gaussian → Mahalanobis distance → flag if > 99th percentile of in-distribution distances. Calibrated against 823 real detections (6 classes); same architecture upgrades to YOLO penultimate-layer features in R4 by swapping one extractor function. The R2 heuristic is kept as fallback.
+| metric | value |
+|---|---|
+| mAP@50 | 0.52 |
+| **mAP@50:95** | **0.29** |
+| precision | 0.72 |
+| recall | 0.49 |
+| `bridge` class AP | **0.00** |
 
-### Operator UX
+That is a weak detector. Recall of 0.49 means it misses about half of what's there, and it
+fails outright on one of eight classes. The bottleneck is training data, not architecture. I'd
+rather publish the number than lead with the latency figure.
 
-* **T1.7 · Command palette** — `⌘K` / `Ctrl+K` from anywhere. Indexes 10 sidebar pages, the 50 most-recent missions, 25 most-recent alerts, and quick actions (verify chain, anchor now, demo mode). Fuzzy match. Keyboard-driven.
-* **T1.8 · Contextual help** — press `?` anywhere; per-route cheat sheet for all 10 pages. Skips inputs so chat composer stays usable.
-* **T0.4 · Cinematic Verify-Chain** — `Verify chain` on Audit page floors at 700ms so the SHA-walk feels intentional; banner shows row count + genesis + tip hash.
-* **T0.7 · Top-3 airframe alternates** — when the cascade says "F-22 91%", the 2nd & 3rd guesses appear as small chips. Communicates uncertainty per detection.
-* **T0.8 · Operational tooltips** — every specialty viz (ThreatWaveform, ChainVisual, FederatedTopology, RetentionGauge, HeatmapOverlay) explains itself on hover.
-* **T0.11 · IST + relative timestamps** — `2m ago` with full IST tooltip on hover. No more UTC arithmetic in your head.
-* **T0.12 · Toast hardening** — visible cap (5), identical-toast dedupe with `×N` badge, sticky criticals.
-* **T0.14 · Per-route ErrorBoundary** — a render fault in one page never white-screens the whole console. Reset, reload, copy-stack actions.
-* **T0.15 · Demo mode** — sidebar toggle hides operator chrome, skips splash + onboarding, pulses "DEMO MODE" pill at top.
-* **T1.10 · One-pager auto-PDF** — `GET /api/v1/benchmarks/onepager.pdf`: 4.3 KB single-page A4 with three pillars + live metrics + competitive delta strip. Built for procurement officers to take away.
-* **T1.12 · Pillars tile on Command** — full-width SOVEREIGN / ON-DEVICE / DEFENSIBLE tile.
+Latency p50 is ~500 ms, but that's 25 runs on a single image on one laptop (RTX 4050, 6 GB) —
+treat it as a smoke test, not a benchmark.
 
-### Real numbers, captured live
+**Out-of-distribution rejection.** Mahalanobis distance over a 9-dimensional colour/edge
+feature vector, per-class Gaussian, flagged above the 99th percentile. Deliberately
+model-agnostic: using YOLO's penultimate-layer features would be better and needs model
+surgery I didn't do.
 
-The Benchmark page reads directly from JSON files under `benchmarks/` produced by:
+## What is *not* real
 
-| Number | Value (latest capture) | Script |
-|---|---|---|
-| Detector mAP@0.5 | **0.523** | `scripts/capture_detector_map.py` |
-| Detector mAP@0.5:0.95 | **0.290** | (above) |
-| Detector precision / recall | 0.722 / 0.490 | (above) |
-| Cascade top-1 | **89.03%** | training run, MAR20 |
-| Ingest→alert p50 | **499 ms** | `scripts/capture_latency.py` |
-| Ingest→alert p99 | **626 ms** | (above) |
-| Audit chain rows verified | live count, genesis-anchored | `Verify chain` button |
+I'd rather you read this than discover it:
 
-### Backend platform
+- **The Phi-3.5 LLM is not wired up.** In `fusion/narrator.py` the alert narrator is if/else
+  string templates and the Phi-3.5 code is commented out entirely. `services/rag.py` does have
+  a real `llama_cpp` path, but it needs a 2.4 GB GGUF you download yourself *and*
+  `llama-cpp-python`, which isn't a declared dependency. Out of the box you get a regex intent
+  matcher.
+- **"Cross-agency mesh witnessing" is two synthetic peers in one process.** The signatures are
+  genuine Ed25519 — but the server generates and holds *both* peer keypairs (`DEMO_PEERS =
+  ("peer-IB", "peer-NIA")`). A party signing its own logs with keys it minted attests nothing.
+  It demonstrates the protocol; it is not a trust boundary.
+- **Chain anchoring is a local file** on the same disk as the thing it's anchoring, which is a
+  weak guarantee. Anchoring to an external timestamp authority is the obvious next step and
+  isn't done.
+- **The counter-drone "Sentinel" module is fully synthetic.** Every drone track is
+  `random.uniform()`. No RF, no kinetics. The IFF crypto around it is real; the world it
+  operates on is invented.
+- **The model weights are not in this repo.** Detection will raise `WeightsNotFoundError`
+  telling you exactly what's missing until you train a detector or drop a `.pt` in place.
 
-* **T0.6 · Warmup hook + LLM cache** — YOLO + cascade + Phi-3.5 preload at boot (~6s). First request after boot drops from ~1500ms cold start to ~500ms steady-state.
-* **T0.16 · `scripts/preflight.sh`** — pre-demo readiness gate. ALL GREEN required.
-* **T0.17 · `scripts/dev-restart.sh`** — single-command zombie-kill + uvicorn restart for the recurring WinError 10013.
-* **T0.13 · Soft-delete missions** — DELETE `/api/v1/ingest/{id}` sets `deleted_at`; detections + audit preserved (chain stays append-only by contract).
-* **T0.10 · Skeletons + 15s stall hint** — no white-screen waits; long-running loads surface a "still loading" hint.
+## Running it
 
-### LLM-grounded Q&A (Phi-3.5)
+The data directory (weights, secrets, anchors, models) lives outside the repo. Point
+`ASTRA_DATA_DIR` at it; everything else derives from that one variable. It defaults to
+`~/astra-data`.
 
-The Chat page now talks to a real LLM when `D:/astra-data/models/phi-3.5-mini-instruct.Q4_K_M.gguf` is present and `llama-cpp-python` is installed. Two-tier with graceful fallback:
-
-* **Tier 1 (LLM):** Phi-3.5-mini retrieves recent missions + top alerts as context; phrases natural-English answers; honest about what it doesn't know.
-* **Tier 2 (rule-based):** regex intent matcher over the DB. Always works.
-* **Mission-scoped threads** persisted in Postgres (`chat_messages` table). Refresh-survives.
-* **`details of mission #N`** intent → multi-section briefing (overview, detections by class, airframes ID'd, alerts, operator notes, audit summary).
-* **`note: <text>`** intent → save free-form note attached to the active mission.
-
----
-
-## What's still in the box from R1–R3
+## Capabilities
 
 ### Two-stage detection model
 * **YOLOv11-nano** fine-tuned on DOTA-v1.5 — 8 defence-relevant classes (small/large vehicle, fixed/rotor aircraft, ship, storage-depot, harbor, bridge).
@@ -122,12 +132,13 @@ The Chat page now talks to a real LLM when `D:/astra-data/models/phi-3.5-mini-in
 Prereqs: Windows 11, Python 3.13, Node 22+, Docker Desktop, CUDA-capable GPU (tested on RTX 4050 Laptop 6GB).
 
 ```bash
-# 1. Data dir (deliberately on D: to escape OneDrive sync)
-mkdir D:\astra-data\{datasets,weights,runs,uploads,secrets,anchors,models}
+# 1. Data dir — anywhere you like; export ASTRA_DATA_DIR to point at it
+export ASTRA_DATA_DIR=~/astra-data          # or wherever you want it
+mkdir -p $ASTRA_DATA_DIR/{datasets,weights,runs,uploads,secrets,anchors,models}
 
 # 2. Python venv
-py -3.13 -m venv D:/astra-data/venvs/astra
-. D:/astra-data/venvs/astra/Scripts/activate
+py -3.13 -m venv $ASTRA_DATA_DIR/venvs/astra
+. $ASTRA_DATA_DIR/venvs/astra/Scripts/activate
 pip install --upgrade pip
 pip install -r backend/requirements-cuda.txt   # torch 2.6.0+cu124 (~2 GB)
 pip install -r backend/requirements.txt        # ultralytics, fastapi, reportlab, etc.
@@ -140,10 +151,10 @@ cd frontend && npm install && cd ..
 docker compose up -d
 
 # 5. (Optional) Download Phi-3.5 GGUF for live LLM in /chat
-curl -L --fail -o D:/astra-data/models/phi-3.5-mini-instruct.Q4_K_M.gguf \
+curl -L --fail -o $ASTRA_DATA_DIR/models/phi-3.5-mini-instruct.Q4_K_M.gguf \
   "https://huggingface.co/bartowski/Phi-3.5-mini-instruct-GGUF/resolve/main/Phi-3.5-mini-instruct-Q4_K_M.gguf?download=true"
 
-# 6. Train your own detector OR drop a trained .pt at D:/astra-data/weights/astra-v1.pt
+# 6. Train your own detector OR drop a trained .pt at $ASTRA_DATA_DIR/weights/astra-v1.pt
 python training/train.py --config training/configs/astra-v1.yaml
 
 # 7. (Optional) Calibrate the Mahalanobis OOD gate against your detections
@@ -164,7 +175,7 @@ Open **http://localhost:5173/**. First-run users see a 90-second onboarding tour
 ## Demo flow (5 minutes)
 
 1. **Splash** → Command Center loads with live numbers + the three pillars tile.
-2. **Mission** → drag `D:/astra-data/demo-samples/02-airfield-hero.jpg`. Within 1.5s: 13 fixed-wing aircraft detected, top-3 cascade chips appear (P-3C / F-22 / E-3 alternates).
+2. **Mission** → drag `$ASTRA_DATA_DIR/demo-samples/02-airfield-hero.jpg`. Within 1.5s: 13 fixed-wing aircraft detected, top-3 cascade chips appear (P-3C / F-22 / E-3 alternates).
 3. Click any detection's **`signed`** badge → modal opens, click *Verify now* → ✓ "Signature valid".
 4. **Audit** → click *verify chain* → SHA-256 walks 200+ rows from genesis to tip with green banner. Then click *Anchor now* → external tip captured. Then *Verify anchors* → ✓ all anchors valid.
 5. **Chat** → header pill shows `Phi-3.5 LLM`. Type `details of mission #N` → professional briefing.

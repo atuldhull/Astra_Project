@@ -112,7 +112,7 @@ RAID 2020). Synthetic 5-class non-IID partition for fast convergence.
 
 ### Per-round telemetry exposed to UI
 - `/api/v1/federated` — global curve, per-client local accuracy, FoolsGold
-  weights, quarantine status. JSONL log at `D:/astra-data/federated/run.jsonl`.
+  weights, quarantine status. JSONL log at `$ASTRA_DATA_DIR/federated/run.jsonl`.
 - React `Federated` page renders 4 panels with 3-second polling.
 
 ---
@@ -169,8 +169,8 @@ python training/train.py --config training/configs/astra-aircraft-v1.yaml
 # Hardened variant (operator-run, ~1h)
 python training/adversarial_augment.py --clean-existing
 python training/train.py --config training/configs/astra-v1-hardened.yaml
-cp D:/astra-data/runs/astra-v1-hardened/weights/best.pt \
-   D:/astra-data/weights/astra-v1-hardened.pt
+cp $ASTRA_DATA_DIR/runs/astra-v1-hardened/weights/best.pt \
+   $ASTRA_DATA_DIR/weights/astra-v1-hardened.pt
 
 # Federated demo with Sybil attack
 python -m federated.run_demo --task synthetic --rounds 5 --inject-poison

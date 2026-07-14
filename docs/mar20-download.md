@@ -42,7 +42,7 @@ verified against the actual extracted contents — 3,842 JPEGs, 3,842 HBB
 XMLs, train/test split files present):
 
 ```
-D:/astra-data/datasets/MAR20/
+$ASTRA_DATA_DIR/datasets/MAR20/
     JPEGImages/                                   *.jpg     (3,842 files)
     Annotations/
         Horizontal Bounding Boxes/                *.xml     (preferred — 3,842)
@@ -66,7 +66,7 @@ python training/prepare_mar20.py --clean
 python training/train.py --config training/configs/astra-aircraft-v1.yaml
 ```
 
-Output classifier weights: `D:/astra-data/runs/astra-aircraft-v1/weights/best.pt`
+Output classifier weights: `$ASTRA_DATA_DIR/runs/astra-aircraft-v1/weights/best.pt`
 
 ## If download is blocked
 

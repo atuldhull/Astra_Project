@@ -248,7 +248,7 @@ The PDF mission-report generator computes a SHA-256 hash over the canonical JSON
 
 | Upgrade | Files to touch | Effort |
 |---|---|---|
-| Real Phi-3.5 LLM narrator | `fusion/narrator.py` has a stubbed hook; install `llama-cpp-python`, drop GGUF in `D:/astra-data/models/` | 4 hrs |
+| Real Phi-3.5 LLM narrator | `fusion/narrator.py` has a stubbed hook; install `llama-cpp-python`, drop GGUF in `$ASTRA_DATA_DIR/models/` | 4 hrs |
 | MAR20 fine-grained aircraft | `training/prepare_mar20.py` + `inference/aircraft_classifier.py` | 8-10 hrs |
 | Federated training | Flower FL server + per-node trainer wrapper | 1-2 days |
 | Rotated bboxes (bridge fix) | YOLO-OBB variant + label format change | 1 day retraining |

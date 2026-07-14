@@ -69,19 +69,19 @@ const HEALTH_CAPTURE_ACTIONS: Array<{ id: string; label: string; sub: string; cm
     id: "act:run-ood-calibration",
     label: "Run OOD calibration",
     sub: "fits Mahalanobis · operator-blocked",
-    cmd: "D:/astra-data/venvs/astra/Scripts/python.exe scripts/calibrate_ood.py",
+    cmd: "python scripts/calibrate_ood.py",
   },
   {
     id: "act:run-latency-capture",
     label: "Run latency capture",
     sub: "p50/p95/p99 over 25 ingests",
-    cmd: "D:/astra-data/venvs/astra/Scripts/python.exe scripts/capture_latency.py --n 25",
+    cmd: "python scripts/capture_latency.py --n 25",
   },
   {
     id: "act:run-detector-map",
     label: "Run detector mAP capture",
     sub: "DOTA-val · refreshes Benchmark hero",
-    cmd: "D:/astra-data/venvs/astra/Scripts/python.exe scripts/capture_detector_map.py",
+    cmd: "python scripts/capture_detector_map.py",
   },
 ];
 

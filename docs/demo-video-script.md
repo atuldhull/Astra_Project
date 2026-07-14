@@ -32,7 +32,7 @@
 - No browser extensions popping up (Grammarly, React DevTools, etc.)
 
 ### 3. Have the test image ready
-- Copy `D:\astra-data\datasets\astra-v1\images\val\P0003__t000.jpg` to your Desktop as `drone-clip.jpg` (cleaner filename in the file picker)
+- Copy `$ASTRA_DATA_DIR\datasets\astra-v1\images\val\P0003__t000.jpg` to your Desktop as `drone-clip.jpg` (cleaner filename in the file picker)
 - Confirm you can upload it and the backend still returns 54 detections (quick sanity check before recording)
 
 ### 4. Verify stack is up

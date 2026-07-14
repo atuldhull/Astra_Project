@@ -42,9 +42,9 @@ function formatUptime(seconds: number): string {
 }
 
 const SCRIPTS = {
-  ood: "D:/astra-data/venvs/astra/Scripts/python.exe scripts/calibrate_ood.py",
-  latency: "D:/astra-data/venvs/astra/Scripts/python.exe scripts/capture_latency.py --n 25",
-  map: "D:/astra-data/venvs/astra/Scripts/python.exe scripts/capture_detector_map.py",
+  ood: "python scripts/calibrate_ood.py",
+  latency: "python scripts/capture_latency.py --n 25",
+  map: "python scripts/capture_detector_map.py",
 };
 
 export default function Health() {

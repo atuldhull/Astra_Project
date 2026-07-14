@@ -5,7 +5,7 @@
 ## 1. Demo content locations
 
 ### Images
-Already on your drive at `D:\astra-data\demo-samples\`:
+Already on your drive at `$ASTRA_DATA_DIR\demo-samples\`:
 - `01-vehicle-convoy.jpg` — 300 vehicles (lead demo)
 - `02-airfield-hero.jpg` — 17 aircraft (adversarial + hero)
 - `03-naval-port.jpg` · `04-mixed-scene.jpg` · `05-helipad.jpg` (reserves)
@@ -42,7 +42,7 @@ docker ps --format "{{.Names}}: {{.Status}}" | grep astra
 
 ### Terminal 2 — Backend
 ```bash
-. /d/astra-data/venvs/astra/Scripts/activate
+. $ASTRA_DATA_DIR/venvs/astra/Scripts/activate
 cd "/c/Users/atuld/OneDrive/Desktop/astra/backend"
 uvicorn app.main:app --reload
 ```
@@ -53,7 +53,7 @@ Verify in browser: http://127.0.0.1:8000/health → `model_loaded: true`
 
 If model_loaded is false:
 ```bash
-cp "/d/astra-data/runs/astra-v1-2/weights/best.pt" "/d/astra-data/weights/astra-v1.pt"
+cp "$ASTRA_DATA_DIR/runs/astra-v1-2/weights/best.pt" "$ASTRA_DATA_DIR/weights/astra-v1.pt"
 # then Ctrl+C uvicorn, re-run it
 ```
 

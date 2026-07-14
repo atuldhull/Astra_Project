@@ -217,7 +217,7 @@ export default function Adversarial() {
               <div className="text-xs text-muted text-center px-6">
                 Upload any aerial image to begin.
                 <br />
-                Suggested: <code className="text-accent">D:\astra-data\demo-samples\02-airfield-hero.jpg</code>
+                Suggested: <code className="text-accent">$ASTRA_DATA_DIR/demo-samples/02-airfield-hero.jpg</code>
               </div>
             )}
           </div>

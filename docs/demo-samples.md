@@ -1,6 +1,6 @@
 # Demo Sample Images
 
-> Physical location: `D:\astra-data\demo-samples\`
+> Physical location: `$ASTRA_DATA_DIR\demo-samples\`
 > Not committed to git (images live outside the repo — see `.gitignore`).
 
 These 5 images were hand-picked by auto-ranking 100 random DOTA val tiles through the actual `/predict` endpoint and choosing the ones with the most visually impressive + class-diverse detections. The model has **never seen them during training** (val split).
@@ -26,4 +26,4 @@ Keep #3-5 as reserve.
 All 5 are from **DOTA-v1.5**, the public academic aerial dataset from Wuhan University. It aggregates Google Earth + WorldView satellite + drone imagery, all published for research. Zero classified content, zero proprietary data. The specific tiles here are from the VAL split — the model only ever saw them at inference, never training. Live detections = genuine generalization, not memorization.
 
 ## If you need to add more
-Point your browser at http://localhost:5173, upload any image from `D:\astra-data\datasets\astra-v1\images\val\`, and if it looks good — copy it to `D:\astra-data\demo-samples\` with a descriptive name.
+Point your browser at http://localhost:5173, upload any image from `$ASTRA_DATA_DIR\datasets\astra-v1\images\val\`, and if it looks good — copy it to `$ASTRA_DATA_DIR\demo-samples\` with a descriptive name.

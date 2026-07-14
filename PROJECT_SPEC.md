@@ -537,11 +537,11 @@ The project root is inside OneDrive (`c:\Users\atuld\OneDrive\Desktop\astra`). O
 | Path | Purpose | In OneDrive? |
 |---|---|---|
 | `c:\Users\atuld\OneDrive\Desktop\astra\` | Source code, this spec, configs | ✅ Yes |
-| `D:\astra-data\datasets\` | Raw + converted datasets (DOTA etc.) | ❌ No |
-| `D:\astra-data\weights\` | `.pt` and `.onnx` checkpoints | ❌ No |
-| `D:\astra-data\runs\` | Ultralytics training outputs, TensorBoard logs | ❌ No |
-| `D:\astra-data\tiles\` | Offline OSM map tiles | ❌ No |
-| `D:\astra-data\uploads\` | Uploaded videos served to backend | ❌ No |
+| `$ASTRA_DATA_DIR\datasets\` | Raw + converted datasets (DOTA etc.) | ❌ No |
+| `$ASTRA_DATA_DIR\weights\` | `.pt` and `.onnx` checkpoints | ❌ No |
+| `$ASTRA_DATA_DIR\runs\` | Ultralytics training outputs, TensorBoard logs | ❌ No |
+| `$ASTRA_DATA_DIR\tiles\` | Offline OSM map tiles | ❌ No |
+| `$ASTRA_DATA_DIR\uploads\` | Uploaded videos served to backend | ❌ No |
 
 The repo will reference these paths via a `.env` file (not committed) so teammates/graders on different machines can override.
 
