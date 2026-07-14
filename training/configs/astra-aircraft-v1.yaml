@@ -24,7 +24,7 @@
 model: yolo11n-cls.pt
 # data is a directory root for cls task (not a dataset.yaml).
 # Folder layout produced by prepare_mar20.py: <data>/{train,val}/<class>/*.jpg
-data: D:/astra-data/datasets/mar20-cls
+data: ${ASTRA_DATA_DIR}/datasets/mar20-cls
 
 # ── Core schedule ─────────────────────────────────────────────────────────
 epochs: 50
@@ -35,7 +35,7 @@ amp: true
 cache: false
 workers: 0                     # Windows quirk — same as the DOTA run
 device: 0                      # RTX 4050
-project: D:/astra-data/runs
+project: ${ASTRA_DATA_DIR}/runs
 name: astra-aircraft-v1
 exist_ok: false
 seed: 42

@@ -15,7 +15,7 @@ The user must download MAR20 manually (registration on the authors' page):
 
 Expected input layout (canonical PASCAL VOC — confirmed against the
 upstream MAR20 release):
-    D:/astra-data/datasets/MAR20/
+    $ASTRA_DATA_DIR/datasets/MAR20/
         JPEGImages/                                  *.jpg     (3,842 files)
         Annotations/Horizontal Bounding Boxes/       *.xml     (preferred, 3,842)
         Annotations/Oriented Bounding Boxes/         *.xml     (ignored — we use HBB)
@@ -25,7 +25,7 @@ upstream MAR20 release):
             test.txt                                  (2,510 stems → our val)
 
 Output layout (Ultralytics YOLO-cls standard):
-    D:/astra-data/datasets/mar20-cls/
+    $ASTRA_DATA_DIR/datasets/mar20-cls/
         train/<airframe>/<stem>__<idx>.jpg
         val/<airframe>/<stem>__<idx>.jpg
         stats.json
@@ -39,11 +39,18 @@ from __future__ import annotations
 import argparse
 import json
 import shutil
+import sys
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 from pathlib import Path
 
 import cv2
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from astra_paths import DATASETS_DIR  # noqa: E402
 
 # MAR20 stores classes as A1..A20. The paper assigns each code to a specific
 # airframe; we use those names so the UI can render them human-readably
@@ -180,12 +187,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Convert MAR20 → YOLO-cls cropped dataset")
     parser.add_argument(
         "--mar20-root", type=Path,
-        default=Path("D:/astra-data/datasets/MAR20"),
+        default=DATASETS_DIR / "MAR20",
         help="Root of unpacked MAR20 (must contain JPEGImages/ and Annotations/)",
     )
     parser.add_argument(
         "--out-root", type=Path,
-        default=Path("D:/astra-data/datasets/mar20-cls"),
+        default=DATASETS_DIR / "mar20-cls",
         help="Output classification dataset root",
     )
     parser.add_argument(

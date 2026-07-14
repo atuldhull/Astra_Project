@@ -35,12 +35,16 @@ from pathlib import Path
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
+from app.config import FEDERATED_LOG, MODELS_DIR
 from app.db.models import (
     Alert, AlertStatus, AuditEvent, ChatMessage, Detection, Mission,
 )
 
 
-PHI_PATH = Path(os.environ.get("ASTRA_PHI_PATH", "D:/astra-data/models/phi-3.5-mini-instruct.Q4_K_M.gguf"))
+PHI_PATH = Path(
+    os.environ.get("ASTRA_PHI_PATH")
+    or MODELS_DIR / "phi-3.5-mini-instruct.Q4_K_M.gguf"
+)
 
 
 @dataclass
@@ -367,7 +371,7 @@ def _rule_answer(db: Session, q: str, mission_id: int | None = None) -> Answer:
 
     # ----- Federated state -----
     if "federated" in qn or "foolsgold" in qn or "sybil" in qn:
-        log = Path(os.environ.get("ASTRA_FEDERATED_LOG", "D:/astra-data/federated/run.jsonl"))
+        log = Path(os.environ.get("ASTRA_FEDERATED_LOG") or FEDERATED_LOG)
         if not log.exists():
             return Answer("No federated run on disk yet. Start one with: python -m federated.run_demo --task synthetic --rounds 5 --inject-poison", "rule", [])
         last_acc = None; quarantined: list[str] = []

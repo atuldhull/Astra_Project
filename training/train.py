@@ -18,10 +18,18 @@ from pathlib import Path
 
 import yaml
 
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from astra_paths import expand, resolve_data_yaml, tokenize  # noqa: E402
+
 
 def load_config(path: Path) -> dict:
+    """Load a training YAML, expanding ${ASTRA_DATA_DIR} in every string value."""
     with path.open("r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
+        cfg = yaml.safe_load(f)
+    return {k: expand(v) if isinstance(v, str) else v for k, v in cfg.items()}
 
 
 def ensure_cuda() -> None:
@@ -61,10 +69,11 @@ def make_smoke_subset(dataset_yaml: Path, n_images: int = 50) -> Path:
                 shutil.copy2(lbl, dst_lbl / lbl.name)
         print(f"  smoke [{split}] copied {len(images)} images")
 
-    smoke_cfg = {**cfg, "path": str(smoke_root).replace("\\", "/")}
+    # Written back with the ${ASTRA_DATA_DIR} token — this file is committed.
+    smoke_cfg = {**cfg, "path": tokenize(str(smoke_root).replace("\\", "/"))}
     smoke_yaml = dataset_yaml.parent / "dataset-smoke.yaml"
     smoke_yaml.write_text(yaml.safe_dump(smoke_cfg, sort_keys=False), encoding="utf-8")
-    return smoke_yaml
+    return resolve_data_yaml(smoke_yaml)
 
 
 def main() -> None:
@@ -81,10 +90,11 @@ def main() -> None:
     data_path = Path(cfg["data"])
     if not data_path.is_absolute():
         data_path = (args.config.parent / data_path).resolve()
-    data_yaml = data_path
+    if not data_path.exists():
+        sys.exit(f"dataset.yaml not found at {data_path}. Run prepare_dota.py first.")
+    # Ultralytics reads the dataset YAML itself and won't expand our token.
+    data_yaml = resolve_data_yaml(data_path)
     cfg["data"] = str(data_yaml)
-    if not data_yaml.exists():
-        sys.exit(f"dataset.yaml not found at {data_yaml}. Run prepare_dota.py first.")
 
     # Ultralytics imports torch, so delay this until after ensure_cuda() gives a clean message.
     from ultralytics import YOLO

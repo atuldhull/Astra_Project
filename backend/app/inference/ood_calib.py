@@ -46,11 +46,12 @@ from pathlib import Path
 import cv2
 import numpy as np
 
+from app.config import WEIGHTS_DIR
 
-OOD_WEIGHTS_PATH = Path(os.environ.get(
-    "ASTRA_OOD_WEIGHTS",
-    "D:/astra-data/weights/astra-v1.ood.npz",
-))
+
+OOD_WEIGHTS_PATH = Path(
+    os.environ.get("ASTRA_OOD_WEIGHTS") or WEIGHTS_DIR / "astra-v1.ood.npz"
+)
 OOD_META_PATH = OOD_WEIGHTS_PATH.with_suffix(".meta.json")
 
 FEATURE_NAMES = [

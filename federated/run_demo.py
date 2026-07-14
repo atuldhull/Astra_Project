@@ -8,13 +8,13 @@ Examples:
 
   # MAR20 cls federated, non-IID Dirichlet split, 5 rounds
   python -m federated.run_demo --task mar20 \\
-      --partition-root D:/astra-data/datasets/mar20-cls-fed \\
+      --partition-root "$ASTRA_DATA_DIR/datasets/mar20-cls-fed" \\
       --rounds 5
 
   # Synthetic task with a Sybil/poison client — watch FoolsGold quarantine it
   python -m federated.run_demo --task synthetic --rounds 6 --inject-poison
 
-The orchestrator writes JSONL telemetry to D:/astra-data/federated/run.jsonl
+The orchestrator writes JSONL telemetry to $ASTRA_DATA_DIR/federated/run.jsonl
 (overridable via ASTRA_FEDERATED_LOG). The backend exposes that file at
 GET /api/v1/federated for the Federated dashboard page to plot.
 """

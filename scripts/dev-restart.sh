@@ -15,7 +15,7 @@ set -uo pipefail
 
 PORT="${ASTRA_BACKEND_PORT:-8000}"
 HOST="${ASTRA_BACKEND_HOST:-127.0.0.1}"
-PYTHON="${ASTRA_PYTHON:-D:/astra-data/venvs/astra/Scripts/python.exe}"
+PYTHON="${ASTRA_PYTHON:-python}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BACKEND_DIR="${REPO_ROOT}/backend"
 LOG_FILE="${REPO_ROOT}/.dev-restart.log"

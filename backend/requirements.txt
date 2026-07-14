@@ -29,6 +29,12 @@ alembic==1.14.0
 psycopg2-binary==2.9.10
 redis==5.2.1
 
+# Provenance / audit — Ed25519 signing in services/provenance.py, mesh.py, sentinel.py
+cryptography==44.0.0
+
+# PDF export — services/reports.py, onepager.py, range_cert.py
+reportlab==4.2.5
+
 # Utils
 python-dotenv==1.0.1
 httpx==0.28.1

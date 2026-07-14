@@ -5,8 +5,8 @@ page and the pitch deck.
 
 Usage:
     python benchmark.py \
-        --pt D:/astra-data/runs/astra-v1/weights/best.pt \
-        --onnx D:/astra-data/weights/astra-v1.onnx \
+        --pt $ASTRA_DATA_DIR/runs/astra-v1/weights/best.pt \
+        --onnx $ASTRA_DATA_DIR/weights/astra-v1.onnx \
         --imgsz 1024 --iters 100
 """
 

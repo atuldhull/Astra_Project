@@ -5,7 +5,7 @@ The user must download DOTA-v1.5 manually (registration required):
     https://captain-whu.github.io/DOTA/dataset.html
 
 Expected input layout:
-    D:/astra-data/datasets/dota-raw/
+    $ASTRA_DATA_DIR/datasets/dota-raw/
         train/
             images/P0001.png ...
             labelTxt/P0001.txt ...
@@ -14,7 +14,7 @@ Expected input layout:
             labelTxt/
 
 Output layout (Ultralytics standard):
-    D:/astra-data/datasets/astra-v1/
+    $ASTRA_DATA_DIR/datasets/astra-v1/
         images/{train,val,test}/*.jpg
         labels/{train,val,test}/*.txt   (YOLO: class cx cy w h, normalized)
         stats.json
@@ -37,11 +37,18 @@ from __future__ import annotations
 import argparse
 import json
 import shutil
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
 import cv2
 import numpy as np
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from astra_paths import DATASETS_DIR  # noqa: E402
 
 # ── DOTA → ASTRA class remap ──────────────────────────────────────────────
 # Only classes listed here are kept; everything else is dropped.
@@ -241,11 +248,11 @@ def split_val_images(val_images_dir: Path) -> tuple[set[str], set[str]]:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Convert DOTA-v1.5 → ASTRA YOLO format")
     parser.add_argument(
-        "--dota-root", type=Path, default=Path("D:/astra-data/datasets/dota-raw"),
+        "--dota-root", type=Path, default=DATASETS_DIR / "dota-raw",
         help="Root of unpacked DOTA dataset (must contain train/ and val/)",
     )
     parser.add_argument(
-        "--out-root", type=Path, default=Path("D:/astra-data/datasets/astra-v1"),
+        "--out-root", type=Path, default=DATASETS_DIR / "astra-v1",
         help="Output YOLO dataset root",
     )
     parser.add_argument(

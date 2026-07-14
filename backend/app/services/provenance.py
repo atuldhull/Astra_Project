@@ -45,12 +45,15 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
 from cryptography.hazmat.primitives import serialization
 from cryptography.exceptions import InvalidSignature
 
+from app.config import SECRETS_DIR as _DEFAULT_SECRETS_DIR
+from app.config import settings
+
 log = logging.getLogger("astra.provenance")
 
 
 # ── Configuration ──────────────────────────────────────────────────────
 
-SECRETS_DIR = Path(os.environ.get("ASTRA_SECRETS_DIR", "D:/astra-data/secrets"))
+SECRETS_DIR = Path(os.environ.get("ASTRA_SECRETS_DIR") or _DEFAULT_SECRETS_DIR)
 KEY_FILE = SECRETS_DIR / "astra.ed25519"
 ENABLED = os.environ.get("ASTRA_PROVENANCE_ENABLED", "true").lower() != "false"
 
@@ -220,8 +223,7 @@ def model_hash() -> str:
         return _model_hash_cache  # type: ignore[name-defined]
     except NameError:
         pass
-    weights_path = Path(os.environ.get("ASTRA_DETECTOR_WEIGHTS",
-                                       "D:/astra-data/weights/astra-v1.pt"))
+    weights_path = Path(os.environ.get("ASTRA_DETECTOR_WEIGHTS") or settings.model_path)
     if not weights_path.exists():
         digest = "weights-missing"
     else:

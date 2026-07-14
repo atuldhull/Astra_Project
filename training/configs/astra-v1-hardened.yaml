@@ -14,14 +14,14 @@
 # Launched via:
 #   1) python training/adversarial_augment.py    (~10-30 min, one-time)
 #   2) python training/train.py --config training/configs/astra-v1-hardened.yaml
-#   3) cp D:/astra-data/runs/astra-v1-hardened/weights/best.pt \
-#         D:/astra-data/weights/astra-v1-hardened.pt
+#   3) cp ${ASTRA_DATA_DIR}/runs/astra-v1-hardened/weights/best.pt \
+#         ${ASTRA_DATA_DIR}/weights/astra-v1-hardened.pt
 #
 # Then the Adversarial A/B page picker lights up the v1-hardened option.
 
 # ── Model & data ──────────────────────────────────────────────────────────
 # Resume FROM astra-v1.pt — fine-tuning, not fresh training.
-model: D:/astra-data/runs/astra-v1-2/weights/best.pt
+model: ${ASTRA_DATA_DIR}/runs/astra-v1-2/weights/best.pt
 data: ../dataset.yaml
 
 # ── Schedule ──────────────────────────────────────────────────────────────
@@ -36,7 +36,7 @@ amp: true
 cache: false
 workers: 0
 device: 0
-project: D:/astra-data/runs
+project: ${ASTRA_DATA_DIR}/runs
 name: astra-v1-hardened
 exist_ok: false
 seed: 42

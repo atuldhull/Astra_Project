@@ -15,8 +15,7 @@ For the demo we stand up two synthetic peers in-process ("peer-IB" and
 PEER_KEYS_DIR. In production each peer BYOs a key and the synthetic
 loop becomes the peer's own cron job hitting the same endpoints.
 
-PEER_KEYS_DIR layout:
-    D:/astra-data/secrets/mesh_peers/
+PEER_KEYS_DIR layout ($ASTRA_DATA_DIR/secrets/mesh_peers/):
       peer-IB.ed25519       (32-byte raw private key)
       peer-IB.pub.pem       (PEM-encoded public key, optional)
       peer-NIA.ed25519
@@ -41,8 +40,10 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
 from cryptography.hazmat.primitives import serialization
 from cryptography.exceptions import InvalidSignature
 
+from app.config import SECRETS_DIR
 
-PEER_KEYS_DIR = Path(os.environ.get("ASTRA_MESH_PEERS_DIR", "D:/astra-data/secrets/mesh_peers"))
+
+PEER_KEYS_DIR = Path(os.environ.get("ASTRA_MESH_PEERS_DIR") or SECRETS_DIR / "mesh_peers")
 
 # The two synthetic demo peers. Each gets a real Ed25519 keypair on
 # first boot — these are not mocked.

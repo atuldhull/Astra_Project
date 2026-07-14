@@ -28,14 +28,11 @@ import threading
 from datetime import datetime, timezone
 from pathlib import Path
 
+from astra_paths import FEDERATED_LOG
+
 # Default log path. Overridable via ASTRA_FEDERATED_LOG env so the
 # orchestrator can sandbox different runs.
-DEFAULT_LOG_PATH = Path(
-    os.environ.get(
-        "ASTRA_FEDERATED_LOG",
-        "D:/astra-data/federated/run.jsonl",
-    )
-)
+DEFAULT_LOG_PATH = Path(os.environ.get("ASTRA_FEDERATED_LOG") or FEDERATED_LOG)
 
 _lock = threading.Lock()
 

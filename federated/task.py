@@ -37,6 +37,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
 
+from astra_paths import DATASETS_DIR
+
 
 @dataclass
 class Task:
@@ -188,11 +190,11 @@ def synthetic_task(client_ids: list[str]) -> Task:
 
 
 # ── MAR20 cls task ────────────────────────────────────────────────────────
-# Real federated training on disjoint partitions of D:/astra-data/datasets/mar20-cls/train.
+# Real federated training on disjoint partitions of <datasets>/mar20-cls/train.
 # Falls back gracefully to a clear error message if the dataset isn't ready.
 
 _MAR20_CLS_ROOT = Path(
-    os.environ.get("ASTRA_MAR20_CLS_ROOT", "D:/astra-data/datasets/mar20-cls")
+    os.environ.get("ASTRA_MAR20_CLS_ROOT") or DATASETS_DIR / "mar20-cls"
 )
 
 
@@ -209,7 +211,7 @@ def mar20_task(client_ids: list[str], partition_root: Path | None = None) -> Tas
         partition_root/node-1/...
     Use partition.py to produce these.
 
-    Eval uses the canonical val set at D:/astra-data/datasets/mar20-cls/val.
+    Eval uses the canonical val set at <datasets>/mar20-cls/val.
     """
     if partition_root is None:
         raise ValueError("mar20_task requires --partition-root pointing at the federated split dirs")

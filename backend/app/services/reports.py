@@ -407,7 +407,8 @@ def generate_mission_report(db: Session, mission_id: int) -> bytes:
     try:
         import os
         from pathlib import Path as _P
-        fed_log = _P(os.environ.get("ASTRA_FEDERATED_LOG", "D:/astra-data/federated/run.jsonl"))
+        from app.config import FEDERATED_LOG
+        fed_log = _P(os.environ.get("ASTRA_FEDERATED_LOG") or FEDERATED_LOG)
         if fed_log.exists():
             recs = []
             for line in fed_log.read_text(encoding="utf-8").splitlines()[-200:]:

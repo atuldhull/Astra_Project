@@ -6,10 +6,10 @@ printing a per-feature PASS/FAIL line. Run this in a separate terminal
 right before a demo to catch regressions.
 
 Usage (with backend running on 127.0.0.1:8000 and a demo image at
-D:/astra-data/demo-samples/02-airfield-hero.jpg):
+$ASTRA_DATA_DIR/demo-samples/02-airfield-hero.jpg):
 
     python scripts/e2e_regression.py
-    python scripts/e2e_regression.py --base http://127.0.0.1:8000 --image D:/astra-data/demo-samples/02-airfield-hero.jpg
+    python scripts/e2e_regression.py --base http://127.0.0.1:8000 --image $ASTRA_DATA_DIR/demo-samples/02-airfield-hero.jpg
 
 Exit code:  0 = all green, 1 = any failure.
 """
@@ -23,6 +23,12 @@ import time
 from pathlib import Path
 
 import httpx
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from astra_paths import DEMO_SAMPLES_DIR  # noqa: E402
 
 
 PASS = "[ ok ]"
@@ -47,7 +53,7 @@ def _check(label: str, ok: bool, detail: str = "") -> bool:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--base", default="http://127.0.0.1:8000")
-    ap.add_argument("--image", type=Path, default=Path("D:/astra-data/demo-samples/02-airfield-hero.jpg"))
+    ap.add_argument("--image", type=Path, default=DEMO_SAMPLES_DIR / "02-airfield-hero.jpg")
     ap.add_argument("--mission-name", default="E2E-REGRESSION")
     args = ap.parse_args()
 

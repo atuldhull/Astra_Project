@@ -8,7 +8,7 @@
 #   python training/continual_finetune.py
 #   python training/train.py --config training/configs/astra-v1-continual.yaml
 
-model: D:/astra-data/runs/astra-v1-2/weights/best.pt
+model: ${ASTRA_DATA_DIR}/runs/astra-v1-2/weights/best.pt
 data: ../continual-dataset.yaml
 
 epochs: 5                      # tiny — we just want a nudge
@@ -20,7 +20,7 @@ amp: true
 cache: false
 workers: 0
 device: 0
-project: D:/astra-data/runs
+project: ${ASTRA_DATA_DIR}/runs
 name: astra-v1-continual
 exist_ok: false
 seed: 42

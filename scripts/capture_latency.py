@@ -12,7 +12,7 @@ hero stat reads it.
 
 Usage:
     python scripts/capture_latency.py --n 20 \
-        --image D:/astra-data/demo-samples/02-airfield-hero.jpg
+        --image $ASTRA_DATA_DIR/demo-samples/02-airfield-hero.jpg
 """
 
 from __future__ import annotations
@@ -21,6 +21,7 @@ import argparse
 import asyncio
 import json
 import statistics
+import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -28,9 +29,13 @@ from pathlib import Path
 import httpx
 import websockets
 
-
 REPO_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_IMAGE = Path("D:/astra-data/demo-samples/02-airfield-hero.jpg")
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from astra_paths import DEMO_SAMPLES_DIR  # noqa: E402
+
+DEFAULT_IMAGE = DEMO_SAMPLES_DIR / "02-airfield-hero.jpg"
 OUT = REPO_ROOT / "benchmarks" / "latency.json"
 
 
@@ -117,9 +122,16 @@ async def main_async(args: argparse.Namespace) -> int:
         idx = min(len(sorted_ms) - 1, int(round((p / 100) * (len(sorted_ms) - 1))))
         return sorted_ms[idx]
 
+    # benchmarks/latency.json is committed — record the image relative to the
+    # data root rather than leaking an absolute path from whoever ran it.
+    try:
+        image_label = str(args.image.relative_to(DEMO_SAMPLES_DIR.parent)).replace("\\", "/")
+    except ValueError:
+        image_label = args.image.name
+
     summary = {
         "captured_at": datetime.now(timezone.utc).isoformat(),
-        "image": str(args.image),
+        "image": image_label,
         "n": len(samples_ms),
         "failures": failures,
         "p50_ms": round(statistics.median(samples_ms), 1),

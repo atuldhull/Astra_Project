@@ -9,15 +9,20 @@ Output: benchmarks/detector_val.json
 from __future__ import annotations
 
 import json
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 from ultralytics import YOLO
 
-
 REPO_ROOT = Path(__file__).resolve().parent.parent
-WEIGHTS = Path("D:/astra-data/weights/astra-v1.pt")
-DATASET_YAML = REPO_ROOT / "training" / "dataset.yaml"
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from astra_paths import WEIGHTS_DIR, resolve_data_yaml  # noqa: E402
+
+WEIGHTS = WEIGHTS_DIR / "astra-v1.pt"
+DATASET_YAML = resolve_data_yaml(REPO_ROOT / "training" / "dataset.yaml")
 OUT = REPO_ROOT / "benchmarks" / "detector_val.json"
 
 
@@ -48,10 +53,12 @@ def main() -> None:
             "ap_50_95": round(float(ap), 4),
         })
 
+    # Paths are recorded relative to their root — this file is committed, and
+    # an absolute path here leaks whoever's machine last ran the benchmark.
     summary = {
         "captured_at": datetime.now(timezone.utc).isoformat(),
-        "weights": str(WEIGHTS),
-        "dataset": str(DATASET_YAML),
+        "weights": f"weights/{WEIGHTS.name}",
+        "dataset": "training/dataset.yaml",
         "split": "val",
         "map_50": round(float(metrics.box.map50), 4),
         "map_50_95": round(float(metrics.box.map), 4),

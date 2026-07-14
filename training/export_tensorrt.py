@@ -11,10 +11,10 @@ still a 3rd benchmark number for the slides.
 
 Usage:
     python training/export_tensorrt.py
-    python training/export_tensorrt.py --weights D:/astra-data/runs/astra-v1-2/weights/best.pt --int8
+    python training/export_tensorrt.py --weights $ASTRA_DATA_DIR/runs/astra-v1-2/weights/best.pt --int8
 
 Output:
-    D:/astra-data/weights/astra-v1.engine     (TensorRT engine)
+    $ASTRA_DATA_DIR/weights/astra-v1.engine     (TensorRT engine)
     Print: latency benchmark on a 5-image dummy run
 
 This MUST be run on the deployment device (or one with the same TensorRT +
@@ -24,16 +24,23 @@ GPU compute capability) — engines are not portable.
 from __future__ import annotations
 
 import argparse
+import sys
 import time
 from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from astra_paths import RUNS_DIR, WEIGHTS_DIR  # noqa: E402
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--weights", type=Path,
-                    default=Path("D:/astra-data/runs/astra-v1-2/weights/best.pt"))
+                    default=RUNS_DIR / "astra-v1-2" / "weights" / "best.pt")
     ap.add_argument("--out", type=Path,
-                    default=Path("D:/astra-data/weights/astra-v1.engine"))
+                    default=WEIGHTS_DIR / "astra-v1.engine")
     ap.add_argument("--imgsz", type=int, default=640)
     ap.add_argument("--int8", action="store_true",
                     help="Try INT8 quantization. Falls back to FP16 if calibration fails.")

@@ -1,6 +1,19 @@
+import os
 from pathlib import Path
-from pydantic import Field
+
+from pydantic import AliasChoices, Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def _default_data_root() -> Path:
+    """Root of every ASTRA data directory: weights, datasets, secrets, uploads.
+
+    Point ASTRA_DATA_DIR at wherever you keep the big files. The default
+    (~/astra-data) works on Windows, Linux and macOS without editing anything,
+    so a fresh clone boots. ASTRA_DATA_ROOT is the older name, still honoured.
+    """
+    explicit = os.getenv("ASTRA_DATA_DIR") or os.getenv("ASTRA_DATA_ROOT")
+    return Path(explicit) if explicit else Path.home() / "astra-data"
 
 
 class Settings(BaseSettings):
@@ -10,15 +23,24 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    data_root: Path = Field(default=Path("D:/astra-data"), alias="ASTRA_DATA_ROOT")
-    datasets_dir: Path = Field(default=Path("D:/astra-data/datasets"), alias="ASTRA_DATASETS_DIR")
-    weights_dir: Path = Field(default=Path("D:/astra-data/weights"), alias="ASTRA_WEIGHTS_DIR")
-    runs_dir: Path = Field(default=Path("D:/astra-data/runs"), alias="ASTRA_RUNS_DIR")
-    tiles_dir: Path = Field(default=Path("D:/astra-data/tiles"), alias="ASTRA_TILES_DIR")
-    uploads_dir: Path = Field(default=Path("D:/astra-data/uploads"), alias="ASTRA_UPLOADS_DIR")
+    # Everything below defaults to a subdirectory of data_root. Set an
+    # individual env var only when one directory lives somewhere unusual.
+    data_root: Path = Field(
+        default_factory=_default_data_root,
+        validation_alias=AliasChoices("ASTRA_DATA_DIR", "ASTRA_DATA_ROOT"),
+    )
+    datasets_dir: Path | None = Field(default=None, alias="ASTRA_DATASETS_DIR")
+    weights_dir: Path | None = Field(default=None, alias="ASTRA_WEIGHTS_DIR")
+    runs_dir: Path | None = Field(default=None, alias="ASTRA_RUNS_DIR")
+    tiles_dir: Path | None = Field(default=None, alias="ASTRA_TILES_DIR")
+    uploads_dir: Path | None = Field(default=None, alias="ASTRA_UPLOADS_DIR")
+    secrets_dir: Path | None = Field(default=None, alias="ASTRA_SECRETS_DIR")
+    anchors_dir: Path | None = Field(default=None, alias="ASTRA_ANCHORS_DIR")
+    models_dir: Path | None = Field(default=None, alias="ASTRA_MODELS_DIR")
+    federated_dir: Path | None = Field(default=None, alias="ASTRA_FEDERATED_DIR")
 
-    model_path: Path = Field(default=Path("D:/astra-data/weights/astra-v1.pt"), alias="ASTRA_MODEL_PATH")
-    onnx_path: Path = Field(default=Path("D:/astra-data/weights/astra-v1.onnx"), alias="ASTRA_ONNX_PATH")
+    model_path: Path | None = Field(default=None, alias="ASTRA_MODEL_PATH")
+    onnx_path: Path | None = Field(default=None, alias="ASTRA_ONNX_PATH")
     inference_device: str = Field(default="cuda:0", alias="ASTRA_INFERENCE_DEVICE")
     imgsz: int = Field(default=1024, alias="ASTRA_IMGSZ")
     conf_threshold: float = Field(default=0.25, alias="ASTRA_CONF_THRESHOLD")
@@ -45,6 +67,28 @@ class Settings(BaseSettings):
         alias="ASTRA_FRIENDLY_ASSETS",
     )
 
+    @model_validator(mode="after")
+    def _derive_paths(self) -> "Settings":
+        root = self.data_root
+        for attr, name in (
+            ("datasets_dir", "datasets"),
+            ("weights_dir", "weights"),
+            ("runs_dir", "runs"),
+            ("tiles_dir", "tiles"),
+            ("uploads_dir", "uploads"),
+            ("secrets_dir", "secrets"),
+            ("anchors_dir", "anchors"),
+            ("models_dir", "models"),
+            ("federated_dir", "federated"),
+        ):
+            if getattr(self, attr) is None:
+                setattr(self, attr, root / name)
+        if self.model_path is None:
+            self.model_path = self.weights_dir / "astra-v1.pt"
+        if self.onnx_path is None:
+            self.onnx_path = self.weights_dir / "astra-v1.onnx"
+        return self
+
     @property
     def friendly_assets(self) -> list[tuple[str, float, float]]:
         import json
@@ -67,3 +111,17 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+# Module-level aliases so callers never have to rebuild these paths by hand.
+# Import these instead of hardcoding a data directory anywhere.
+DATA_ROOT: Path = settings.data_root
+DATASETS_DIR: Path = settings.datasets_dir
+WEIGHTS_DIR: Path = settings.weights_dir
+RUNS_DIR: Path = settings.runs_dir
+TILES_DIR: Path = settings.tiles_dir
+UPLOADS_DIR: Path = settings.uploads_dir
+SECRETS_DIR: Path = settings.secrets_dir
+ANCHORS_DIR: Path = settings.anchors_dir
+MODELS_DIR: Path = settings.models_dir
+FEDERATED_DIR: Path = settings.federated_dir
+FEDERATED_LOG: Path = FEDERATED_DIR / "run.jsonl"

@@ -14,14 +14,14 @@ Why this beats the data-augmentation hardening we shipped in R2:
   helipad win to 1 of 5 demo images.
 
 Run on operator GPU:
-    D:/astra-data/venvs/astra/Scripts/python.exe training/pgd_finetune.py \\
-        --weights D:/astra-data/runs/astra-v1-2/weights/best.pt \\
+    python training/pgd_finetune.py \\
+        --weights $ASTRA_DATA_DIR/runs/astra-v1-2/weights/best.pt \\
         --epochs 5 --eps 0.03 --pgd-steps 3
 
 After completion, copy the result and the Adversarial A/B picker will
 auto-detect:
-    cp D:/astra-data/runs/astra-v1-pgd/weights/best.pt \\
-       D:/astra-data/weights/astra-v1-hardened.pt
+    cp $ASTRA_DATA_DIR/runs/astra-v1-pgd/weights/best.pt \\
+       $ASTRA_DATA_DIR/weights/astra-v1-hardened.pt
 """
 
 from __future__ import annotations
@@ -34,13 +34,18 @@ from pathlib import Path
 # Bootstrap so we can import the existing FGSM helper to compute single-step
 # perturbations on YOLO inputs.
 _HERE = Path(__file__).resolve()
-sys.path.insert(0, str(_HERE.parent.parent / "backend"))
+REPO_ROOT = _HERE.parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+sys.path.insert(0, str(REPO_ROOT / "backend"))
+
+from astra_paths import RUNS_DIR, WEIGHTS_DIR  # noqa: E402
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--weights", type=Path,
-                    default=Path("D:/astra-data/runs/astra-v1-2/weights/best.pt"))
+                    default=RUNS_DIR / "astra-v1-2" / "weights" / "best.pt")
     ap.add_argument("--data",    type=Path,
                     default=Path("training/dataset.yaml"))
     ap.add_argument("--epochs", type=int, default=5)
@@ -53,7 +58,7 @@ def main() -> None:
                     help="PGD step size (typically eps/3)")
     ap.add_argument("--pgd-steps", type=int, default=3)
     ap.add_argument("--out",    type=Path,
-                    default=Path("D:/astra-data/runs/astra-v1-pgd"))
+                    default=RUNS_DIR / "astra-v1-pgd")
     args = ap.parse_args()
 
     if not args.weights.exists():
@@ -162,7 +167,7 @@ def main() -> None:
     print(f"\n=== DONE in {elapsed/60:.1f} min ===")
     print(f"Weights: {args.out / 'weights' / 'best.pt'}")
     print(f"\nPromote to active hardened variant:")
-    print(f"  cp {args.out / 'weights' / 'best.pt'} D:/astra-data/weights/astra-v1-hardened.pt")
+    print(f"  cp {args.out / 'weights' / 'best.pt'} {WEIGHTS_DIR / 'astra-v1-hardened.pt'}")
 
 
 if __name__ == "__main__":

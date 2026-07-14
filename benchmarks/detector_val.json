@@ -1,7 +1,7 @@
 {
   "captured_at": "2026-04-28T11:04:57.143624+00:00",
-  "weights": "D:\\astra-data\\weights\\astra-v1.pt",
-  "dataset": "C:\\Users\\atuld\\OneDrive\\Desktop\\astra\\training\\dataset.yaml",
+  "weights": "weights/astra-v1.pt",
+  "dataset": "training/dataset.yaml",
   "split": "val",
   "map_50": 0.5227,
   "map_50_95": 0.2899,

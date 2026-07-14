@@ -21,7 +21,7 @@ amp: true                      # automatic mixed precision — mandatory on 6GB
 cache: false                   # disk is tight — no cache
 workers: 0                     # Windows + 16GB RAM: 0 = serial loading in main process
 device: 0                      # RTX 4050
-project: D:/astra-data/runs    # outputs go to the data dir, NOT OneDrive
+project: ${ASTRA_DATA_DIR}/runs    # outputs go to the data dir, NOT OneDrive
 name: astra-v1
 exist_ok: false
 seed: 42

@@ -1,4 +1,4 @@
-path: C:/astra-data/datasets/astra-v1-smoke
+path: ${ASTRA_DATA_DIR}/datasets/astra-v1-smoke
 train: images/train
 val: images/val
 test: images/test

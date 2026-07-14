@@ -204,5 +204,5 @@ def assess_detection(
 # ── Optional SAM hook (no-op until weights present) ──────────────────────
 
 def sam_available() -> bool:
-    from pathlib import Path
-    return Path("D:/astra-data/models/sam_vit_b_01ec64.pth").exists()
+    from app.config import MODELS_DIR
+    return (MODELS_DIR / "sam_vit_b_01ec64.pth").exists()

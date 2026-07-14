@@ -13,13 +13,29 @@ from dataclasses import dataclass
 from pathlib import Path
 from threading import Lock
 
-from app.config import settings
+from app.config import DATA_ROOT, WEIGHTS_DIR, settings
 
 # Per-variant model cache. Variants we know about:
 #   "v1"          → settings.model_path (the canonical Round-1 weights)
-#   "v1-hardened" → D:/astra-data/weights/astra-v1-hardened.pt (FGSM-augmented)
+#   "v1-hardened" → <weights_dir>/astra-v1-hardened.pt (FGSM-augmented)
 _models: dict[str, object] = {}
 _model_lock = Lock()
+
+
+class WeightsNotFoundError(FileNotFoundError):
+    """The weights file for a detector variant is not on disk."""
+
+
+def _missing_weights(variant: str, path: Path) -> WeightsNotFoundError:
+    """Build the one error message every missing-weights path reports."""
+    return WeightsNotFoundError(
+        f"Detector weights for variant {variant!r} not found at: {path}\n"
+        f"ASTRA resolves weights under ASTRA_DATA_DIR (currently: {DATA_ROOT}).\n"
+        "To fix, do one of:\n"
+        f"  1. Set ASTRA_DATA_DIR to the directory that contains weights/{path.name}\n"
+        "  2. Set ASTRA_MODEL_PATH to the .pt file directly (variant 'v1' only)\n"
+        "  3. Train a model: python training/train.py --config training/configs/astra-v1.yaml"
+    )
 
 
 def _variant_path(variant: str) -> Path:
@@ -28,7 +44,7 @@ def _variant_path(variant: str) -> Path:
     if variant == "v1":
         return Path(settings.model_path)
     if variant == "v1-hardened":
-        return Path("D:/astra-data/weights/astra-v1-hardened.pt")
+        return WEIGHTS_DIR / "astra-v1-hardened.pt"
     raise ValueError(f"Unknown model variant: {variant!r}. Known: v1, v1-hardened.")
 
 
@@ -80,10 +96,7 @@ def _load_model(variant: str = "v1"):
 
         path = _variant_path(variant)
         if not path.exists():
-            raise FileNotFoundError(
-                f"Model weights for variant {variant!r} not found at {path}. "
-                "Train first: python training/train.py --config training/configs/astra-v1.yaml"
-            )
+            raise _missing_weights(variant, path)
         _models[variant] = YOLO(str(path))
     return _models[variant]
 
@@ -97,11 +110,13 @@ def is_ready(variant: str = "v1") -> bool:
 
 def detect(image_bgr, imgsz: int | None = None, conf: float | None = None, variant: str = "v1") -> list[DetectionRecord]:
     """Run detection on a single BGR image (numpy ndarray H×W×3).
-    Returns an empty list if the model isn't loaded yet and is_ready() is False —
-    callers can probe is_ready() first to distinguish 'no detections' from 'no model'.
+
+    Raises WeightsNotFoundError if the variant's weights are missing. An empty
+    list therefore means "the model ran and found nothing", never "there is no
+    model" — call is_ready() first if you need to branch on that.
     """
     if not is_ready(variant):
-        return []
+        raise _missing_weights(variant, _variant_path(variant))
     model = _load_model(variant)
     results = model.predict(
         image_bgr,
@@ -138,6 +153,9 @@ def detect_and_track_video(
     across frames within a single call). track_id is stable across frames for
     the same object. Stops after max_frames yields to cap demo latency.
 
+    Raises WeightsNotFoundError if the weights are missing, for the same reason
+    detect() does — a caller must never mistake "no model" for "no objects".
+
     Yields:
         frame_index: 0-based index into the INPUT video (accounts for stride)
         timestamp_ms: milliseconds into the video
@@ -145,7 +163,7 @@ def detect_and_track_video(
         records: list[DetectionRecord] with track_id populated
     """
     if not is_ready():
-        return
+        raise _missing_weights("v1", _variant_path("v1"))
     model = _load_model()
 
     # Probe FPS so we can report real timestamps back to callers

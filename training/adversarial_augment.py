@@ -10,17 +10,17 @@ same perturbations.
 
 Usage:
     python training/adversarial_augment.py \\
-        --weights D:/astra-data/runs/astra-v1-2/weights/best.pt \\
-        --train-images D:/astra-data/datasets/astra-v1/images/train \\
-        --train-labels D:/astra-data/datasets/astra-v1/labels/train \\
+        --weights $ASTRA_DATA_DIR/runs/astra-v1-2/weights/best.pt \\
+        --train-images $ASTRA_DATA_DIR/datasets/astra-v1/images/train \\
+        --train-labels $ASTRA_DATA_DIR/datasets/astra-v1/labels/train \\
         --fraction 0.30 --epsilon 0.04 --clean-existing
 
 After this completes, run the hardened training:
     python training/train.py --config training/configs/astra-v1-hardened.yaml
 
 Then promote the resulting weights so the backend can find them:
-    cp D:/astra-data/runs/astra-v1-hardened/weights/best.pt \\
-       D:/astra-data/weights/astra-v1-hardened.pt
+    cp $ASTRA_DATA_DIR/runs/astra-v1-hardened/weights/best.pt \\
+       $ASTRA_DATA_DIR/weights/astra-v1-hardened.pt
 """
 
 from __future__ import annotations
@@ -39,7 +39,12 @@ import numpy as np
 # We reuse the inference adversarial perturb function — it already knows how
 # to letterbox to 640², compute the gradient on the YOLO head's class scores,
 # and unwrap back to the original size.
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "backend"))
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+sys.path.insert(0, str(REPO_ROOT / "backend"))
+
+from astra_paths import DATASETS_DIR, RUNS_DIR, WEIGHTS_DIR  # noqa: E402
 from app.inference.adversarial import perturb_fgsm  # noqa: E402
 
 
@@ -48,12 +53,12 @@ ADVERSARIAL_SUFFIX = "__adv"
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--weights", type=Path, default=Path("D:/astra-data/runs/astra-v1-2/weights/best.pt"),
+    ap.add_argument("--weights", type=Path, default=RUNS_DIR / "astra-v1-2" / "weights" / "best.pt",
                     help="YOLOv11 weights to compute the gradient against")
     ap.add_argument("--train-images", type=Path,
-                    default=Path("D:/astra-data/datasets/astra-v1/images/train"))
+                    default=DATASETS_DIR / "astra-v1" / "images" / "train")
     ap.add_argument("--train-labels", type=Path,
-                    default=Path("D:/astra-data/datasets/astra-v1/labels/train"))
+                    default=DATASETS_DIR / "astra-v1" / "labels" / "train")
     ap.add_argument("--fraction", type=float, default=0.30,
                     help="Fraction of training tiles to augment (0..1)")
     ap.add_argument("--epsilon", type=float, default=0.04,
@@ -133,8 +138,8 @@ def main() -> None:
     print(f"\nNext step:")
     print(f"  python training/train.py --config training/configs/astra-v1-hardened.yaml")
     print(f"\nThen promote the hardened weights:")
-    print(f"  cp D:/astra-data/runs/astra-v1-hardened/weights/best.pt \\")
-    print(f"     D:/astra-data/weights/astra-v1-hardened.pt")
+    print(f"  cp {RUNS_DIR}/astra-v1-hardened/weights/best.pt \\")
+    print(f"     {WEIGHTS_DIR}/astra-v1-hardened.pt")
 
 
 if __name__ == "__main__":

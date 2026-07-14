@@ -2,7 +2,7 @@
 # Paths are RELATIVE to `path` below. `prepare_dota.py` writes images/ and labels/
 # under this root, with train/val/test splits.
 
-path: D:/astra-data/datasets/astra-v1
+path: ${ASTRA_DATA_DIR}/datasets/astra-v1
 train: images/train
 val: images/val
 test: images/test

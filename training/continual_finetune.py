@@ -31,7 +31,12 @@ from pathlib import Path
 
 # Bootstrap the backend so we can import models / db
 _HERE = Path(__file__).resolve()
-sys.path.insert(0, str(_HERE.parent.parent / "backend"))
+REPO_ROOT = _HERE.parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+sys.path.insert(0, str(REPO_ROOT / "backend"))
+
+from astra_paths import DATASETS_DIR  # noqa: E402
 
 from app.db.models import Alert, AlertStatus, Detection, Mission  # noqa: E402
 from app.db.session import SessionLocal  # noqa: E402
@@ -46,7 +51,7 @@ CLASS_NAMES = [
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out-root", type=Path,
-                    default=Path("D:/astra-data/datasets/astra-continual"),
+                    default=DATASETS_DIR / "astra-continual",
                     help="Where to write the operator-curated dataset")
     ap.add_argument("--min-confirmed", type=int, default=10,
                     help="Skip if fewer than this many confirmed alerts to add")

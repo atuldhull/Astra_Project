@@ -31,6 +31,8 @@ import shutil
 from collections import defaultdict
 from pathlib import Path
 
+from astra_paths import DATASETS_DIR
+
 
 def link_or_copy(src: Path, dst: Path) -> None:
     """Create a hardlink from src -> dst; fall back to copy on error
@@ -121,8 +123,8 @@ def write_poison_node(per_class: dict[str, list[Path]], out_root: Path, label_sw
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Partition MAR20-cls train into N federated nodes")
-    ap.add_argument("--train-root", type=Path, default=Path("D:/astra-data/datasets/mar20-cls/train"))
-    ap.add_argument("--out-root", type=Path, default=Path("D:/astra-data/datasets/mar20-cls-fed"))
+    ap.add_argument("--train-root", type=Path, default=DATASETS_DIR / "mar20-cls" / "train")
+    ap.add_argument("--out-root", type=Path, default=DATASETS_DIR / "mar20-cls-fed")
     ap.add_argument("--nodes", type=int, default=3)
     ap.add_argument("--mode", choices=["iid", "non-iid", "attack"], default="non-iid")
     ap.add_argument("--alpha", type=float, default=0.3, help="Dirichlet alpha for non-iid mode")

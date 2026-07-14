@@ -99,7 +99,7 @@ def narrate(ctx: NarratorContext) -> str:
 
 # ── Future LLM upgrade hook ────────────────────────────────────────────────
 # When llama-cpp-python is reliably installed and Phi-3.5-mini-instruct
-# GGUF is downloaded to D:/astra-data/models/, uncomment the code below
+# GGUF is downloaded to app.config.MODELS_DIR, uncomment the code below
 # to generate richer narratives. Template path always remains as fallback.
 #
 # _llm = None
@@ -109,8 +109,9 @@ def narrate(ctx: NarratorContext) -> str:
 #     try:
 #         if _llm is None:
 #             from llama_cpp import Llama
+#             from app.config import MODELS_DIR
 #             _llm = Llama(
-#                 model_path="D:/astra-data/models/Phi-3.5-mini-instruct-Q4_K_M.gguf",
+#                 model_path=str(MODELS_DIR / "Phi-3.5-mini-instruct-Q4_K_M.gguf"),
 #                 n_ctx=2048, verbose=False,
 #             )
 #         prompt = (

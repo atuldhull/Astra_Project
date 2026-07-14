@@ -21,7 +21,7 @@ from threading import Lock
 
 import numpy as np
 
-from app.config import settings
+from app.config import RUNS_DIR, WEIGHTS_DIR, settings
 
 
 _model = None
@@ -42,14 +42,15 @@ class AirframeResult:
 def _weights_path() -> Path:
     """Where we expect the trained MAR20 classifier weights to live.
 
-    We don't add a dedicated env var yet — Day 1 trains into the runs/ folder
-    and we copy/symlink the best checkpoint here once the run finishes.
+    Both locations sit under ASTRA_DATA_DIR (see app.config). Day 1 trains into
+    the runs/ folder and we copy/symlink the best checkpoint into weights/ once
+    the run finishes.
     """
-    explicit = Path("D:/astra-data/weights/astra-aircraft-v1.pt")
+    explicit = WEIGHTS_DIR / "astra-aircraft-v1.pt"
     if explicit.exists():
         return explicit
     # Fallback: training run's best.pt (path produced by Ultralytics)
-    return Path("D:/astra-data/runs/astra-aircraft-v1/weights/best.pt")
+    return RUNS_DIR / "astra-aircraft-v1" / "weights" / "best.pt"
 
 
 def is_ready() -> bool:

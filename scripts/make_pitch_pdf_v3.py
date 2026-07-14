@@ -528,7 +528,7 @@ def slide_architecture(c: rl_canvas.Canvas, n: int, total: int) -> None:
         ("Crypto",
          "Ed25519 detection signatures · SHA-256 chain",
          "cryptography 43 · base64url",
-         "Server keypair at D:/astra-data/secrets/astra.ed25519 · pubkey FP shown on /audit subtitle."),
+         "Server keypair at $ASTRA_DATA_DIR/secrets/astra.ed25519 · pubkey FP shown on /audit subtitle."),
         ("Federated",
          "FedAvg + FoolsGold (Sybil quarantine) + DP-SGD",
          "Synthetic + MAR20 partitions",
@@ -741,9 +741,9 @@ def slide_pillar_sovereign(c: rl_canvas.Canvas, n: int, total: int, data: dict) 
         "Phi-3.5-mini-instruct LLM runs on the same box as the detector — Q4_K_M GGUF, 2.4 GB, llama-cpp-python n_ctx=2048. No call to any third-party hosted LLM service.",
         "PostgreSQL on a Docker volume; Redis cache only. Both bind to 127.0.0.1 by default. Air-gap deployable.",
         "Map tiles default to OpenStreetMap; the AOI overlay works offline once tiles are pre-cached.",
-        "Audit chain anchor file lives at D:/astra-data/anchors/log.jsonl — append-only on the operator's own disk. Round-4 swap to OpenTimestamps or a coalition partner is one env-flag away.",
-        "ED25519 server keypair persisted at D:/astra-data/secrets/astra.ed25519. Pub-key fingerprint visible on /audit subtitle. Private key never leaves the host.",
-        "Federated training partitions live at D:/astra-data/datasets/mar20-cls-fed/. FoolsGold sybil-quarantines outliers; DP-SGD adds privacy noise per gradient step.",
+        "Audit chain anchor file lives at $ASTRA_DATA_DIR/anchors/log.jsonl — append-only on the operator's own disk. Round-4 swap to OpenTimestamps or a coalition partner is one env-flag away.",
+        "ED25519 server keypair persisted at $ASTRA_DATA_DIR/secrets/astra.ed25519. Pub-key fingerprint visible on /audit subtitle. Private key never leaves the host.",
+        "Federated training partitions live at $ASTRA_DATA_DIR/datasets/mar20-cls-fed/. FoolsGold sybil-quarantines outliers; DP-SGD adds privacy noise per gradient step.",
     ]
     yy = y - 0.10 * inch
     for b in bullets:

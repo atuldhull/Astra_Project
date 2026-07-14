@@ -27,6 +27,12 @@ frontend/.vite/
 *.log
 npm-debug.log*
 
+# TypeScript incremental build cache — machine-local, never commit
+*.tsbuildinfo
+
+# Dataset YAMLs with ${ASTRA_DATA_DIR} expanded for Ultralytics (see astra_paths.py)
+*.resolved.yaml
+
 # IDE
 .vscode/
 .idea/
@@ -35,7 +41,7 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
-# Training artifacts (NEVER commit — use D:\astra-data\)
+# Training artifacts (NEVER commit — they belong under $ASTRA_DATA_DIR)
 runs/
 wandb/
 *.pt
@@ -44,7 +50,7 @@ wandb/
 *.engine
 *.trt
 
-# Datasets (NEVER commit — use D:\astra-data\datasets\)
+# Datasets (NEVER commit — they belong under $ASTRA_DATA_DIR/datasets)
 datasets/
 *.tif
 *.tiff

@@ -1,8 +1,8 @@
 name: ASTRA CI
 
-# Runs on every push + PR to main. Three light jobs:
+# Runs on every push + PR to release/3.0. Three light jobs:
 #   1) frontend lint + tsc + build
-#   2) backend smoke (Python import, schema construction, hash chain unit)
+#   2) backend smoke (Python import, hash chain unit, pytest suite)
 #   3) federated synthetic smoke (1 round, 2 honest clients, no GPU)
 #
 # We deliberately DO NOT run the full e2e_regression here because that needs
@@ -11,9 +11,9 @@ name: ASTRA CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ release/3.0 ]
   pull_request:
-    branches: [ main ]
+    branches: [ release/3.0 ]
 
 jobs:
   # ── Frontend ────────────────────────────────────────────────────────
@@ -36,7 +36,7 @@ jobs:
 
   # ── Backend smoke ───────────────────────────────────────────────────
   backend:
-    name: backend · imports + hash chain
+    name: backend · imports + hash chain + tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -44,29 +44,47 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
-      - name: install minimal deps
+          cache-dependency-path: backend/requirements.txt
+      - name: system libs for opencv
+        # requirements.txt pins opencv-python (not -headless), which dlopens
+        # libGL at import. Same packages the backend Dockerfile installs.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libgl1 libglib2.0-0
+      - name: install deps
         run: |
           python -m pip install --upgrade pip
-          # Pin a minimal install — we don't need ultralytics/torch in CI for
-          # import + hash chain unit tests.
-          pip install fastapi pydantic-settings sqlalchemy psycopg2-binary \
-                      python-multipart httpx numpy opencv-python-headless reportlab pillow
+          # CPU torch first so the ultralytics dependency in requirements.txt
+          # is satisfied without pulling the multi-GB CUDA wheel.
+          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          # Install the real requirements file — never a hand-maintained subset,
+          # which is how cryptography went missing here in the first place.
+          pip install -r backend/requirements.txt
       - name: backend imports
         env:
           POSTGRES_HOST: localhost
           POSTGRES_PORT: "5432"
+        working-directory: backend
         run: |
-          cd backend
           python -c "import app.main; print('main OK')"
           python -c "from app.services.audit import _row_hash, GENESIS_HASH; \
                      h = _row_hash(GENESIS_HASH, {'a':1}); \
                      assert len(h) == 64; print('hash chain OK')"
+      - name: backend tests
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: "5432"
+        working-directory: backend
+        run: python -m pytest -q
+      - name: federated foolsgold
+        # From the repo root — `federated` is a top-level package, not part of
+        # the backend package.
+        run: |
           python -c "from federated.foolsgold import compute_aggregation_weights, FoolsGoldState; \
                      import numpy as np; \
                      s = FoolsGoldState(); \
                      w, d = compute_aggregation_weights({'a': np.ones(10), 'b': np.ones(10)}, s); \
                      print('foolsgold OK:', w)"
-        continue-on-error: false
 
   # ── Federated synthetic ──────────────────────────────────────────────
   federated:

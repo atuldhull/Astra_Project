@@ -41,11 +41,12 @@ from pathlib import Path
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.config import ANCHORS_DIR as _DEFAULT_ANCHORS_DIR
 from app.db.models import AuditEvent
 
 log = logging.getLogger("astra.anchor")
 
-ANCHORS_DIR = Path(os.environ.get("ASTRA_ANCHORS_DIR", "D:/astra-data/anchors"))
+ANCHORS_DIR = Path(os.environ.get("ASTRA_ANCHORS_DIR") or _DEFAULT_ANCHORS_DIR)
 ANCHOR_FILE = ANCHORS_DIR / "log.jsonl"
 ANCHOR_INTERVAL = int(os.environ.get("ASTRA_ANCHOR_INTERVAL", "50"))
 ENABLED = os.environ.get("ASTRA_ANCHOR_ENABLED", "true").lower() != "false"

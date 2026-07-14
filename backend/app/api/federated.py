@@ -18,6 +18,8 @@ from pathlib import Path
 
 from fastapi import APIRouter
 
+from app.config import FEDERATED_LOG
+
 router = APIRouter(prefix="/federated", tags=["federated"])
 
 
@@ -25,12 +27,7 @@ router = APIRouter(prefix="/federated", tags=["federated"])
 # agree on the file location even when the orchestrator runs from a
 # different cwd. Both honour ASTRA_FEDERATED_LOG.
 def _log_path() -> Path:
-    return Path(
-        os.environ.get(
-            "ASTRA_FEDERATED_LOG",
-            "D:/astra-data/federated/run.jsonl",
-        )
-    )
+    return Path(os.environ.get("ASTRA_FEDERATED_LOG") or FEDERATED_LOG)
 
 
 def _read_records() -> list[dict]:

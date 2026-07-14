@@ -7,12 +7,12 @@ table. Detections with valid bbox + intact source image are used. We
 sample the most-recent N detections per class (default 200) for balance.
 
 Usage (from repo root):
-    D:/astra-data/venvs/astra/Scripts/python.exe scripts/calibrate_ood.py
-    D:/astra-data/venvs/astra/Scripts/python.exe scripts/calibrate_ood.py --per-class 500 --percentile 99
+    python scripts/calibrate_ood.py
+    python scripts/calibrate_ood.py --per-class 500 --percentile 99
 
 Writes:
-    D:/astra-data/weights/astra-v1.ood.npz       (numpy NPZ)
-    D:/astra-data/weights/astra-v1.ood.meta.json (human-readable summary)
+    $ASTRA_DATA_DIR/weights/astra-v1.ood.npz       (numpy NPZ)
+    $ASTRA_DATA_DIR/weights/astra-v1.ood.meta.json (human-readable summary)
 """
 
 from __future__ import annotations

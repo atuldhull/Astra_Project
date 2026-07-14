@@ -17,7 +17,7 @@ Run:
     python scripts/setup_dota.py
 
 Staging layout tolerated:
-    D:/astra-data/datasets/dota-staging/
+    $ASTRA_DATA_DIR/datasets/dota-staging/
         traning/                      (or training, train, anything with 'tra')
             labelTxt-v1.5-*.zip       <- authoritative train labels
             part1-*.zip               <- train images (maybe)
@@ -26,7 +26,7 @@ Staging layout tolerated:
             labelTxt-v1.5-*.zip       <- authoritative val labels
             ... any image zips the user mis-placed here will still sort correctly ...
 
-Output: D:/astra-data/datasets/dota-raw/{train,val}/{images,labelTxt}/
+Output: $ASTRA_DATA_DIR/datasets/dota-raw/{train,val}/{images,labelTxt}/
 """
 
 from __future__ import annotations
@@ -37,6 +37,12 @@ import sys
 import tempfile
 import zipfile
 from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from astra_paths import DATASETS_DIR  # noqa: E402
 
 
 IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".tif", ".tiff"}
@@ -90,8 +96,8 @@ def _walk_nested_zips(root: Path, dest: Path) -> int:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--staging", type=Path, default=Path("D:/astra-data/datasets/dota-staging"))
-    parser.add_argument("--out", type=Path, default=Path("D:/astra-data/datasets/dota-raw"))
+    parser.add_argument("--staging", type=Path, default=DATASETS_DIR / "dota-staging")
+    parser.add_argument("--out", type=Path, default=DATASETS_DIR / "dota-raw")
     args = parser.parse_args()
 
     if not args.staging.exists():
