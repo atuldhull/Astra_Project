@@ -147,3 +147,26 @@ def attack_test2() -> list[Scenario]:
 
 
 PACKS.update({"benign-v3": benign_v3, "attack-test2": attack_test2})
+
+
+def mixed_test(n_geom: int = 8, tag: str = "mixed-test") -> list[Scenario]:
+    """Jamming / jump / replay attacks on fresh geometries, for scoring the forensics verdict (A3)."""
+    rng = _random.Random(tag)
+    tag_root = tag
+    out = []
+    for g in range(n_geom):
+        for tag, att in (
+            ("deny", {"model": "jam_denial", "duration_s": 60}),
+            ("intermittent", {"model": "jam_intermittent", "duration_s": 120, "period_s": 4, "duty": 0.5}),
+            ("chaotic", {"model": "jam_chaotic", "duration_s": 60}),
+            ("degrade", {"model": "jam_degrade", "duration_s": 120, "num_sats": 5, "accuracy_m": 8}),
+            ("jump", {"model": "spoof_jump", "duration_s": 120, "north_m": 0, "east_m": 100}),
+            ("meacon", {"model": "meaconing", "duration_s": 120, "delay_ms": 2000}),
+        ):
+            a = {**att, "start": {"at_waypoint": 1, "delay_s": rng.uniform(10, 40)}}
+            out.append(_corpus_scenario(f"{tag_root}-g{g}-{tag}", rng, [a]))
+    return out
+
+
+PACKS["mixed-test"] = mixed_test
+PACKS["mixed-dev"] = lambda: mixed_test(6, "mixed-dev")

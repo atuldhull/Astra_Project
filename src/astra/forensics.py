@@ -49,6 +49,26 @@ def _intervals(t: np.ndarray, mask: np.ndarray, min_len_s: float = 1.0) -> list[
     return out
 
 
+def _step_residual(fl: logs.FlightLog):
+    """Per-fix |Δp − v̄·Δt| (m), airborne only: a position jump the reported velocity doesn't explain."""
+    from astra.geo import latlon_to_ne
+    g = fl["GPS"]
+    ok = g["Status"] >= 3
+    if ok.sum() < 3:
+        return np.zeros(0), np.zeros(0)
+    t, la, lo = g["t"][ok], g["Lat"][ok], g["Lng"][ok]
+    n, e = latlon_to_ne(la[0], lo[0], la, lo)
+    crs = np.radians(g["GCrs"][ok])
+    vn, ve = g["Spd"][ok] * np.cos(crs), g["Spd"][ok] * np.sin(crs)
+    dt = np.diff(t)
+    rn = np.diff(n) - 0.5 * (vn[1:] + vn[:-1]) * dt
+    re = np.diff(e) - 0.5 * (ve[1:] + ve[:-1]) * dt
+    pos = fl["POS"]
+    air = np.interp(t[1:], pos["t"], pos["RelHomeAlt"]) > 3
+    good = (dt > 0.05) & (dt < 0.5) & air
+    return t[1:][good], np.hypot(rn, re)[good]
+
+
 def diagnose(path: Path, cal_file: Path | None = None) -> dict:
     from astra.detect import features, monitor
 
@@ -88,15 +108,40 @@ def diagnose(path: Path, cal_file: Path | None = None) -> dict:
         a2["reason"] = "no bundled A2 calibration yet (run benchmarks/a2_eval.py --save-cal)"
     rep["a2_monitor"] = a2
 
-    jam = bool(rep["receiver"]["fix_lost_intervals_s"] or rep["receiver"]["low_satellite_intervals_s"])
-    spoof = bool(a2.get("alarm")) and a2.get("first_channel") in ("c2", "c3", "c1")
+    # ── evidence ────────────────────────────────────────────────────────────
+    jam_iv = rep["receiver"]["fix_lost_intervals_s"] + rep["receiver"]["low_satellite_intervals_s"]
+    spoof_ev: list[tuple[float, str]] = []
+    if a2.get("alarm"):
+        spoof_ev.append((a2["alarm_t"], f"A2 {a2['first_channel']}"))
+    step_thr = (cal_all or {}).get("step", {}).get("thresh_m")
+    if step_thr:
+        st, ss = _step_residual(fl)
+        hits = st[ss > step_thr]
+        rep["position_steps"] = {"threshold_m": step_thr, "n": int(len(hits)),
+                                 "max_m": round(float(ss.max()), 1) if len(ss) else None,
+                                 "first_t": round(float(hits[0]), 1) if len(hits) else None}
+        if len(hits):
+            spoof_ev.append((float(hits[0]), "position step"))
+    for t, m in rep["stock_alerts"]:
+        if "glitch" in m.lower():
+            spoof_ev.append((t, "stock: " + m))
+
+    # Attribution: spoof-like evidence inside a jamming interval (or up to 30 s after it, while the
+    # receiver re-acquires and the EKF resets) is a jamming artefact, not separate spoofing.
+    def _in_jam(t):
+        return any(a - 5.0 <= t <= b + 30.0 for a, b in jam_iv)
+
+    spoof_outside = [(t, why) for t, why in spoof_ev if not _in_jam(t)]
+    rep["evidence"] = {"jamming_intervals_s": jam_iv,
+                       "spoofing_events": [[round(t, 1), w] for t, w in spoof_ev],
+                       "spoofing_events_outside_jamming": [[round(t, 1), w] for t, w in spoof_outside]}
+    jam, spoof = bool(jam_iv), bool(spoof_outside)
     if jam and not spoof:
         verdict = "jamming-like: receiver lost fix or satellites"
     elif spoof and not jam:
-        verdict = (f"spoofing-like: navigation inconsistency on {a2['first_channel']} while the receiver "
-                   f"reported healthy fix")
+        verdict = f"spoofing-like: {spoof_outside[0][1]} while the receiver reported a healthy fix"
     elif jam and spoof:
-        verdict = "mixed: receiver degradation and navigation inconsistency"
+        verdict = "mixed: receiver degradation and, separately, navigation inconsistency"
     else:
         verdict = ("no GNSS anomaly found by the available checks. Note: a slow, consistent spoof is not "
                    "observable without an independent witness sensor (docs/v4/05-DETECTION-PHYSICS.md)")

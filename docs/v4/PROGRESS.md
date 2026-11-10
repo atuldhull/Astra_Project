@@ -154,3 +154,17 @@ before generation): **0 false alarms in 7.2 h** (UB 0.51/h). Slow drag-off detec
 A2 GPS+IMU **39/95**, **A2 +flow 84/95 (88%)**. Consistent ≥ 0.5 m/s 24/24, consistent 0.25 m/s 9/11,
 naive ≥ 0.5 m/s 23/24, naive 0.25 m/s 4/12 (weakest). Error at alarm for 1–2 m/s: 19–34 m.
 1 errored run (harness takeoff flake, excluded and listed). The bundled calibration is now v7.
+
+## 2026-11-11: A3 forensics verdict, Shield v2 mitigation
+
+**A3** (`benchmarks/a3-final-v2.md`): `astra diagnose` verdicts scored on held-out mixed-test (48
+jamming/jump/replay), attack-test2 (95 drags) and benign-v3 (80). v1 → v2: overall 194 → **209/223
+(94%)**. Benign never accused (80/80). Jamming 19 → 29/32. Spoofing 95 → 100/111 (jumps 3 → 8/8).
+Rules refined on a separate mixed-dev set only: a position-step check (threshold 1.0 m = 1.5× the
+benign-v1 max), stock "GPS glitch" alerts as evidence, and spoof evidence within a jamming interval
+(+30 s) attributed to the jamming. Remaining misses: 0.25 m/s drags (10/23), 3 chaotic jams labelled
+"mixed" (that model does inject position jumps).
+
+**Shield v2** (`benchmarks/shield-v1.md`): drop GPS via EKF source set 2, then LAND. True displacement
+from alarm to touchdown: mean 46 m → **19 m** (6/6 safe aborts). Flow velocity as the post-alarm
+source gives no extra gain (18.6 m).
