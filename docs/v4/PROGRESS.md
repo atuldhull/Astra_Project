@@ -129,3 +129,10 @@ armed script is `src/astra/data/astra_shield.lua`.
 FBM did *not* beat random on the simple 2-D slice (97.6% vs 100%). Unproven on SITL; needs 4-D.
 
 **`astra calibrate`**: per-airframe A2 calibration from benign logs. `astra diagnose --cal`.
+
+**Harness bug found and fixed (2026-11-11):** occasionally the takeoff command didn't take effect.
+The copter auto-disarmed at home and was then mis-scored as "diverted". The fix retries takeoff (×3)
+and otherwise marks the run `error` (excluded and listed), never an airframe outcome. Audit of all
+results: 4 affected runs (a6 default benign ×1, attack-dev ×1, shield atk ×1, shield far ×1). None
+of the published A2 held-out numbers are affected (0 runs in benign-v2/attack-test). The Shield
+cells already excluded those runs (no airborne blocks).

@@ -293,8 +293,19 @@ def fly(sc: Scenario, seed: int, workdir: Path, *, speedup: int = 5,
             res.outcome, res.reason = "error", "vehicle never became ready to arm"
             return res
         t_arm = f.t
-        f.command(ML.MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0, 0, 0, sc.mission.takeoff_alt_m)
-        f.run_until(lambda: f.est is not None and f.est[2] >= 0.9 * sc.mission.takeoff_alt_m, 60)
+        climbed = False
+        for _attempt in range(3):
+            if not f.armed and not f.wait_ready_and_arm(30):
+                break
+            t_arm = f.t
+            f.command(ML.MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0, 0, 0, sc.mission.takeoff_alt_m)
+            if f.run_until(lambda: f.est is not None and f.est[2] >= 2.0, 8):
+                climbed = f.run_until(lambda: f.est[2] >= 0.9 * sc.mission.takeoff_alt_m, 60)
+                break
+        if not climbed:
+            # A harness failure, not an airframe outcome: never score it as one.
+            res.outcome, res.reason = "error", "harness: takeoff did not start after 3 attempts"
+            return res
         f.set_mode("AUTO")
         last_item = n_items - 1
         geofence = sc.expect.geofence_radius_m
