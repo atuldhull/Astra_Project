@@ -81,3 +81,17 @@ but not reliable enough.
 - `astra diagnose` with C1 removed gives "no anomaly" on 39/39 real benign flights.
 - Not tested on real data: flow channel C2 (no flow in these logs), and detection of *real* spoofing
   (no labelled real attacks available here).
+
+## Per-airframe test (properly powered for one vehicle)
+
+Two vehicles sampled at random from 22 with ≥ 15 qualifying real flights (PX4 FMU-v4, PX4 v1.14):
+
+| vehicle | usable flights (airborne) | sim constants | per-airframe calibration (≥ 0.5 h), 20 random splits |
+|---|---|---|---|
+| V1 | 18 (1.84 h) | 0/18 alarm | **0 alarms in all 20 splits** (257 held-out flight-tests; resampled, not independent hours) |
+| V2 | 10 (0.40 h; 5 logs lacked raw GPS) | 0/10 alarm (peak ≤ 0.15× threshold) | not testable: under 0.5 h in total |
+
+**Reading:** on modern receivers (2020s PX4/u-blox), Shield was clean even with simulation constants,
+and per-airframe calibration stayed clean on held-out flights. The 3/39 false alarms in the random
+sample came from 2017-era receivers (PX4 v1.6), which suggests receiver generation matters more than
+airframe. This is a small-sample pattern, not a proven rule; calibrate on your own airframe regardless.

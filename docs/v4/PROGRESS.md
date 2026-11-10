@@ -202,3 +202,7 @@ were sampled. After size and logging limits, two had 3 flights (0.07 h) and 5 fl
 alarms were 0/10 and 11/30. This supports the minimum-data warning, but **doesn't validate**
 per-airframe calibration. Needs a vehicle with ≥ 30 min of downloadable flights. ULog adapter: falls back
 to the lowest topic instance and explains logs without raw GPS (SDLOG_PROFILE).
+
+**Per-airframe test, powered:** vehicle V1 (18 real flights, 1.84 h): sim constants 0/18, per-airframe
+calibration 0 alarms across 20 held-out splits. V2: 0/10 with sim constants (too little data to split).
+The earlier 3/39 sim-constant alarms were all on 2017-era receivers.
