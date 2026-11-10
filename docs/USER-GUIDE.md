@@ -102,7 +102,7 @@ Copy the script to the autopilot's `APM/scripts/` and set `SCR_ENABLE 1`. On ala
 `EK3_SRC2_POSXY 0, EK3_SRC2_VELXY 0, EK3_SRC2_POSZ 1, EK3_SRC2_YAW 1`. In simulation, `nogps-land`
 cut post-alarm movement from 46 m to 19 m on average.
 
-**Don't skip step (b).** With simulation-only constants Shield false-alarmed on 1 of 39 real flights.
+**Don't skip step (b).** With simulation-only constants Shield false-alarmed on 3 of 39 real flights.
 Test the armed script in SITL and on the bench before flying it.
 
 ## What ASTRA can't tell you

@@ -61,9 +61,15 @@ Per flight (anonymised log-id prefix):
 ## ASTRA Shield arithmetic replayed on the same real flights
 
 Exact onboard computation (2 s span, 4 s block medians, CUSUM) with the **simulation-derived**
-constants: **1/39 flights would alarm** (4.48 airborne h, about 0.22/h). Median peak/threshold 0.18,
-max 1.39. Whether that one flight had a genuine GNSS anomaly is unknown, so it's counted as a false
-alarm. **Consequence:** run the per-airframe `astra shield calibrate` step on the vendor's own
+constants: **3/39 flights would alarm** (5.0 airborne h). Median peak/threshold 0.18; the three
+alarming flights peak at 1.09–1.51×. *Correction:* an earlier ad-hoc replay with a slightly wrong window
+midpoint reported 1/39. The faithful mirror (`onboard.shield_blocks`, verified against onboard SITL
+logs to 0.016 m/s) gives 3/39. Typical noise matches simulation (σ about 0.10 m/s per axis both); real
+receivers have **heavier tails**, which the CUSUM accumulates.
+
+**Fleet calibration on real flights** (calibrate on 20 real flights, test on the other 19, 3 random
+splits): 0/19, 1/19, 1/19 false alarms. Better, but mixed airframes don't fully fix it; per-airframe
+calibration is the remaining test. **Consequence:** run the per-airframe `astra shield calibrate` step on the vendor's own
 benign flights before arming Shield on a real drone. Simulation constants are close to transferring,
 but not reliable enough.
 

@@ -190,3 +190,8 @@ c3, about 10–25% earlier and at lower error (1 m/s naive: 13.8 vs 18.6 m at al
 false alarm** (peak 1.22× threshold) vs c3 0/39 (peak 0.89×). **Rejected as default** (the real-data gate
 wins). It's kept as an option (`ASTRA_C3=raw` in a2_eval, channel `c3r`). It also explains Shield's 1/39
 real false alarm: same arithmetic, so Shield must be calibrated per airframe before arming.
+
+**Correction (Shield on real flights):** 3/39, not 1/39. The earlier replay used a wrong window
+midpoint. The faithful mirror `onboard.shield_blocks` (verified vs onboard SITL blocks) gives 3/39 with
+simulation constants. Typical real noise equals simulated (σ about 0.10 m/s); real tails are heavier. Fleet
+calibration on 20 real flights → 0/19, 1/19, 1/19 on held-out real flights (3 splits). All docs corrected.

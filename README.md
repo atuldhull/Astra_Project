@@ -113,7 +113,7 @@ gives **90× real time** (16 flight-hours in about 11 minutes).
 - Simulation: ArduCopter only (PX4 SITL and fixed-wing planned). PX4 *logs* can be diagnosed (`.ulg`).
 - Calibrations shipped are from simulated receivers. Calibrate per airframe on the vendor's own benign
   logs (`astra calibrate`, `astra shield calibrate`) before trusting alarms. Shield with simulation
-  constants false-alarmed on 1/39 real flights.
+  constants false-alarmed on 3/39 real flights (0–1/19 after calibrating on other real flights).
 
 ## Docs
 
