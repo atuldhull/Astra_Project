@@ -115,3 +115,17 @@ Against the S1 target (≥ +40 pp on slow drag-off): **met with a flow witness (
 +31 pp overall, +72 pp on naive spoofs, and 0 on consistent ones, as physics predicts.
 Caveat: SITL flow has ideal texture (05-DETECTION-PHYSICS §2), so the +flow column is an upper bound.
 The calibration is bundled at `src/astra/data/a2-calibration.json` (used by `astra diagnose`).
+
+## 2026-11-11: ASTRA Shield (onboard C3 Lua), A1 on SITL, calibrate command
+
+**Shield** (`benchmarks/shield-v1.md`): calibrated on its *own* logged residuals (40 benign-v1
+flights, 3.8 h). Held-out benign-v2: **0 false alarms in 6.7 h** (UB 0.55/h). Naive drag ≥ 0.5 m/s:
+**35/35**, alarm at 14–31 m error (better than offline C3, because it uses raw 5 Hz fixes).
+0.25 m/s naive: 6/12. Consistent: 1/48 (physics limit). Onboard alarm equals offline replay in 6/6.
+LAND-on-alarm turned 6/6 diversions into safe aborts and cut worst deviation by about 80–85%. The
+armed script is `src/astra/data/astra_shield.lua`.
+
+**A1 on SITL** (`benchmarks/a1-sitl-v1.md`): margin for A2+flow is about 0.6 m/s (both methods agree).
+FBM did *not* beat random on the simple 2-D slice (97.6% vs 100%). Unproven on SITL; needs 4-D.
+
+**`astra calibrate`**: per-airframe A2 calibration from benign logs. `astra diagnose --cal`.
