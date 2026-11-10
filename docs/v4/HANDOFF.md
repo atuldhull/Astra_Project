@@ -54,7 +54,7 @@ Thermals: 4 parallel SITL at 20× is about 3 cores. 8 at 20× is about 5 cores (
 
 1. SITL flow assumes perfect texture. Real flow over sand, water or at night is worse. C2 is an upper bound.
 2. No RF-level attack synthesis, so receiver-internal detectors (C/N0, AGC, clock) can't be validated in SITL.
-3. Only ArduCopter. No PX4, no fixed-wing yet.
+3. Multicopter only (ArduCopter 4.7.2 + PX4 v1.17 SIH). PX4: 7/7 attack models; protection via Shield-Companion; `astra advise` ArduPilot-only. No fixed-wing yet.
 4. The A2 calibration comes from simulated "typical" receivers. A real product must calibrate per airframe from
    the vendor's own benign logs (about 30–60 min of flights).
 5. The stealthy consistent spoof with GPS + IMU only is fundamentally undetectable on short horizons
