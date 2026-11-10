@@ -29,7 +29,8 @@ from astra.scenario import (JamDegrade, JamDenial, JamIntermittent, Scenario, Sp
 from astra.sitl import read_params
 
 ML = mavutil.mavlink
-PX4_IMAGE = "astra/px4-sitl:v1.17.0"
+import os
+PX4_IMAGE = os.environ.get("ASTRA_PX4_IMAGE", "astra/px4-sitl:v1.17.0")
 ROOTFS = "/src/px4/build/px4_sitl_default/rootfs"
 ETC = "/src/px4/build/px4_sitl_default/etc"
 

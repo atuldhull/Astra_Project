@@ -20,7 +20,7 @@ Keys and the local audit ledger live in `ASTRA_HOME` (default `~/.astra`). Set `
 ### PX4 airframes
 
 ```bash
-docker build -t astra/px4-sitl:v1.17.0 sim/px4      # ~40 min, 5.4 GB (contains the PX4 toolchain)
+docker build -t astra/px4-sitl:v1.17.0 sim/px4      # ~40 min build; 0.9 GB runtime image
 astra run baseline-v1 --autopilot px4 --params my.params --out runs/myframe-px4 --seeds 3 --parallel 4 --speedup 10
 ```
 

@@ -97,7 +97,7 @@ Prereqs: Docker Desktop, Python ≥ 3.11.
 ```bash
 python -m venv .venv && .venv/Scripts/python -m pip install -e ".[dev]"   # Linux/macOS: .venv/bin/
 docker build -t astra/ardupilot-sitl:copter-4.7.2 sim/ardupilot           # ~10 min, once
-docker build -t astra/px4-sitl:v1.17.0 sim/px4                             # optional, PX4 (~40 min, 5.4 GB)
+docker build -t astra/px4-sitl:v1.17.0 sim/px4                             # optional, PX4 (~40 min build, 0.9 GB image)
 astra packs                                                                # list scenario packs
 astra run baseline-v1 --out runs/my-airframe --params my.parm --seeds 3    # fly the pack (add --autopilot px4 for PX4)
 astra verify runs/my-airframe/report.json --trust $(astra key)             # check a report
