@@ -118,6 +118,6 @@ def load_ulog(path: str | Path) -> FlightLog:
         fl.series["XKF4"] = {"t": np.array([t[0], t[-1]]), **{k: z for k in ("C", "SV", "SP", "SH", "SM", "FS", "TS", "SS", "GPS")}}
     # PX4 text messages live in the ULog message section, not in a data topic.
     import re
-    ansi = re.compile(r"\[[0-9;]*m")
+    ansi = re.compile(r"\x1b\[[0-9;]*m")
     fl.messages = [(m.timestamp / 1e6, ansi.sub("", m.message).strip()) for m in u.logged_messages]
     return fl
