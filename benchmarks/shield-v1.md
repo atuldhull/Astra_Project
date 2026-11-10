@@ -67,3 +67,8 @@ Vendor config: `EK3_SRC2_POSXY 0, EK3_SRC2_VELXY 0, EK3_SRC2_POSZ 1, EK3_SRC2_YA
 reference, so the nav-error row overstates the gain. The honest improvement is about 58% less movement
 after the alarm. The remaining ~20 m is mostly braking from 10 m/s cruise plus wind drift. With an
 optical-flow sensor, `EK3_SRC2_VELXY 5` (flow) should cut drift further (not yet measured).
+
+**Also tested:** flow velocity as the post-alarm source (`EK3_SRC2_VELXY 5`): true displacement
+5.5–22.6 m (mean 18.6), against a mean of 19 with no velocity source. **No meaningful gain.** The
+displacement is dominated by braking from cruise speed. Flow may help in a long hover in wind
+(untested). Recommendation stays `EK3_SRC2_VELXY 0` for simplicity.
