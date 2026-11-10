@@ -24,7 +24,12 @@ from astra.evaluate import ALERT_WORDS, CODE_NAMES
 
 
 def _load(path: Path) -> logs.FlightLog:
-    return logs.load_npz(path) if path.suffix == ".npz" else logs.load(path)
+    if path.suffix == ".npz":
+        return logs.load_npz(path)
+    if path.suffix.lower() == ".ulg":
+        from astra.ulog import load_ulog
+        return load_ulog(path)
+    return logs.load(path)
 
 
 def _bundled_calibration():
