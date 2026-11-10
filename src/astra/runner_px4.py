@@ -6,8 +6,8 @@ PX4 differences handled here:
   * ground truth comes from the ULog (vehicle_global_position_groundtruth) after the flight
   * the attack timeline runs inside the patched simulated GPS (seconds after arming)
 
-Supported attack models on PX4 (sim/px4 patch v1): jam_denial, jam_intermittent, jam_degrade,
-spoof_jump, spoof_drag. "at_waypoint" triggers are converted to seconds after arming using an
+Supported attack models on PX4 (sim/px4 patch v2): all 7 (jam_denial, jam_intermittent, jam_degrade,
+jam_chaotic, spoof_jump, spoof_drag, meaconing). "at_waypoint" triggers are converted to seconds after arming using an
 estimate of take-off time (recorded in the result as `px4_trigger_s`).
 """
 
@@ -25,7 +25,8 @@ from pymavlink import mavutil
 
 from astra.geo import latlon_to_ne, ne_to_latlon
 from astra.runner import RunResult, seed_perturbation
-from astra.scenario import (JamDegrade, JamDenial, JamIntermittent, Scenario, SpoofDrag, SpoofJump)
+from astra.scenario import (JamChaotic, JamDegrade, JamDenial, JamIntermittent, Meaconing, Scenario, SpoofDrag,
+                            SpoofJump)
 from astra.sitl import read_params
 
 ML = mavutil.mavlink
@@ -57,6 +58,10 @@ def attack_params(sc: Scenario) -> tuple[dict, float | None]:
                  ASTRA_ATK_RAMP=a.ramp_s, ASTRA_ATK_CONS=1 if a.consistent else 0)
     elif isinstance(a, JamDegrade):
         p["ASTRA_ATK_MODEL"] = 6
+    elif isinstance(a, Meaconing):
+        p.update(ASTRA_ATK_MODEL=5, ASTRA_ATK_DLY_MS=a.delay_ms)
+    elif isinstance(a, JamChaotic):
+        p["ASTRA_ATK_MODEL"] = 7
     else:
         raise ValueError(f"attack model {a.model} not supported on PX4 yet")
     return p, t0

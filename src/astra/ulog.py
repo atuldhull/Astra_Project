@@ -27,7 +27,7 @@ TOPICS = ["sensor_gps", "vehicle_gps_position", "vehicle_global_position", "vehi
           "vehicle_status", "estimator_innovation_test_ratios"]
 
 # ASTRA PX4 attack model numbers (sim/px4 patch) -> astra.evaluate CODE_NAMES codes
-PX4_MODEL_TO_CODE = {1: 1, 2: 2, 3: 5, 4: 6, 6: 4}
+PX4_MODEL_TO_CODE = {1: 1, 2: 2, 3: 5, 4: 6, 5: 7, 6: 4, 7: 3}
 
 
 def _quat_to_euler_deg(q0, q1, q2, q3):
@@ -100,7 +100,7 @@ def load_ulog(path: str | Path) -> FlightLog:
             act = ((tt >= s0) & (tt < s1)).astype(float)
             z = np.zeros(len(tt))
             fl.series["ASTK"] = {"t": tt, "Act": act, "Code": act * PX4_MODEL_TO_CODE.get(model, model),
-                                 "OfsN": z, "OfsE": z, "VbN": z, "VbE": z, "En": 1 - act * (model in (1, 2)), "Jam": z}
+                                 "OfsN": z, "OfsE": z, "VbN": z, "VbE": z, "En": 1 - act * (model in (1, 2, 7)), "Jam": z}
     # EKF2 GPS innovation test ratios (>1 = rejected) mapped onto ArduPilot's XKF4 names, so the
     # shared "did the stock autopilot notice?" evaluation works for PX4 too.
     itr = by.get("estimator_innovation_test_ratios")

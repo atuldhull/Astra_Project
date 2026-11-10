@@ -27,14 +27,20 @@ def hpp(h):
                   "\t// ASTRA test-harness extension (simulator only): attack timeline + receiver noise\n"
                   "\tuORB::Subscription _vehicle_status_sub{ORB_ID(vehicle_status)};\n"
                   "\thrt_abstime _astra_armed_at{0};\n\thrt_abstime _astra_gm_last{0};\n"
-                  "\tfloat _astra_gm_n{0.f};\n\tfloat _astra_gm_e{0.f};\n\tbool _astra_gm_init{false};\n")
+                  "\tfloat _astra_gm_n{0.f};\n\tfloat _astra_gm_e{0.f};\n\tbool _astra_gm_init{false};\n"
+                  "\tstruct AstraHist { hrt_abstime t; double lat; double lon; double alt; float vn; float ve; float vd; };\n"
+                  "\tstatic constexpr int ASTRA_HIST_N = 512;\n"
+                  "\tAstraHist _astra_hist[ASTRA_HIST_N] {};\n\tint _astra_hist_head{0};\n\tint _astra_hist_count{0};\n"
+                  "\thrt_abstime _astra_chaos_next{0};\n\tint _astra_chaos_sats{10};\n\tbool _astra_chaos_lock{true};\n"
+                  "\tdouble _astra_chaos_dn{0.0};\n\tdouble _astra_chaos_de{0.0};\n\tfloat _astra_chaos_vn{0.f};\n"
+                  "\tfloat _astra_chaos_ve{0.f};\n\thrt_abstime _astra_chaos_start{0};\n")
     names = [("Int", "ASTRA_ATK_MODEL", "_astra_model"), ("Float", "ASTRA_ATK_ARM_S", "_astra_arm_s"),
              ("Float", "ASTRA_ATK_DUR", "_astra_dur"), ("Float", "ASTRA_ATK_RATE", "_astra_rate"),
              ("Float", "ASTRA_ATK_BRG", "_astra_brg"), ("Float", "ASTRA_ATK_RAMP", "_astra_ramp"),
              ("Int", "ASTRA_ATK_CONS", "_astra_cons"), ("Float", "ASTRA_ATK_JN", "_astra_jn"),
              ("Float", "ASTRA_ATK_JE", "_astra_je"), ("Float", "ASTRA_ATK_PER", "_astra_per"),
              ("Float", "ASTRA_ATK_DUTY", "_astra_duty"), ("Float", "ASTRA_GPS_PNSE", "_astra_pnse"),
-             ("Float", "ASTRA_GPS_PTAU", "_astra_ptau")]
+             ("Float", "ASTRA_GPS_PTAU", "_astra_ptau"), ("Int", "ASTRA_ATK_DLY_MS", "_astra_delay_ms")]
     extra = "".join(f",\n\t\t(Param{k}<px4::params::{n}>) {m}" for k, n, m in names)
     return h.replace("\t\t(ParamInt<px4::params::SIM_GPS_USED>) _sim_gps_used\n",
                      "\t\t(ParamInt<px4::params::SIM_GPS_USED>) _sim_gps_used" + extra + "\n")
@@ -75,6 +81,16 @@ BLOCK = """
 			_astra_gm_e = a * _astra_gm_e + q * generate_wgn();
 			latitude += (double)_astra_gm_n / astra_m_per_deg;
 			longitude += (double)_astra_gm_e / (astra_m_per_deg * astra_cos_lat);
+		}
+
+		// history of the un-attacked fix (for meaconing), at most every 20 ms => ~10 s of history
+		const int astra_last = (_astra_hist_head - 1 + ASTRA_HIST_N) % ASTRA_HIST_N;
+
+		if (_astra_hist_count == 0 || astra_now - _astra_hist[astra_last].t >= 20000) {
+			_astra_hist[_astra_hist_head] = AstraHist{astra_now, latitude, longitude, altitude, gps_vel(0), gps_vel(1), gps_vel(2)};
+			_astra_hist_head = (_astra_hist_head + 1) % ASTRA_HIST_N;
+
+			if (_astra_hist_count < ASTRA_HIST_N) { _astra_hist_count++; }
 		}
 
 		bool astra_deny = false;
@@ -130,6 +146,58 @@ BLOCK = """
 						break;
 					}
 
+				case 5: { // meaconing: report where the vehicle was delay_ms ago
+						const hrt_abstime want = astra_now - (hrt_abstime)_astra_delay_ms.get() * 1000;
+
+						for (int i = 1; i <= _astra_hist_count; i++) {
+							const AstraHist &h = _astra_hist[(_astra_hist_head - i + ASTRA_HIST_N) % ASTRA_HIST_N];
+
+							if (h.t <= want) {
+								latitude = h.lat;
+								longitude = h.lon;
+								altitude = h.alt;
+								gps_vel = Vector3f{h.vn, h.ve, h.vd};
+								break;
+							}
+						}
+
+						break;
+					}
+
+				case 7: { // jam_chaotic (modelled on ArduPilot SITL's jamming model)
+						if (_astra_chaos_start == 0) {
+							_astra_chaos_start = astra_now;
+							_astra_chaos_dn = _astra_chaos_de = 0.0;
+						}
+
+						const float since = (astra_now - _astra_chaos_start) * 1e-6f;
+
+						if (since < 1.f + 2.5f * fabsf(generate_wgn())) {
+							astra_deny = true;  // total loss of signal at the start is common
+
+						} else {
+							if (astra_now >= _astra_chaos_next) {
+								_astra_chaos_next = astra_now + (hrt_abstime)(1e6f * (0.3f + 0.7f * fabsf(generate_wgn())));
+								_astra_chaos_sats = 2 + (int)(fabsf(generate_wgn()) * 6.f) % 15;
+								_astra_chaos_lock = _astra_chaos_sats >= 4 && generate_wgn() > 0.f;
+								_astra_chaos_dn += 60.0 * (double)generate_wgn();
+								_astra_chaos_de += 60.0 * (double)generate_wgn();
+								_astra_chaos_vn = 8.f * generate_wgn();
+								_astra_chaos_ve = 8.f * generate_wgn();
+							}
+
+							astra_sats = _astra_chaos_sats;
+							astra_deny = !_astra_chaos_lock;
+							astra_eph = 2.f + 20.f * fabsf(generate_wgn());
+							latitude += _astra_chaos_dn / astra_m_per_deg;
+							longitude += _astra_chaos_de / (astra_m_per_deg * astra_cos_lat);
+							gps_vel(0) += _astra_chaos_vn;
+							gps_vel(1) += _astra_chaos_ve;
+						}
+
+						break;
+					}
+
 				case 6: // jam_degrade
 					astra_sats = 5;
 					astra_eph = 8.f;
@@ -162,7 +230,8 @@ def P(name, kind, default, desc, unit=None):
 
 def params(s):
     return s + "".join([
-        P("ASTRA_ATK_MODEL", "INT32", 0, "attack model (0 none, 1 denial, 2 intermittent, 3 jump, 4 drag, 6 degrade)"),
+        P("ASTRA_ATK_MODEL", "INT32", 0, "attack model (0 none, 1 denial, 2 intermittent, 3 jump, 4 drag, 5 meaconing, 6 degrade, 7 chaotic)"),
+        P("ASTRA_ATK_DLY_MS", "INT32", 0, "meaconing replay delay", "ms"),
         P("ASTRA_ATK_ARM_S", "FLOAT", "0.0f", "attack start, seconds after arming", "s"),
         P("ASTRA_ATK_DUR", "FLOAT", "0.0f", "attack duration", "s"),
         P("ASTRA_ATK_RATE", "FLOAT", "0.0f", "drag-off rate", "m/s"),
@@ -182,3 +251,13 @@ rw("SensorGpsSim.hpp", hpp)
 rw("SensorGpsSim.cpp", cpp)
 rw("parameters.c", params)
 print("patched", d)
+
+# Guard against silent no-match edits: every expected token must be present after patching.
+_REQUIRED = {"SensorGpsSim.hpp": ["struct AstraHist", "_astra_hist_head", "_astra_chaos_start", "ASTRA_ATK_DLY_MS"],
+             "SensorGpsSim.cpp": ["at most every 20 ms", "case 5:", "case 7:", "astra_deny ? 0 : astra_sats"],
+             "parameters.c": ["ASTRA_ATK_DLY_MS", "ASTRA_GPS_PTAU"]}
+for _f, _toks in _REQUIRED.items():
+    _txt = (d / _f).read_text(encoding="utf-8")
+    _missing = [t for t in _toks if t not in _txt]
+    assert not _missing, f"{_f}: missing {_missing}"
+print("all required edits present")

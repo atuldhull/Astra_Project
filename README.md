@@ -121,9 +121,8 @@ gives **90× real time** (16 flight-hours in about 11 minutes).
   latency) consistent spoofs ≥ 1 m/s are still caught (20/22) but only at 180–365 m off course, and
   ≤ 0.5 m/s mostly not (2/24) ([benchmarks/a2-flowdeg-v7.md](benchmarks/a2-flowdeg-v7.md)).
 - No RF-level attack synthesis, so receiver-internal spoof flags can't be validated here yet.
-- Simulation: ArduCopter 4.7.2 and **PX4 v1.17 (SIH)** multicopters. PX4 supports 5 of the 7 attack
-  models (no meaconing or chaotic jamming yet), and waypoint-triggered attacks are approximated as seconds
-  after arming. Fixed-wing is planned. PX4 and ArduPilot *logs* can both be diagnosed (`.ulg`, `.BIN`).
+- Simulation: ArduCopter 4.7.2 and **PX4 v1.17 (SIH)** multicopters. PX4 supports all 7 attack models;
+  waypoint-triggered attacks are approximated as seconds after arming. Fixed-wing is planned. PX4 and ArduPilot *logs* can both be diagnosed (`.ulg`, `.BIN`).
 - Calibrations shipped are from simulated receivers. Calibrate per airframe on the vendor's own benign
   logs (`astra calibrate`, `astra shield calibrate`) before trusting alarms. Shield with simulation
   constants false-alarmed on 3/39 real flights (0–1/19 after calibrating on other real flights).

@@ -256,3 +256,5 @@ rate error **9%**, bearing **2°**, onset **0 s**. Re-flying the estimated attac
 class 4/4, with miss distance within about ±50% (ramp not yet estimated; start time estimated from take-off).
 
 **A5 v2 (ramp + refined onset):** ramp within ±15 s in 59/84. Re-fly reproduction within 8% for 3/4 incidents (v1 2/4). The weak spot is slow consistent drags (noisy flow residual).
+
+**PX4 patch v2:** meaconing (≈10 s history, 20 ms sampling) and chaotic jamming ported, so all 7 models run on PX4. Stock PX4 catches 2 s meaconing in 0.16 s and chaotic jamming in 2.6 s (repeated blind-land failsafes). The patch generator now asserts that every required edit is present (an earlier silent no-match caused a compile error).

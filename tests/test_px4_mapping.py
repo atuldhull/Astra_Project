@@ -27,10 +27,15 @@ def test_waypoint_trigger_is_approximated_and_reported():
     assert p["ASTRA_ATK_MODEL"] == 1 and t0 == pytest.approx(30 / 1.5 + 8 + 10)
 
 
-@pytest.mark.parametrize("att", [
-    {"model": "meaconing", "start": {"after_arm_s": 5}, "duration_s": 10, "delay_ms": 1000},
-    {"model": "jam_chaotic", "start": {"after_arm_s": 5}, "duration_s": 10},
-])
-def test_unsupported_models_are_refused_not_ignored(att):
-    with pytest.raises(ValueError, match="not supported on PX4"):
-        attack_params(sc(att))
+def test_meaconing_and_chaotic_map_to_patch_models():
+    p, _ = attack_params(sc({"model": "meaconing", "start": {"after_arm_s": 5}, "duration_s": 10, "delay_ms": 1000}))
+    assert p["ASTRA_ATK_MODEL"] == 5 and p["ASTRA_ATK_DLY_MS"] == 1000
+    p, _ = attack_params(sc({"model": "jam_chaotic", "start": {"after_arm_s": 5}, "duration_s": 10}))
+    assert p["ASTRA_ATK_MODEL"] == 7
+
+
+def test_multiple_attacks_are_refused_not_ignored():
+    att = {"model": "jam_denial", "start": {"after_arm_s": 5}, "duration_s": 10}
+    s = Scenario.model_validate({**BASE, "attacks": [att, att]})
+    with pytest.raises(ValueError, match="one attack"):
+        attack_params(s)

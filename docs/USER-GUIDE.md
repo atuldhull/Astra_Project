@@ -24,8 +24,8 @@ docker build -t astra/px4-sitl:v1.17.0 sim/px4      # ~40 min build; 0.9 GB runt
 astra run baseline-v1 --autopilot px4 --params my.params --out runs/myframe-px4 --seeds 3 --parallel 4 --speedup 10
 ```
 
-PX4 runs use SIH (PX4's built-in simulator). Params are applied at boot. Supported attacks:
-denial, intermittent, degraded, jump and drag-off (naive/consistent, with ramp). Waypoint-triggered
+PX4 runs use SIH (PX4's built-in simulator). Params are applied at boot. All 7 attack models are
+supported. Waypoint-triggered
 attacks are converted to "seconds after arming" (the value used is recorded per run as
 `px4_trigger_s`). ASTRA Shield (Lua) and `astra advise` are ArduPilot-only today.
 

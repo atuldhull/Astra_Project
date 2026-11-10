@@ -66,7 +66,7 @@ Thermals: 4 parallel SITL at 20× is about 3 cores. 8 at 20× is about 5 cores (
   windows, `--autopilot px4` in run/batch/report. Baseline: same slow-drag blind spot as ArduPilot.
 - A2 C3 on PX4 (80-flight calibration): naive drags 36/48 vs stock 10/48, held-out FAR 0 in 3.8 h.
 - Shield for PX4: **Shield-Companion** (`astra.companion`), done and verified live.
-- Not yet: meaconing/chaotic models,
+- All 7 attack models ported (patch v2). Not yet:
   `astra advise` for EKF2 params, speed-up: results invariant 5–20×, but no wall-time gain above 10× (use 10×). (Runtime image is slim: 0.9 GB, verified
   identical results to the full image.)
 
