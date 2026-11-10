@@ -193,3 +193,14 @@ def attack_flowdeg() -> list[Scenario]:
 
 
 PACKS.update({"benign-flowdeg": benign_flowdeg, "attack-flowdeg": attack_flowdeg})
+
+
+def px4_benign() -> list[Scenario]:
+    return benign_v2()[:40]
+
+
+def px4_attack_naive() -> list[Scenario]:
+    return [s for s in attack_test2() if s.id.endswith("-n")]
+
+
+PACKS.update({"px4-benign": px4_benign, "px4-attack-naive": px4_attack_naive})
