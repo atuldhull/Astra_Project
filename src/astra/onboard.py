@@ -116,3 +116,50 @@ end
 gcs:send_text(6, "ASTRA Shield loaded (" .. (ARMED and "armed" or "log-only") .. ")")
 return update, 50
 """
+
+
+DELTA_DESIGN = 1.0
+K_DESIGN = 2.0 + DELTA_DESIGN ** 2 / 2.0
+
+
+def replay_cusum(q: np.ndarray, k: float = K_DESIGN) -> np.ndarray:
+    """Exactly the onboard arithmetic: S = max(0, S + min(q, 100) - k)."""
+    s, out = 0.0, np.empty(len(q))
+    for i, v in enumerate(q):
+        s = max(0.0, s + min(float(v), 100.0) - k)
+        out[i] = s
+    return out
+
+
+def calibrate_from_logs(paths, margin: float = 1.25) -> tuple[dict, dict]:
+    """Fit Shield constants from benign flights flown with the log-only script (ASTM blocks)."""
+    from pathlib import Path
+
+    from astra import logs
+    from astra.calibrate import _collect
+
+    blocks, skipped = [], []
+    for p in _collect([Path(x) for x in paths]):
+        try:
+            fl = logs.load_npz(p) if p.suffix == ".npz" else logs.load(p)
+        except (ValueError, KeyError, OSError) as exc:
+            skipped.append((str(p), str(exc)))
+            continue
+        if fl.attack_windows():
+            skipped.append((str(p), "contains an ASTRA attack label; not benign"))
+            continue
+        if not fl.has("ASTM") or len(fl["ASTM"]["t"]) < 5:
+            skipped.append((str(p), "no ASTM blocks (was the log-only Shield script loaded?)"))
+            continue
+        a = fl["ASTM"]
+        blocks.append(np.stack([a["rN"], a["rE"]], axis=1))
+    if not blocks:
+        raise ValueError("no usable ASTM blocks")
+    R = np.concatenate(blocks)
+    sinv = np.linalg.inv(np.cov(R.T) + 1e-9 * np.eye(2))
+    peak = max(replay_cusum(np.einsum("ni,ij,nj->n", b, sinv, b)).max() for b in blocks)
+    hours = len(R) * BLOCK_S / 3600
+    cal = {"sigma_inv": sinv.tolist(), "k": K_DESIGN, "h": float(max(margin * peak, 8.0))}
+    info = {"flights": len(blocks), "airborne_hours": round(hours, 3), "skipped": skipped,
+            "warning": None if hours >= 0.5 else "less than 0.5 h of benign blocks: threshold unreliable"}
+    return cal, info

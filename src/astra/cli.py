@@ -7,6 +7,7 @@
   astra ledger verify                      re-walk the local hash-chained ledger
   astra diagnose LOG.BIN|flight.npz        forensics on a flight log (A2 monitor)
   astra calibrate LOGS... --out CAL.json   airframe-specific A2 calibration from benign logs
+  astra shield calibrate|export ...        onboard Lua monitor (log-only -> calibrate -> armed)
 """
 
 from __future__ import annotations
@@ -90,6 +91,20 @@ def _cmd_calibrate(a):
     print(json.dumps(info, indent=1))
 
 
+def _cmd_shield(a):
+    from astra import onboard
+    if a.action_name == "calibrate":
+        cal, info = onboard.calibrate_from_logs(a.logs)
+        Path(a.out).write_text(json.dumps(cal, indent=1))
+        print(json.dumps(info, indent=1))
+        return
+    cal = None if a.log_only else json.loads(Path(a.cal).read_text())
+    script = onboard.lua_monitor(cal, action={"alert": 0, "land": 1}[a.on_alarm])
+    Path(a.out).write_text(script, encoding="ascii", newline="\n")
+    print(f"wrote {a.out} ({'log-only' if cal is None else 'armed, on alarm: ' + a.on_alarm}). "
+          f"Copy to the autopilot's APM/scripts/ and set SCR_ENABLE=1.")
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(prog="astra", description="ASTRA Proving Ground")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -121,6 +136,18 @@ def main(argv=None):
     c.add_argument("logs", nargs="+")
     c.add_argument("--out", required=True)
     c.set_defaults(fn=_cmd_calibrate)
+    sh = sub.add_parser("shield", help="ASTRA Shield onboard monitor (ArduPilot Lua)")
+    shs = sh.add_subparsers(dest="action_name", required=True)
+    sc_ = shs.add_parser("calibrate", help="fit constants from benign logs flown with the log-only script")
+    sc_.add_argument("logs", nargs="+")
+    sc_.add_argument("--out", required=True)
+    se = shs.add_parser("export", help="write the Lua script")
+    se.add_argument("--out", required=True)
+    g = se.add_mutually_exclusive_group(required=True)
+    g.add_argument("--log-only", action="store_true", help="calibration-collection mode (no alarms)")
+    g.add_argument("--cal", help="constants from `astra shield calibrate`")
+    se.add_argument("--on-alarm", choices=["alert", "land"], default="alert")
+    sh.set_defaults(fn=_cmd_shield)
     a = p.parse_args(argv)
     a.fn(a)
 
