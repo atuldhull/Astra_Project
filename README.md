@@ -108,7 +108,9 @@ gives **90× real time** (16 flight-hours in about 11 minutes).
 ## Limits (read before relying on results)
 
 - Simulation is pre-qualification, not a replacement for range trials.
-- SITL optical flow assumes ideal ground texture. Real flow over sand, water or at night is worse.
+- The optical-flow numbers assume a **good** flow sensor. With a degraded one (2–5× noise, ±5% scale,
+  latency) consistent spoofs ≥ 1 m/s are still caught (20/22) but only at 180–365 m off course, and
+  ≤ 0.5 m/s mostly not (2/24) ([benchmarks/a2-flowdeg-v7.md](benchmarks/a2-flowdeg-v7.md)).
 - No RF-level attack synthesis, so receiver-internal spoof flags can't be validated here yet.
 - Simulation: ArduCopter only (PX4 SITL and fixed-wing planned). PX4 *logs* can be diagnosed (`.ulg`).
 - Calibrations shipped are from simulated receivers. Calibrate per airframe on the vendor's own benign

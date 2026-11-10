@@ -29,7 +29,8 @@ jamming at all, and hardware GNSS simulators cost lakhs to crores while testing 
 
 ## Honest limits
 - Simulation is pre-qualification, not a range trial. Real *attack* logs aren't tested yet.
-- Optical-flow results assume good ground texture (an upper bound over sand, water or at night).
+- Optical-flow results need a good flow sensor: with a degraded one, spoofs ≥ 1 m/s are caught only at
+  180–365 m off course and ≤ 0.5 m/s mostly not. We test with your sensor's noise.
 - Calibrations shipped are simulation-derived. Calibrate on your own benign flights before arming.
 - ArduCopter SITL only today (PX4 logs can be diagnosed).
 

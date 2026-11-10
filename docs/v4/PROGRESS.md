@@ -206,3 +206,10 @@ to the lowest topic instance and explains logs without raw GPS (SDLOG_PROFILE).
 **Per-airframe test, powered:** vehicle V1 (18 real flights, 1.84 h): sim constants 0/18, per-airframe
 calibration 0 alarms across 20 held-out splits. V2: 0/10 with sim constants (too little data to split).
 The earlier 3/39 sim-constant alarms were all on 2017-era receivers.
+
+## 2026-11-11: degraded optical-flow sensitivity (`benchmarks/a2-flowdeg-v7.md`)
+
+A2 v7 frozen, calibration refit on 40 degraded-flow benign flights. Consistent drag-off ≥ 1 m/s:
+20/22, but alarm at 178–365 m error (ideal flow: 19–34 m). 0.5 m/s 1/12, 0.25 m/s 1/12. 1 false alarm
+in 3.5 h. The residual is noise-dominated (2.7 vs 0.85 m/s); latency compensation doesn't help. The
+headline flow numbers need a good sensor at operating altitude. README and pitch updated.
