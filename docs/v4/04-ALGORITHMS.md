@@ -129,3 +129,23 @@ a wrong scenario.
 ## Sources
 
 [PSY-TaLiRo stealthy attack demo](https://par.nsf.gov/servlets/purl/10433147) · [PSY-TaLiRo](https://ar5iv.arxiv.org/html/2106.02200) · [ARCH falsification report](https://www.sosy-lab.org/research/pub/2019-ARCH.Category_Report_Falsification.pdf) · [PGFuzz](https://www.ndss-symposium.org/ndss-paper/pgfuzz-policy-guided-fuzzing-for-robotic-vehicles) · [Control-invariant detection, CCS'18](https://par.nsf.gov/servlets/purl/10086394) · [Stealthy attacks vs control-based detection, ACSAC'19](https://blogs.ubc.ca/karthik/files/2019/09/acsac19.pdf) · [PID-Piper](https://people.ece.ubc.ca/zitaoc/files/Pid-Piper-DSN21.pdf) · [QUADFormer](https://arxiv.org/abs/2501.07597) · [Adversarial robustness of GPS-spoofing IDS](https://par.nsf.gov/servlets/purl/10535570) · [PoliTo AGC + C/N0](https://iris.polito.it/retrieve/handle/11583/2839032/383268) · [Drone forensics challenges](https://arxiv.org/pdf/2105.10917) · [Physics-based reconstruction, SAI 2025](https://thesai.org/Downloads/Volume17No2/Paper_2-A_Confidence_Aware_Multi_Layer_Framework.pdf) · [LSTM telemetry reconstruction](https://mdpi-res.com/d_attachment/jcp/jcp-06-00123/article_deploy/jcp-06-00123.pdf) · [GNSS threat simulator](https://arxiv.org/html/2405.17925v2) · [Spoofing injection testbed](https://arxiv.org/pdf/1906.03928) · [UAV Attack Dataset](https://ieee-dataport.org/node/2097)
+
+---
+
+## Status after the first build session (measured; details in PROGRESS.md)
+
+| ID | Built | Measured result | Verdict vs kill criterion |
+|---|---|---|---|
+| A1 FBM | ✅ `astra.search`, `search_sitl` | Synthetic 2-D: 34–86% lower boundary error than random. **SITL 2-D: 97.6% vs random 100%**, no gain on a simple boundary | Kill criterion (< 1.2× random on both reference airframes) **not yet evaluated properly**: needs a 4-D SITL test. Keep, unproven |
+| A2 monitor | ✅ v6 `astra.detect` | Held-out: 0 false alarms in 6.9 h. Slow drag-off detection 10/96 (stock) → 40/96 (GPS+IMU) → 65/96 (+flow) | S1 target met with a flow witness (+57 pp). C1 (Δv onset) contributes almost nothing (thresholds very high), candidate for removal |
+| A2 onboard ("Shield", C3 in Lua) | ✅ `astra.onboard` | Evaluation in progress | – |
+| A3 classifier | partial: rule-based verdict in `astra.forensics` | Not yet scored (needs jamming corpus + real logs) | – |
+| A4 terrain anchor | ❌ | SITL ground is flat at the reference site, and terrain-following SITL is unverified | Deferred |
+| A5 inversion | ❌ | – | Backlog (C2/C3 residuals already estimate the bias vector directly) |
+| A6 param advisor | sweep script `benchmarks/a6_params.py` | Pending | – |
+
+Design changes forced by measurement (keep these lessons):
+- Per-sample CUSUM on autocorrelated residuals can't work. Use **block statistics**, with drift from the design shift.
+- Flow model must be **geometric** (full body-frame velocity / slant range). The level-flight approximation breaks at cruise tilt.
+- Use **block medians**: single bad flow frames are tens of m/s at 40 m range.
+- "Robustness margin" must be the **upper** edge of the undetected region when failures start at the bottom of the range.
