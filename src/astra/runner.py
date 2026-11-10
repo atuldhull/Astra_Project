@@ -42,7 +42,7 @@ class Sample:
     t: float  # sim seconds since boot
     true_n: float
     true_e: float
-    true_alt: float
+    alt_rel: float  # EKF relative altitude (belief); horizontal attacks leave it intact
     est_n: float | None
     est_e: float | None
     mode: str
@@ -72,11 +72,45 @@ def seed_perturbation(sc: Scenario, seed: int) -> dict:
     """Deterministic per-seed nuisance variation (wind), so seeds explore conditions, not noise."""
     rng = random.Random(f"{sc.content_hash()}:{seed}")
     env = sc.environment
-    return {
+    p = {
         "SIM_WIND_SPD": max(0.0, round(env.wind_speed_ms + rng.uniform(-1.0, 1.0), 3)),
         "SIM_WIND_DIR": round((env.wind_dir_deg + rng.uniform(-20, 20)) % 360, 2),
         "SIM_WIND_TURB": max(0.0, round(env.wind_turbulence + rng.uniform(0, 0.5), 3)),
     }
+    if sc.sensors.imu == "mems":
+        # Consumer-MEMS-like after factory/user calibration (order-of-magnitude, documented in
+        # docs/v4/PROGRESS.md): residual accel bias ~0.05 m/s^2 (1 sigma) per axis, gyro bias
+        # ~0.1 deg/s, motor-vibration noise on. The EKF still has to estimate these biases, which is
+        # exactly what lets a slow spoof hide inside them.
+        for ax in "XYZ":
+            p[f"SIM_ACC1_BIAS_{ax}"] = round(rng.gauss(0, 0.05), 4)
+            p[f"SIM_ACC2_BIAS_{ax}"] = round(rng.gauss(0, 0.05), 4)
+            p[f"SIM_GYR1_BIAS_{ax}"] = round(rng.gauss(0, 0.0017), 5)
+            p[f"SIM_GYR2_BIAS_{ax}"] = round(rng.gauss(0, 0.0017), 5)
+        p["SIM_ACC1_RND"] = 0.5
+        p["SIM_ACC2_RND"] = 0.5
+        p["SIM_GYR1_RND"] = 0.05
+        p["SIM_GYR2_RND"] = 0.05
+    if sc.sensors.gps == "typical":
+        # Single-frequency GNSS, open sky: ~1 m (1-sigma) slowly wandering position error,
+        # 30-90 s correlation, 0.05-0.12 m/s velocity noise. Reported accuracy matches.
+        pos = round(rng.uniform(0.7, 1.5), 3)
+        p.update({"SIM_GPS1_PNSE": pos, "SIM_GPS1_PTAU": round(rng.uniform(30, 90), 1),
+                  "SIM_GPS1_VNSE": round(rng.uniform(0.05, 0.12), 3),
+                  "SIM_GPS1_NSEED": rng.randint(1, 2**31 - 1),
+                  "SIM_GPS1_ACC": round(1.5 * pos, 2)})
+    return p
+
+
+def sensor_params(sc: Scenario) -> dict:
+    """Passive extra sensors: present and logged, NOT selected as EKF sources (EK3_SRC* untouched)."""
+    p: dict = {}
+    if sc.sensors.optical_flow:
+        p.update({"SIM_FLOW_ENABLE": 1, "FLOW_TYPE": 10, "SIM_FLOW_RND": 0.05})
+    if sc.sensors.rangefinder or sc.sensors.optical_flow:
+        p.update({"RNGFND1_TYPE": 100, "RNGFND1_MIN": 0.2, "RNGFND1_MAX": 100,
+                  "RNGFND1_ORIENT": 25, "SIM_SONAR_SCALE": 10})
+    return p
 
 
 class _Flight:
@@ -95,6 +129,7 @@ class _Flight:
         self.samples: list[Sample] = []
         self.landed_state = 0
         self._last_sample_t = -1.0
+        self.landed_on_ground = False
 
     # ── message pump ────────────────────────────────────────────────────
     def pump(self, timeout=1.0):
@@ -237,7 +272,7 @@ def fly(sc: Scenario, seed: int, workdir: Path, *, speedup: int = 5,
         vendor_param_file: Path | None = None, cpus: float = 1.5, keep_logs: bool = False) -> RunResult:
     wall0 = time.monotonic()
     pert = seed_perturbation(sc, seed)
-    extra = dict(pert)
+    extra = {**pert, **sensor_params(sc)}
     extra["WPNAV_SPEED"] = sc.mission.speed_ms * 100  # mission cruise speed is a scenario property
     cfg = SitlConfig(
         home=(sc.home.lat, sc.home.lon, sc.home.alt_m, sc.home.heading_deg),
@@ -270,6 +305,13 @@ def fly(sc: Scenario, seed: int, workdir: Path, *, speedup: int = 5,
                 return True
             if sc.mission.end == "loiter" and f.nav_idx >= last_item and f.mode == "AUTO":
                 return True
+            # On the ground for 10 s after flying, even if still armed (a spoofed velocity can keep
+            # the land detector from ever disarming the vehicle).
+            if s and s.t - t_arm > 30 and len(f.samples) > 60:
+                recent = [x for x in f.samples if x.t >= s.t - 10]
+                if recent and recent[0].t <= s.t - 9.5 and all(x.alt_rel < 0.5 for x in recent):
+                    f.landed_on_ground = True
+                    return True
             return False
 
         finished = f.run_until(ended, sc.time_limit_s, wall_timeout_s=max(120, 3 * sc.time_limit_s / speedup))
@@ -309,6 +351,7 @@ def _classify(res: RunResult, f: _Flight, sc: Scenario, finished: bool, t_arm: f
         first_alert_t=f.alerts[0][0] - t_arm if f.alerts else None,
         n_alerts=len(f.alerts),
         final_mode=last.mode,
+        stuck_armed_on_ground=bool(f.landed_on_ground and f.armed),
     )
     R = sc.expect.goal_radius_m
     aborted = any(md in ("LAND", "RTL", "ALT_HOLD", "BRAKE", "SMART_RTL") for _, md in f.modes[1:])

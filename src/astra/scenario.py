@@ -109,6 +109,11 @@ class SpoofDrag(_Attack):
     rate_ms: float = Field(gt=0, le=30)
     bearing_deg: float = Field(ge=0, lt=360)
     consistent: bool = True
+    ramp_s: float = Field(
+        0.0, ge=0, le=600,
+        description="seconds to ease the velocity bias in (0 = instant step). A careful spoofer ramps "
+                    "slowly so the onset hides under IMU noise; detectors must be judged against this.",
+    )
     hold_after_s: float | None = Field(
         None, ge=0, description="stop growing the offset after this many seconds (hold it)"
     )
@@ -124,6 +129,20 @@ Attack = Annotated[
     Union[JamDenial, JamIntermittent, JamChaotic, JamDegrade, SpoofJump, SpoofDrag, Meaconing],
     Field(discriminator="model"),
 ]
+
+
+class Sensors(_Strict):
+    """What the airframe carries. Extra sensors are passive witnesses: logged, not fused,
+    unless the vendor's own params tell the EKF to use them."""
+    optical_flow: bool = False
+    rangefinder: bool = False
+    imu: Literal["ideal", "mems"] = Field(
+        "mems", description="ideal = SITL default (near-perfect). mems = per-seed bias + vibration noise"
+    )
+    gps: Literal["ideal", "typical"] = Field(
+        "typical", description="ideal = SITL default (perfect position). typical = single-frequency "
+                               "receiver: ~1 m Gauss-Markov position error, ~0.08 m/s velocity noise"
+    )
 
 
 class Expectation(_Strict):
@@ -144,6 +163,7 @@ class Scenario(_Strict):
     home: Home
     mission: Mission
     environment: Environment = Environment()
+    sensors: Sensors = Sensors()
     attacks: list[Attack] = Field(default_factory=list, max_length=8)
     expect: Expectation = Expectation()
     time_limit_s: float = Field(600.0, gt=10, le=7200)

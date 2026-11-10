@@ -1,8 +1,8 @@
 diff --git a/libraries/SITL/SIM_GPS.cpp b/libraries/SITL/SIM_GPS.cpp
-index 8ac0465..b4b78d0 100644
+index 8ac0465..c951e7e 100644
 --- a/libraries/SITL/SIM_GPS.cpp
 +++ b/libraries/SITL/SIM_GPS.cpp
-@@ -154,6 +154,13 @@ const AP_Param::GroupInfo SIM::GPSParms::var_info[] = {
+@@ -154,6 +154,40 @@ const AP_Param::GroupInfo SIM::GPSParms::var_info[] = {
      // @User: Advanced
      AP_GROUPINFO("OPTIONS",  18, GPSParms, options, 0),
  
@@ -13,10 +13,103 @@ index 8ac0465..b4b78d0 100644
 +    // @User: Advanced
 +    AP_GROUPINFO("SPFV",     19, GPSParms, spoof_vel, 0),
 +
++    // @Param: PNSE
++    // @DisplayName: GPS position noise
++    // @Description: ASTRA test-harness extension. 1-sigma horizontal position error, first-order Gauss-Markov (vertical uses 1.5x)
++    // @Units: m
++    // @User: Advanced
++    AP_GROUPINFO("PNSE",     20, GPSParms, pos_noise, 0),
++
++    // @Param: PTAU
++    // @DisplayName: GPS position noise correlation time
++    // @Description: ASTRA test-harness extension. Correlation time of the position error
++    // @Units: s
++    // @User: Advanced
++    AP_GROUPINFO("PTAU",     21, GPSParms, pos_tau, 30),
++
++    // @Param: VNSE
++    // @DisplayName: GPS velocity noise
++    // @Description: ASTRA test-harness extension. 1-sigma white velocity noise per axis
++    // @Units: m/s
++    // @User: Advanced
++    AP_GROUPINFO("VNSE",     22, GPSParms, vel_noise, 0),
++
++    // @Param: NSEED
++    // @DisplayName: GPS noise seed
++    // @Description: ASTRA test-harness extension. Seed for the ASTRA GPS noise generator
++    // @User: Advanced
++    AP_GROUPINFO("NSEED",    23, GPSParms, noise_seed, 1),
++
      AP_GROUPEND
  };
  }
-@@ -560,6 +567,12 @@ void GPS::update()
+@@ -165,6 +199,65 @@ extern const AP_HAL::HAL& hal;
+ 
+ using namespace SITL;
+ 
++// ASTRA: deterministic, seedable GPS receiver noise (Gauss-Markov position, white velocity).
++namespace {
++struct AstraNoise {
++    bool init;
++    uint32_t s;
++    uint32_t last_ms;
++    float n, e, u;
++};
++AstraNoise astra_noise_state[AP_SIM_MAX_GPS_SENSORS];
++
++float astra_uniform(uint32_t &s)
++{
++    s ^= s << 13;
++    s ^= s >> 17;
++    s ^= s << 5;
++    return ((s >> 8) + 0.5f) * (1.0f / 16777216.0f);
++}
++
++float astra_gauss(uint32_t &s)
++{
++    const float u1 = astra_uniform(s);
++    const float u2 = astra_uniform(s);
++    return sqrtf(-2.0f * logf(u1)) * cosf(2.0f * float(M_PI) * u2);
++}
++
++void astra_apply_noise(GPS_Data &d, uint8_t instance, uint32_t now_ms,
++                       float pos_sigma, float tau, float vel_sigma, int32_t seed)
++{
++    if (instance >= AP_SIM_MAX_GPS_SENSORS) {
++        return;
++    }
++    AstraNoise &ns = astra_noise_state[instance];
++    if (!ns.init) {
++        ns.s = uint32_t(seed) * 2654435761u + 1u + instance;
++        if (ns.s == 0) {
++            ns.s = 1;
++        }
++        ns.n = pos_sigma * astra_gauss(ns.s);
++        ns.e = pos_sigma * astra_gauss(ns.s);
++        ns.u = 1.5f * pos_sigma * astra_gauss(ns.s);
++        ns.last_ms = now_ms;
++        ns.init = true;
++    }
++    const float dt = (now_ms - ns.last_ms) * 0.001f;
++    ns.last_ms = now_ms;
++    const float a = expf(-dt / MAX(1.0f, tau));
++    const float q = pos_sigma * sqrtf(MAX(0.0f, 1.0f - a * a));
++    ns.n = a * ns.n + q * astra_gauss(ns.s);
++    ns.e = a * ns.e + q * astra_gauss(ns.s);
++    ns.u = a * ns.u + 1.5f * q * astra_gauss(ns.s);
++    d.latitude += ns.n / 111319.49079327357;
++    d.longitude += ns.e / (111319.49079327357 * cos(radians(d.latitude)));
++    d.altitude += ns.u;
++    d.speedN += vel_sigma * astra_gauss(ns.s);
++    d.speedE += vel_sigma * astra_gauss(ns.s);
++    d.speedD += 1.5f * vel_sigma * astra_gauss(ns.s);
++}
++} // namespace
++
+ // ensure the backend we have allocated matches the one that's configured:
+ GPS_Backend::GPS_Backend(GPS &_front, uint8_t _instance) :
+     instance{_instance},
+@@ -560,6 +653,17 @@ void GPS::update()
      d.longitude += glitch_offsets.y;
      d.altitude += glitch_offsets.z;
  
@@ -26,18 +119,27 @@ index 8ac0465..b4b78d0 100644
 +    d.speedE += spoof_vel.y;
 +    d.speedD += spoof_vel.z;
 +
++    // ASTRA: receiver noise model (all zero by default = upstream behaviour)
++    if (params.pos_noise > 0 || params.vel_noise > 0) {
++        astra_apply_noise(d, instance, now_ms, params.pos_noise, params.pos_tau, params.vel_noise, params.noise_seed);
++    }
++
      if (params.jam == 1) {
          simulate_jamming(d);
      }
 diff --git a/libraries/SITL/SITL.h b/libraries/SITL/SITL.h
-index c548c31..bd9b1db 100644
+index c548c31..e113ed9 100644
 --- a/libraries/SITL/SITL.h
 +++ b/libraries/SITL/SITL.h
-@@ -338,6 +338,7 @@ public:
+@@ -338,6 +338,11 @@ public:
          AP_Int8 jam; // jamming simulation enable
          AP_Float heading_offset; // heading offset in degrees
          AP_Int32 options; // GPS options bitmask
 +        AP_Vector3f spoof_vel; // ASTRA: constant GPS velocity bias in NED (m/s), for consistent drag-off spoofing
++        AP_Float pos_noise;  // ASTRA: 1-sigma horizontal position error (m), first-order Gauss-Markov
++        AP_Float pos_tau;    // ASTRA: correlation time of the position error (s)
++        AP_Float vel_noise;  // ASTRA: 1-sigma white velocity noise per axis (m/s)
++        AP_Int32 noise_seed; // ASTRA: seed for the ASTRA noise generator (per-run variation)
      };
      GPSParms gps[AP_SIM_MAX_GPS_SENSORS];
  

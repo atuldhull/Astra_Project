@@ -54,7 +54,7 @@ def _attack_row(a) -> str:
         "wp": a.start.at_waypoint,
         "delay_s": a.start.delay_s,
         "dur_s": a.duration_s,
-        "p1": None, "p2": None, "p3": None, "p4": None,
+        "p1": None, "p2": None, "p3": None, "p4": None, "p5": None,
     }
     if isinstance(a, JamIntermittent):
         f.update(p1=a.period_s, p2=a.duty)
@@ -63,7 +63,7 @@ def _attack_row(a) -> str:
     elif isinstance(a, SpoofJump):
         f.update(p1=a.north_m, p2=a.east_m)
     elif isinstance(a, SpoofDrag):
-        f.update(p1=a.rate_ms, p2=a.bearing_deg, p3=a.consistent, p4=a.hold_after_s)
+        f.update(p1=a.rate_ms, p2=a.bearing_deg, p3=a.consistent, p4=a.hold_after_s, p5=a.ramp_s)
     elif isinstance(a, Meaconing):
         f.update(p1=a.delay_ms)
     elif isinstance(a, (JamDenial, JamChaotic)):
@@ -168,15 +168,25 @@ function update()
       elseif a.code == 5 then
         off_n, off_e = a.p1, a.p2
       elseif a.code == 6 then
+        -- velocity bias ramps 0 -> rate over p5 s; offset is its exact integral
         local tt = t
         local growing = true
         if a.p4 ~= nil and t > a.p4 then tt = a.p4; growing = false end
+        local R = a.p5 or 0
+        local dist, vel
+        if R > 0 and tt < R then
+          dist = a.p1 * tt * tt / (2 * R)
+          vel = a.p1 * tt / R
+        else
+          dist = a.p1 * (tt - R / 2)
+          vel = a.p1
+        end
         local brg = math.rad(a.p2)
-        off_n = a.p1 * tt * math.cos(brg)
-        off_e = a.p1 * tt * math.sin(brg)
+        off_n = dist * math.cos(brg)
+        off_e = dist * math.sin(brg)
         if a.p3 == 1 and growing then
-          v.vx = a.p1 * math.cos(brg)
-          v.vy = a.p1 * math.sin(brg)
+          v.vx = vel * math.cos(brg)
+          v.vy = vel * math.sin(brg)
         end
       elseif a.code == 7 then
         v.lag = a.p1

@@ -23,6 +23,9 @@ WANTED = {
     "XKF1": ("C", "VN", "VE", "VD", "PN", "PE", "PD"),
     "XKF3": ("C", "IVN", "IVE", "IVD", "IPN", "IPE", "IPD"),
     "XKF4": ("C", "SV", "SP", "SH", "SM", "FS", "TS", "SS", "GPS"),
+    "XKF2": ("C", "AX", "AY", "AZ", "VWN", "VWE"),
+    "OF": ("Qual", "flowX", "flowY", "bodyX", "bodyY"),
+    "RFND": ("Instance", "Dist", "Stat"),
     "IMU": ("I", "AccX", "AccY", "AccZ"),
     "ATT": ("Roll", "Pitch", "Yaw"),
     "BARO": ("I", "Alt"),
@@ -31,7 +34,7 @@ WANTED = {
     "ASTK": ("Act", "Code", "OfsN", "OfsE", "VbN", "VbE", "En", "Jam"),
 }
 # Messages with an instance/core column: keep the primary only (C/I == 0).
-PRIMARY_ONLY = {"XKF1": "C", "XKF3": "C", "XKF4": "C", "IMU": "I", "BARO": "I"}
+PRIMARY_ONLY = {"XKF1": "C", "XKF2": "C", "XKF3": "C", "XKF4": "C", "IMU": "I", "BARO": "I", "RFND": "Instance"}
 
 
 @dataclass

@@ -63,3 +63,64 @@ def baseline_v1() -> list[Scenario]:
 
 
 PACKS = {"baseline-v1": baseline_v1}
+
+
+# ── Detector-development corpora ────────────────────────────────────────────
+import math as _math
+import random as _random
+
+_PASSIVE = {"optical_flow": True, "rangefinder": True, "imu": "mems"}
+
+
+def _random_mission(rng: _random.Random) -> dict:
+    n = rng.randint(1, 4)
+    wps, (pn, pe) = [], (0.0, 0.0)
+    for _ in range(n):
+        brg, d = rng.uniform(0, 2 * _math.pi), rng.uniform(400, 1500)
+        pn, pe = pn + d * _math.cos(brg), pe + d * _math.sin(brg)
+        r = _math.hypot(pn, pe)
+        if r > 2200:  # keep inside a 2.2 km radius
+            pn, pe = pn * 2200 / r, pe * 2200 / r
+        wps.append({"north_m": round(pn, 1), "east_m": round(pe, 1), "alt_m": rng.choice([20, 30, 40, 50])})
+    return {"takeoff_alt_m": wps[0]["alt_m"], "speed_ms": rng.choice([5, 8, 10, 12, 15]),
+            "end": "land", "waypoints": wps}
+
+
+def _corpus_scenario(sid: str, rng: _random.Random, attacks: list[dict]) -> Scenario:
+    return Scenario.model_validate({
+        "id": sid, "title": sid, "home": THAR, "mission": _random_mission(rng),
+        "environment": {"wind_speed_ms": rng.uniform(0, 8), "wind_dir_deg": rng.uniform(0, 359.9),
+                        "wind_turbulence": rng.uniform(0, 2)},
+        "sensors": _PASSIVE, "attacks": attacks, "time_limit_s": 1200,
+    })
+
+
+def benign_v1(n: int = 160) -> list[Scenario]:
+    rng = _random.Random("benign-v1")
+    return [_corpus_scenario(f"benign-v1-{i:03d}", rng, []) for i in range(n)]
+
+
+def _attack_corpus(tag: str, n_geom: int) -> list[Scenario]:
+    rng = _random.Random(tag)
+    out = []
+    for g in range(n_geom):
+        for rate in (0.25, 0.5, 1.0, 2.0):
+            for ramp in (0, 15, 60):
+                for consistent in (True, False):
+                    att = {"model": "spoof_drag", "start": {"at_waypoint": 1, "delay_s": rng.uniform(10, 40)},
+                           "duration_s": 3600, "rate_ms": rate, "bearing_deg": round(rng.uniform(0, 359.9), 1),
+                           "consistent": consistent, "ramp_s": ramp}
+                    sid = f"{tag}-g{g}-r{rate:g}-ramp{ramp}-{'c' if consistent else 'n'}"
+                    out.append(_corpus_scenario(sid, rng, [att]))
+    return out
+
+
+def attack_dev() -> list[Scenario]:
+    return _attack_corpus("attack-dev", 2)
+
+
+def attack_test() -> list[Scenario]:
+    return _attack_corpus("attack-test", 4)
+
+
+PACKS.update({"benign-v1": benign_v1, "attack-dev": attack_dev, "attack-test": attack_test})
