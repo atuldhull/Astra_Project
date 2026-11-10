@@ -141,7 +141,7 @@ a wrong scenario.
 | A2 onboard ("Shield", C3 in Lua) | ✅ `astra.onboard` | Evaluation in progress | – |
 | A3 classifier | partial: rule-based verdict in `astra.forensics` | Not yet scored (needs jamming corpus + real logs) | – |
 | A4 terrain anchor | ❌ | SITL ground is flat at the reference site, and terrain-following SITL is unverified | Deferred |
-| A5 inversion | ❌ | – | Backlog (C2/C3 residuals already estimate the bias vector directly) |
+| A5 inversion | ✅ `astra.inversion`, `astra invert` | Held-out: type 84/84, rate err 9%, bearing 2°, onset 0 s. Re-fly reproduces outcome class 4/4, distance ±50% | Keep. Next: ramp estimation |
 | A6 param advisor | sweep script `benchmarks/a6_params.py` | Pending | – |
 
 Design changes forced by measurement (keep these lessons):

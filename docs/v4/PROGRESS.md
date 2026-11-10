@@ -248,3 +248,9 @@ alarm times within 0.0–0.3 s on 6/6 attacks. **PX4** (`benchmarks/companion-px
 PX4 benign flights, offline replay: naive drag-offs **40/48 vs stock 10/48**, 0 FA in 3.0 held-out h. Live in
 the PX4 container: 4/4 attacks (2–9 s earlier than replay), 0 alarms on 20 benign flights. `astra shield
 calibrate` now also works on logs without onboard blocks (PX4, real flights), via the verified mirror.
+
+## 2026-11-11: A5 incident → scenario inversion (`astra invert`)
+
+`benchmarks/a5-inversion-v1.md`: on 84 detected held-out drag-offs, attack type correct **84/84**, median
+rate error **9%**, bearing **2°**, onset **0 s**. Re-flying the estimated attack reproduces the outcome
+class 4/4, with miss distance within about ±50% (ramp not yet estimated; start time estimated from take-off).

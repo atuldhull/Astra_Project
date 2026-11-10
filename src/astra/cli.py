@@ -10,6 +10,7 @@
   astra shield calibrate|export ...        onboard Lua monitor (log-only -> calibrate -> armed)
   astra advise --params P.parm --out DIR   measured EKF-tuning trade-off (A6)
   astra html RUN_DIR                       self-contained HTML report
+  astra invert LOG [--mission M.yaml]      estimate the attack and emit a reproducible scenario (A5)
 """
 
 from __future__ import annotations
@@ -115,6 +116,41 @@ def _cmd_advise(a):
     print(render(rows, a.nbenign))
 
 
+def _cmd_invert(a):
+    import yaml
+    from astra.detect import monitor
+    from astra.forensics import _bundled_calibration, _load
+    from astra.inversion import invert
+    cal_all = json.loads(Path(a.cal).read_text()) if a.cal else _bundled_calibration()
+    fl = _load(Path(a.log))
+    cfg = "gps+imu+flow" if (fl.has("OF") and fl.has("RFND") and "gps+imu+flow" in cal_all) else "gps+imu"
+    inv = invert(fl, monitor.Calibration(**cal_all[cfg]))
+    if inv is None:
+        sys.exit("no drag-off spoof detected in this log; nothing to invert")
+    import numpy as np
+    pos = fl["POS"]
+    climb = np.nonzero(pos["RelHomeAlt"] > 0.5)[0]
+    t_lift = float(pos["t"][climb[0]]) if len(climb) else None
+    # take-off time stands in for arming (logs here carry no explicit arming event): an estimate
+    attack = inv.scenario_attack(after_arm_s=max(0.0, inv.onset_s - t_lift) if t_lift is not None else None)
+    out = {"estimated_attack": attack, "evidence": {"channel": inv.channel, "onset_s_in_log": round(inv.onset_s, 1),
+           "alarm_s_in_log": round(inv.alarm_s, 1), "blocks_used": inv.n_blocks}}
+    if a.mission:
+        sc = yaml.safe_load(Path(a.mission).read_text())
+        sc["attacks"] = [attack]
+        sc["id"] = (sc.get("id", "incident") + "-repro")[:60]
+        out["scenario"] = sc
+    class _NoAlias(yaml.SafeDumper):
+        def ignore_aliases(self, data):
+            return True
+    text = yaml.dump(out, Dumper=_NoAlias, sort_keys=False)
+    if a.out:
+        Path(a.out).write_text(text)
+    print(text)
+    print("# start.after_arm_s is estimated from take-off time (no arming event in the log): check it.",
+          file=sys.stderr)
+
+
 def _cmd_html(a):
     from astra.html_report import render
     print(render(Path(a.run_dir)))
@@ -159,6 +195,12 @@ def main(argv=None):
     ad.add_argument("--nbenign", type=int, default=20)
     ad.add_argument("--parallel", type=int, default=4)
     ad.set_defaults(fn=_cmd_advise)
+    iv = sub.add_parser("invert", help="estimate the drag-off attack in a log and emit a reproducible scenario")
+    iv.add_argument("log")
+    iv.add_argument("--cal", help="calibration (default: bundled)")
+    iv.add_argument("--mission", help="your scenario YAML; the estimated attack is inserted into it")
+    iv.add_argument("--out")
+    iv.set_defaults(fn=_cmd_invert)
     hp = sub.add_parser("html", help="self-contained HTML view of a run directory")
     hp.add_argument("run_dir")
     hp.set_defaults(fn=_cmd_html)

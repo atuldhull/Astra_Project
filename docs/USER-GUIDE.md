@@ -101,6 +101,16 @@ alarm and channel, position-step evidence, and a verdict (`jamming-like` / `spoo
 `mixed` / `no GNSS anomaly`). "No anomaly" does **not** prove no attack: a slow, velocity-consistent
 spoof is invisible without a witness sensor such as optical flow.
 
+### Reproduce an incident
+
+```bash
+astra invert trial_flight.BIN --mission my-mission.yaml --out incident-repro.yaml
+astra run ... (with incident-repro.yaml added to a pack)   # re-fly it, change params, re-test
+```
+
+`astra invert` estimates the drag-off attack (naive/consistent, rate, bearing, onset) from the log. In
+tests the type was right 84/84, rate within ~9%, bearing within ~2°. Ramp-in isn't estimated yet.
+
 ## 7. Arm the onboard monitor (ASTRA Shield)
 
 ```bash
