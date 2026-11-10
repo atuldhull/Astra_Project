@@ -124,3 +124,12 @@ def attack_test() -> list[Scenario]:
 
 
 PACKS.update({"benign-v1": benign_v1, "attack-dev": attack_dev, "attack-test": attack_test})
+
+
+def benign_v2(n: int = 80) -> list[Scenario]:
+    """Fresh benign flights for the final (frozen-design) false-alarm test. Never used for tuning."""
+    rng = _random.Random("benign-v2")
+    return [_corpus_scenario(f"benign-v2-{i:03d}", rng, []) for i in range(n)]
+
+
+PACKS["benign-v2"] = benign_v2

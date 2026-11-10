@@ -66,3 +66,25 @@ improvement.
 
 **Fixed:** mission-upload race (ArduPilot's non-final INVALID_SEQUENCE ack, and a mission-not-ready
 error under load). A readiness probe and retries gave 0/12 errors at 8 parallel.
+
+## 2026-11-11: realism pass, CLI/reports, A1 engine
+
+**Realism (see 05-DETECTION-PHYSICS.md §4 for the traps this fixed)**
+- SITL patch v2 adds a seedable GNSS noise model (Gauss–Markov position about 1 m, τ 30–90 s;
+  white velocity 0.05–0.12 m/s). Upstream SITL GPS position is noise-free.
+- Defaults are now `imu: mems`, `gps: typical`. A passive optical-flow sensor and rangefinder are
+  carried in the corpora (logged, not fused).
+- `spoof_drag.ramp_s`: realistic smooth onset.
+- Runner: an "ended on ground" rule. A spoofed copter can land and never disarm.
+
+**Product layer:** `astra packs|run|verify|key|ledger|diagnose`. The signed report binds the
+simulator image, ArduPilot commit, patch hash, vendor params hash, scenario hashes and seeds.
+Tested: a tampered report fails verify (exit 1).
+
+**A1 engine** (`astra.search`): GP-classifier level-set search with batch diversity plus one
+exploration point per batch. Synthetic 2-D oracle, 6 seeds: boundary error 34/69/77/86% lower
+than random at 24/36/48/72 evaluations. The first version *degraded* at 72 evaluations (worse than
+random) until the exploration point was added. SITL evaluation is pending (`astra.search_sitl`).
+
+**In progress:** benign-v1 (160) and attack-dev (48) corpora with realistic sensors, then the A2
+evaluation (`benchmarks/a2_eval.py`).

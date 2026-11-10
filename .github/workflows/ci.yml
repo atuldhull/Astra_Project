@@ -1,0 +1,35 @@
+name: ASTRA CI
+
+# Free on public repositories (standard GitHub-hosted runners).
+# Unit tests only: SITL flights need Docker + minutes of runtime and are run locally / in benchmarks.
+on:
+  push:
+    branches: [v4]
+  pull_request:
+    branches: [v4]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+      - run: python -m pytest -q -p no:warnings
+
+  sitl-patch-applies:
+    # Cheap guard: the simulator patch must apply cleanly to the pinned ArduPilot tag.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          git clone --depth 1 --branch Copter-4.7.2 --filter=blob:none --sparse \
+            https://github.com/ArduPilot/ardupilot.git ap
+          cd ap && git sparse-checkout set libraries/SITL
+          git apply --check ../sim/ardupilot/astra-sitl-gps.patch

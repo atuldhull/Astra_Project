@@ -104,6 +104,8 @@ def compute(fl: FlightLog, w1_s: float = 3.0, pos_vel_s: float = 2.0,
     pvn[k3:-k3] = (pn[2 * k3:] - pn[:-2 * k3]) / (2 * k3 * DT)
     pve[k3:-k3] = (pe[2 * k3:] - pe[:-2 * k3]) / (2 * k3 * DT)
     c3 = np.stack([pvn - vn, pve - ve], axis=1)
+    # (Tried: normalising c3 by reported hAcc. It raised held-out false alarms 0 -> 3 in 7.5 h,
+    # because c3 noise is dominated by receiver *velocity* noise, which hAcc doesn't track. Reverted.)
 
     # airborne mask from the autopilot's own relative altitude
     pos = fl["POS"]
@@ -112,8 +114,9 @@ def compute(fl: FlightLog, w1_s: float = 3.0, pos_vel_s: float = 2.0,
 
     c2 = c2_valid = None
     if fl.has("OF") and fl.has("RFND"):
-        c2, c2_valid, u, vb = _flow_channel(fl, t, vn, ve, flow_model)
-        meta_flow = {"flow_regressors": u, "gps_body_vel": vb}
+        vd = _interp(t, gt, gps["VZ"][ok])
+        c2, c2_valid, u, vb = _flow_channel(fl, t, vn, ve, vd, flow_model)
+        meta_flow = {"flow_regressors": u, "gps_body_vel": vb, "c2_nuisance_X": _nuisance_X(fl, t, vb)}
     else:
         meta_flow = {}
     return Channels(t, airborne, c1, c3, c2, c2_valid,
@@ -121,29 +124,33 @@ def compute(fl: FlightLog, w1_s: float = 3.0, pos_vel_s: float = 2.0,
 
 
 def flow_regressors(fl: FlightLog, t: np.ndarray):
-    """u = (flow - body rate) * height_above_ground, per body axis; plus validity mask."""
+    """u = (flow rate - body rate) * slant range, per body axis; plus validity mask and attitude.
+
+    Geometry (v2): a body-fixed downward flow sensor sees the body-frame velocity component
+    perpendicular to its boresight, divided by the slant range along the boresight, which is what
+    a body-fixed rangefinder measures. So the regressor uses the raw range (not a cos-corrected
+    height), and the GPS side uses the full 3-D velocity rotated into the body frame (v1 used yaw
+    only, which is wrong at the 20-30 deg cruise tilts multicopters fly at).
+    """
     of, rf, att = fl["OF"], fl["RFND"], fl["ATT"]
     fx, fy = _interp(t, of["t"], of["flowX"]), _interp(t, of["t"], of["flowY"])
     bx, by = _interp(t, of["t"], of["bodyX"]), _interp(t, of["t"], of["bodyY"])
     q = _interp(t, of["t"], of["Qual"])
-    rng = _interp(t, rf["t"], rf["Dist"])
+    d = _interp(t, rf["t"], rf["Dist"])
     st = _interp(t, rf["t"], rf["Stat"])
-    roll = np.radians(_interp(t, att["t"], att["Roll"]))
-    pitch = np.radians(_interp(t, att["t"], att["Pitch"]))
-    h = rng * np.cos(roll) * np.cos(pitch)
-    u = np.stack([(fx - bx) * h, (fy - by) * h], axis=1)
-    valid = (q > 10) & (np.round(st) == 4) & (h > 2.0) & np.isfinite(u).all(axis=1)
-    return u, valid, np.radians(_interp(t, att["t"], att["Yaw"]))
+    R = _rot_body_to_ned(*(np.radians(_interp(t, att["t"], att[k])) for k in ("Roll", "Pitch", "Yaw")))
+    u = np.stack([(fx - bx) * d, (fy - by) * d], axis=1)
+    valid = (q > 10) & (np.round(st) == 4) & (d > 2.0) & np.isfinite(u).all(axis=1)
+    return u, valid, R
 
 
-def _flow_channel(fl, t, vn, ve, flow_model):
-    u, valid, yaw = flow_regressors(fl, t)
-    # GPS velocity into body-horizontal frame (yaw only; flow is already tilt-compensated via h)
-    cy, sy = np.cos(yaw), np.sin(yaw)
-    vb = np.stack([cy * vn + sy * ve, -sy * vn + cy * ve], axis=1)
+def _flow_channel(fl, t, vn, ve, vd, flow_model):
+    u, valid, R = flow_regressors(fl, t)
+    v_ned = np.stack([vn, ve, vd], axis=1)
+    vb = np.einsum("nji,nj->ni", R, v_ned)[:, :2]  # R^T v: body-frame x/y velocity
+    valid &= np.isfinite(vb).all(axis=1)
     M = flow_model if flow_model is not None else np.array([[0.0, 1.0], [-1.0, 0.0]])
-    v_flow = u @ M.T
-    c2 = vb - v_flow
+    c2 = vb - u @ M.T
     c2[~valid] = np.nan
     return c2, valid, u, vb
 
@@ -170,3 +177,38 @@ def fit_flow_model(chs: list[Channels]) -> np.ndarray:
     lat_motion = float(np.std(V[:, 1]))
     ay = float(-U[:, 0] @ V[:, 1] / (U[:, 0] @ U[:, 0])) if lat_motion > 0.5 else ax
     return np.array([[0.0, ax], [-ay, 0.0]])
+
+
+def _nuisance_X(fl: FlightLog, t: np.ndarray, vb: np.ndarray) -> np.ndarray:
+    """Regressors for the flow channel's systematic error (tilt and speed coupling)."""
+    att = fl["ATT"]
+    roll = np.radians(_interp(t, att["t"], att["Roll"]))
+    pitch = np.radians(_interp(t, att["t"], att["Pitch"]))
+    return np.column_stack([np.ones_like(roll), roll, pitch, vb[:, 0], vb[:, 1],
+                            pitch * vb[:, 0], roll * vb[:, 1]])
+
+
+def fit_flow_nuisance(chs: list[Channels]) -> np.ndarray:
+    """Least-squares (7x2) model of the benign flow residual. Benign flights only."""
+    X, Y = [], []
+    for c in chs:
+        if c.c2 is None:
+            continue
+        Xc = c.meta["c2_nuisance_X"]
+        m = c.airborne & c.c2_valid & np.isfinite(c.c2).all(axis=1) & np.isfinite(Xc).all(axis=1)
+        X.append(Xc[m]); Y.append(c.c2[m])
+    B, *_ = np.linalg.lstsq(np.concatenate(X), np.concatenate(Y), rcond=None)
+    return B
+
+
+def apply_flow(ch: Channels, M: np.ndarray, B: np.ndarray | None = None) -> Channels:
+    """(Re)compute c2 for a fitted flow model M and optional nuisance model B."""
+    if ch.c2 is None:
+        return ch
+    u, vb = ch.meta["flow_regressors"], ch.meta["gps_body_vel"]
+    c2 = vb - u @ np.asarray(M).T
+    if B is not None:
+        c2 = c2 - ch.meta["c2_nuisance_X"] @ np.asarray(B)
+    c2[~ch.c2_valid] = np.nan
+    ch.c2 = c2
+    return ch

@@ -37,14 +37,8 @@ def load_runs(d: Path):
     return out
 
 
-def apply_flow(ch, M):
-    if ch.c2 is None:
-        return ch
-    u, vb = ch.meta["flow_regressors"], ch.meta["gps_body_vel"]
-    c2 = vb - u @ M.T
-    c2[~ch.c2_valid] = np.nan
-    ch.c2 = c2
-    return ch
+def apply_flow(ch, M, B=None):
+    return features.apply_flow(ch, M, B)
 
 
 def poisson_upper95(k: int, hours: float) -> float:
@@ -68,8 +62,11 @@ def main():
     train = [c for i, (_, c) in enumerate(chs) if i % 2 == 0]
     test = [c for i, (_, c) in enumerate(chs) if i % 2 == 1]
     M = features.fit_flow_model(train)
-    for c in train + test:
+    for c in train:
         apply_flow(c, M)
+    B = features.fit_flow_nuisance(train)
+    for c in train + test:
+        apply_flow(c, M, B)
 
     lines = [f"# A2 monitor evaluation\n", f"benign flights: {len(train)} calibration / {len(test)} held-out test\n",
              f"flow model (fitted on calibration only): {np.round(M, 3).tolist()}\n"]
@@ -77,6 +74,7 @@ def main():
     for cfg, chans in CONFIGS.items():
         cal = monitor.calibrate(train, chans)
         cal.flow_model = M.tolist()
+        cal.flow_nuisance = B.tolist()
         cals[cfg] = cal
         fa, hours, by = 0, 0.0, collections.Counter()
         for c in test:
@@ -100,7 +98,7 @@ def main():
             continue
         onset = wins[0][0]
         try:
-            ch = apply_flow(features.compute(fl), M)
+            ch = apply_flow(features.compute(fl), M, B)
         except ValueError:
             continue
         te, err = nav_error_series(fl)
