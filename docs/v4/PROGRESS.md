@@ -195,3 +195,10 @@ real false alarm: same arithmetic, so Shield must be calibrated per airframe bef
 midpoint. The faithful mirror `onboard.shield_blocks` (verified vs onboard SITL blocks) gives 3/39 with
 simulation constants. Typical real noise equals simulated (σ about 0.10 m/s); real tails are heavier. Fleet
 calibration on 20 real flights → 0/19, 1/19, 1/19 on held-out real flights (3 splits). All docs corrected.
+
+**Per-airframe real calibration test: inconclusive (underpowered).** From 456 eligible real vehicles, 3
+were sampled. After size and logging limits, two had 3 flights (0.07 h) and 5 flights (0.2 h). With
+2-flight calibrations (a few minutes, far below the 0.5 h minimum the tool warns about), held-out false
+alarms were 0/10 and 11/30. This supports the minimum-data warning, but **doesn't validate**
+per-airframe calibration. Needs a vehicle with ≥ 30 min of downloadable flights. ULog adapter: falls back
+to the lowest topic instance and explains logs without raw GPS (SDLOG_PROFILE).

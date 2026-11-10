@@ -37,14 +37,14 @@ def load_ulog(path: str | Path) -> FlightLog:
     from pyulog import ULog
 
     u = ULog(str(path), TOPICS)
-    by = {}
-    for d in u.data_list:
-        if d.multi_id == 0 and d.name not in by:
-            by[d.name] = d.data
+    by, inst = {}, {}
+    for d in u.data_list:  # prefer instance 0, fall back to the lowest instance present
+        if d.name not in by or d.multi_id < inst[d.name]:
+            by[d.name], inst[d.name] = d.data, d.multi_id
     fl = FlightLog(str(path))
     gps = by.get("sensor_gps") or by.get("vehicle_gps_position")
     if gps is None:
-        raise ValueError("no GPS topic in ULog")
+        raise ValueError("raw GPS not logged in this ULog (sensor_gps / vehicle_gps_position missing; check the logging profile, SDLOG_PROFILE)")
 
     def lat_lon_alt(g):
         if "latitude_deg" in g:
