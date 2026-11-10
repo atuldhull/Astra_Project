@@ -204,3 +204,11 @@ def px4_attack_naive() -> list[Scenario]:
 
 
 PACKS.update({"px4-benign": px4_benign, "px4-attack-naive": px4_attack_naive})
+
+
+def px4_benign_cal() -> list[Scenario]:
+    """PX4 calibration corpus (benign-v1 missions); px4-benign (benign-v2) stays the held-out FAR set."""
+    return benign_v1()[:80]
+
+
+PACKS["px4-benign-cal"] = px4_benign_cal
