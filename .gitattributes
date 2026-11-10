@@ -4,3 +4,4 @@
 *.lua   text eol=lf
 *.py    text eol=lf
 Dockerfile text eol=lf
+sim/px4/*.patch text eol=lf

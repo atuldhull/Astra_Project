@@ -23,7 +23,11 @@ import numpy as np
 from astra.logs import FlightLog
 
 TOPICS = ["sensor_gps", "vehicle_gps_position", "vehicle_global_position", "vehicle_local_position",
-          "sensor_combined", "vehicle_attitude", "logged_messages"]
+          "sensor_combined", "vehicle_attitude", "logged_messages", "vehicle_global_position_groundtruth",
+          "vehicle_status", "estimator_innovation_test_ratios"]
+
+# ASTRA PX4 attack model numbers (sim/px4 patch) -> astra.evaluate CODE_NAMES codes
+PX4_MODEL_TO_CODE = {1: 1, 2: 2, 3: 5, 4: 6, 6: 4}
 
 
 def _quat_to_euler_deg(q0, q1, q2, q3):
@@ -74,6 +78,44 @@ def load_ulog(path: str | Path) -> FlightLog:
     at = by["vehicle_attitude"]
     r, p, y = _quat_to_euler_deg(at["q[0]"], at["q[1]"], at["q[2]"], at["q[3]"])
     fl.series["ATT"] = {"t": at["timestamp"] / 1e6, "Roll": r, "Pitch": p, "Yaw": y}
+    # ── ASTRA SITL extras: simulator truth and the attack window rebuilt from logged params ──
+    gtp = by.get("vehicle_global_position_groundtruth")
+    if gtp is not None:
+        glat2 = gtp["lat"] if gtp["lat"].dtype.kind == "f" else gtp["lat"] / 1e7
+        glon2 = gtp["lon"] if gtp["lon"].dtype.kind == "f" else gtp["lon"] / 1e7
+        fl.series["SIM"] = {"t": gtp["timestamp"] / 1e6, "Lat": glat2, "Lng": glon2, "Alt": gtp["alt"]}
+    params = dict(u.initial_parameters)
+    for _t, name, val in u.changed_parameters:
+        params[name] = val
+    fl.params = {k: float(v) for k, v in params.items()}
+    model = int(params.get("ASTRA_ATK_MODEL", 0) or 0)
+    vs = by.get("vehicle_status")
+    if model and vs is not None:
+        armed = np.nonzero(vs["arming_state"] == 2)[0]
+        if len(armed):
+            t_arm = vs["timestamp"][armed[0]] / 1e6
+            s0 = t_arm + float(params.get("ASTRA_ATK_ARM_S", 0.0))
+            s1 = s0 + float(params.get("ASTRA_ATK_DUR", 0.0))
+            tt = np.arange(t[0], t[-1], 0.05)
+            act = ((tt >= s0) & (tt < s1)).astype(float)
+            z = np.zeros(len(tt))
+            fl.series["ASTK"] = {"t": tt, "Act": act, "Code": act * PX4_MODEL_TO_CODE.get(model, model),
+                                 "OfsN": z, "OfsE": z, "VbN": z, "VbE": z, "En": 1 - act * (model in (1, 2)), "Jam": z}
+    # EKF2 GPS innovation test ratios (>1 = rejected) mapped onto ArduPilot's XKF4 names, so the
+    # shared "did the stock autopilot notice?" evaluation works for PX4 too.
+    itr = by.get("estimator_innovation_test_ratios")
+    if itr is not None:
+        def _mx(prefix):
+            cols = [v for k, v in itr.items() if k.startswith(prefix)]
+            return np.max(np.stack(cols), axis=0) if cols else np.zeros(len(itr["timestamp"]))
+        fl.series["XKF4"] = {"t": itr["timestamp"] / 1e6, "C": np.zeros(len(itr["timestamp"])),
+                             "SV": _mx("gps_hvel"), "SP": _mx("gps_hpos"), "SH": _mx("gps_vpos"),
+                             "SM": np.zeros(len(itr["timestamp"])), "FS": np.zeros(len(itr["timestamp"])),
+                             "TS": np.zeros(len(itr["timestamp"])), "SS": np.zeros(len(itr["timestamp"])),
+                             "GPS": np.zeros(len(itr["timestamp"]))}
+    elif "SIM" in fl.series:
+        z = np.zeros(2)
+        fl.series["XKF4"] = {"t": np.array([t[0], t[-1]]), **{k: z for k in ("C", "SV", "SP", "SH", "SM", "FS", "TS", "SS", "GPS")}}
     lm = by.get("logged_messages")
     if lm is not None:
         txt = ["".join(chr(int(c)) for c in row if int(c) != 0) for row in

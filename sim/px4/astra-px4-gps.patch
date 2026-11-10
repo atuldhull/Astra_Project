@@ -1,0 +1,301 @@
+diff --git a/src/modules/simulation/sensor_gps_sim/SensorGpsSim.cpp b/src/modules/simulation/sensor_gps_sim/SensorGpsSim.cpp
+index 5641706..9f6974f 100644
+--- a/src/modules/simulation/sensor_gps_sim/SensorGpsSim.cpp
++++ b/src/modules/simulation/sensor_gps_sim/SensorGpsSim.cpp
+@@ -120,6 +120,106 @@ void SensorGpsSim::Run()
+ 
+ 		Vector3f gps_vel = Vector3f{lpos.vx, lpos.vy, lpos.vz} + noiseGauss3f(0.06f, 0.077f, 0.158f);
+ 
++		// ---- ASTRA test-harness extension (simulator only; all off by default) ----
++		const hrt_abstime astra_now = hrt_absolute_time();
++
++		if (_vehicle_status_sub.updated()) {
++			vehicle_status_s vs{};
++			_vehicle_status_sub.copy(&vs);
++
++			if (vs.arming_state == vehicle_status_s::ARMING_STATE_ARMED && _astra_armed_at == 0) {
++				_astra_armed_at = astra_now;
++			}
++		}
++
++		const double astra_m_per_deg = math::radians(1.0) * (double)CONSTANTS_RADIUS_OF_EARTH;
++		const double astra_cos_lat = cos(math::radians(gpos.lat));
++
++		if (_astra_pnse.get() > 0.f) {
++			// first-order Gauss-Markov horizontal position error (receiver multipath/atmosphere)
++			const float sigma = _astra_pnse.get();
++
++			if (!_astra_gm_init) {
++				_astra_gm_n = sigma * generate_wgn();
++				_astra_gm_e = sigma * generate_wgn();
++				_astra_gm_last = astra_now;
++				_astra_gm_init = true;
++			}
++
++			const float dt = (astra_now - _astra_gm_last) * 1e-6f;
++			_astra_gm_last = astra_now;
++			const float a = expf(-dt / fmaxf(1.f, _astra_ptau.get()));
++			const float q = sigma * sqrtf(fmaxf(0.f, 1.f - a * a));
++			_astra_gm_n = a * _astra_gm_n + q * generate_wgn();
++			_astra_gm_e = a * _astra_gm_e + q * generate_wgn();
++			latitude += (double)_astra_gm_n / astra_m_per_deg;
++			longitude += (double)_astra_gm_e / (astra_m_per_deg * astra_cos_lat);
++		}
++
++		bool astra_deny = false;
++		int astra_sats = _sim_gps_used.get();
++		float astra_eph = -1.f;
++
++		if (_astra_model.get() > 0 && _astra_armed_at > 0) {
++			const float t = (astra_now - _astra_armed_at) * 1e-6f - _astra_arm_s.get();
++
++			if (t >= 0.f && t < _astra_dur.get()) {
++				switch (_astra_model.get()) {
++				case 1: // jam_denial
++					astra_deny = true;
++					break;
++
++				case 2: { // jam_intermittent
++						const float per = fmaxf(0.2f, _astra_per.get());
++
++						if (fmodf(t, per) / per < _astra_duty.get()) { astra_deny = true; }
++
++						break;
++					}
++
++				case 3: // spoof_jump
++					latitude += (double)_astra_jn.get() / astra_m_per_deg;
++					longitude += (double)_astra_je.get() / (astra_m_per_deg * astra_cos_lat);
++					break;
++
++				case 4: { // spoof_drag (ramp-in; consistent => velocity biased too)
++						const float R = _astra_ramp.get();
++						const float rate = _astra_rate.get();
++						float dist;
++						float vel;
++
++						if (R > 0.f && t < R) {
++							dist = rate * t * t / (2.f * R);
++							vel = rate * t / R;
++
++						} else {
++							dist = rate * (t - R / 2.f);
++							vel = rate;
++						}
++
++						const float brg = math::radians(_astra_brg.get());
++						latitude += (double)(dist * cosf(brg)) / astra_m_per_deg;
++						longitude += (double)(dist * sinf(brg)) / (astra_m_per_deg * astra_cos_lat);
++
++						if (_astra_cons.get() == 1) {
++							gps_vel(0) += vel * cosf(brg);
++							gps_vel(1) += vel * sinf(brg);
++						}
++
++						break;
++					}
++
++				case 6: // jam_degrade
++					astra_sats = 5;
++					astra_eph = 8.f;
++					break;
++
++				default:
++					break;
++				}
++			}
++		}
++
+ 		// device id
+ 		device::Device::DeviceId device_id;
+ 		device_id.devid_s.bus_type = device::Device::DeviceBusType::DeviceBusType_SIMULATION;
+@@ -129,12 +229,12 @@ void SensorGpsSim::Run()
+ 
+ 		sensor_gps_s sensor_gps{};
+ 
+-		if (_sim_gps_used.get() >= 4) {
++		if (!astra_deny && astra_sats >= 4) {
+ 			// fix
+ 			sensor_gps.fix_type = 3; // 3D fix
+ 			sensor_gps.s_variance_m_s = 0.4f;
+ 			sensor_gps.c_variance_rad = 0.1f;
+-			sensor_gps.eph = 0.9f;
++			sensor_gps.eph = astra_eph > 0.f ? astra_eph : 0.9f;
+ 			sensor_gps.epv = 1.78f;
+ 			sensor_gps.hdop = 0.7f;
+ 			sensor_gps.vdop = 1.1f;
+@@ -173,7 +273,7 @@ void SensorGpsSim::Run()
+ 		sensor_gps.jamming_state = 0;
+ 		sensor_gps.spoofing_state = 0;
+ 		sensor_gps.vel_ned_valid = true;
+-		sensor_gps.satellites_used = _sim_gps_used.get();
++		sensor_gps.satellites_used = astra_deny ? 0 : astra_sats;
+ 
+ 		sensor_gps.timestamp = hrt_absolute_time();
+ 		_sensor_gps_pub.publish(sensor_gps);
+diff --git a/src/modules/simulation/sensor_gps_sim/SensorGpsSim.hpp b/src/modules/simulation/sensor_gps_sim/SensorGpsSim.hpp
+index fac4e52..7e1e260 100644
+--- a/src/modules/simulation/sensor_gps_sim/SensorGpsSim.hpp
++++ b/src/modules/simulation/sensor_gps_sim/SensorGpsSim.hpp
+@@ -45,6 +45,7 @@
+ #include <uORB/topics/sensor_gps.h>
+ #include <uORB/topics/vehicle_global_position.h>
+ #include <uORB/topics/vehicle_local_position.h>
++#include <uORB/topics/vehicle_status.h>
+ 
+ using namespace time_literals;
+ 
+@@ -80,9 +81,30 @@ private:
+ 
+ 	uORB::PublicationMulti<sensor_gps_s> _sensor_gps_pub{ORB_ID(sensor_gps)};
+ 
++	// ASTRA test-harness extension (simulator only): attack timeline + receiver noise
++	uORB::Subscription _vehicle_status_sub{ORB_ID(vehicle_status)};
++	hrt_abstime _astra_armed_at{0};
++	hrt_abstime _astra_gm_last{0};
++	float _astra_gm_n{0.f};
++	float _astra_gm_e{0.f};
++	bool _astra_gm_init{false};
++
+ 	perf_counter_t _loop_perf{perf_alloc(PC_ELAPSED, MODULE_NAME": cycle")};
+ 
+ 	DEFINE_PARAMETERS(
+-		(ParamInt<px4::params::SIM_GPS_USED>) _sim_gps_used
++		(ParamInt<px4::params::SIM_GPS_USED>) _sim_gps_used,
++		(ParamInt<px4::params::ASTRA_ATK_MODEL>) _astra_model,
++		(ParamFloat<px4::params::ASTRA_ATK_ARM_S>) _astra_arm_s,
++		(ParamFloat<px4::params::ASTRA_ATK_DUR>) _astra_dur,
++		(ParamFloat<px4::params::ASTRA_ATK_RATE>) _astra_rate,
++		(ParamFloat<px4::params::ASTRA_ATK_BRG>) _astra_brg,
++		(ParamFloat<px4::params::ASTRA_ATK_RAMP>) _astra_ramp,
++		(ParamInt<px4::params::ASTRA_ATK_CONS>) _astra_cons,
++		(ParamFloat<px4::params::ASTRA_ATK_JN>) _astra_jn,
++		(ParamFloat<px4::params::ASTRA_ATK_JE>) _astra_je,
++		(ParamFloat<px4::params::ASTRA_ATK_PER>) _astra_per,
++		(ParamFloat<px4::params::ASTRA_ATK_DUTY>) _astra_duty,
++		(ParamFloat<px4::params::ASTRA_GPS_PNSE>) _astra_pnse,
++		(ParamFloat<px4::params::ASTRA_GPS_PTAU>) _astra_ptau
+ 	)
+ };
+diff --git a/src/modules/simulation/sensor_gps_sim/parameters.c b/src/modules/simulation/sensor_gps_sim/parameters.c
+index c9d9c74..8d89a7a 100644
+--- a/src/modules/simulation/sensor_gps_sim/parameters.c
++++ b/src/modules/simulation/sensor_gps_sim/parameters.c
+@@ -50,3 +50,117 @@ PARAM_DEFINE_INT32(SENS_EN_GPSSIM, 0);
+  * @group Simulator
+  */
+ PARAM_DEFINE_INT32(SIM_GPS_USED, 10);
++
++/**
++ * ASTRA: attack model (0 none, 1 denial, 2 intermittent, 3 jump, 4 drag, 6 degrade)
++ *
++ * Test-harness extension (simulator only).
++ * @group Simulator
++ */
++PARAM_DEFINE_INT32(ASTRA_ATK_MODEL, 0);
++
++/**
++ * ASTRA: attack start, seconds after arming
++ *
++ * Test-harness extension (simulator only).
++ * @unit s
++ * @group Simulator
++ */
++PARAM_DEFINE_FLOAT(ASTRA_ATK_ARM_S, 0.0f);
++
++/**
++ * ASTRA: attack duration
++ *
++ * Test-harness extension (simulator only).
++ * @unit s
++ * @group Simulator
++ */
++PARAM_DEFINE_FLOAT(ASTRA_ATK_DUR, 0.0f);
++
++/**
++ * ASTRA: drag-off rate
++ *
++ * Test-harness extension (simulator only).
++ * @unit m/s
++ * @group Simulator
++ */
++PARAM_DEFINE_FLOAT(ASTRA_ATK_RATE, 0.0f);
++
++/**
++ * ASTRA: drag-off bearing
++ *
++ * Test-harness extension (simulator only).
++ * @unit deg
++ * @group Simulator
++ */
++PARAM_DEFINE_FLOAT(ASTRA_ATK_BRG, 0.0f);
++
++/**
++ * ASTRA: drag-off ramp-in time
++ *
++ * Test-harness extension (simulator only).
++ * @unit s
++ * @group Simulator
++ */
++PARAM_DEFINE_FLOAT(ASTRA_ATK_RAMP, 0.0f);
++
++/**
++ * ASTRA: drag-off velocity-consistent (1) or naive (0)
++ *
++ * Test-harness extension (simulator only).
++ * @group Simulator
++ */
++PARAM_DEFINE_INT32(ASTRA_ATK_CONS, 1);
++
++/**
++ * ASTRA: jump offset north
++ *
++ * Test-harness extension (simulator only).
++ * @unit m
++ * @group Simulator
++ */
++PARAM_DEFINE_FLOAT(ASTRA_ATK_JN, 0.0f);
++
++/**
++ * ASTRA: jump offset east
++ *
++ * Test-harness extension (simulator only).
++ * @unit m
++ * @group Simulator
++ */
++PARAM_DEFINE_FLOAT(ASTRA_ATK_JE, 0.0f);
++
++/**
++ * ASTRA: intermittent jamming period
++ *
++ * Test-harness extension (simulator only).
++ * @unit s
++ * @group Simulator
++ */
++PARAM_DEFINE_FLOAT(ASTRA_ATK_PER, 4.0f);
++
++/**
++ * ASTRA: intermittent jamming fraction without fix
++ *
++ * Test-harness extension (simulator only).
++ * @group Simulator
++ */
++PARAM_DEFINE_FLOAT(ASTRA_ATK_DUTY, 0.5f);
++
++/**
++ * ASTRA: 1-sigma Gauss-Markov horizontal position error
++ *
++ * Test-harness extension (simulator only).
++ * @unit m
++ * @group Simulator
++ */
++PARAM_DEFINE_FLOAT(ASTRA_GPS_PNSE, 0.0f);
++
++/**
++ * ASTRA: position error correlation time
++ *
++ * Test-harness extension (simulator only).
++ * @unit s
++ * @group Simulator
++ */
++PARAM_DEFINE_FLOAT(ASTRA_GPS_PTAU, 30.0f);
