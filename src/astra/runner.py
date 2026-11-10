@@ -64,6 +64,7 @@ class RunResult:
     modes: list = field(default_factory=list)  # [sim_t, mode]
     perturbation: dict = field(default_factory=dict)
     log_files: list = field(default_factory=list)
+    windows: list = field(default_factory=list)  # per-attack ground-truth evaluation (astra.evaluate)
     wall_s: float = 0.0
 
 
@@ -177,8 +178,26 @@ class _Flight:
                    "loiter": ML.MAV_CMD_NAV_LOITER_UNLIM}[sc.mission.end]
         items.append((end_cmd, ML.MAV_FRAME_GLOBAL_RELATIVE_ALT, glat, glon, 0.0))
 
+        last_err = "timed out"
+        for _attempt in range(5):
+            self._wait_mission_ready()
+            ok, last_err = self._upload_once(items)
+            if ok:
+                return len(items)
+            self.run_until(lambda: False, 3)
+        raise RuntimeError(f"mission upload failed after 5 attempts: {last_err}")
+
+    def _wait_mission_ready(self, wall_timeout_s: float = 20) -> None:
+        """The mission subsystem answers MISSION_REQUEST_LIST with MISSION_COUNT once it's ready."""
+        deadline = time.monotonic() + wall_timeout_s
+        while time.monotonic() < deadline:
+            self.m.mav.mission_request_list_send(1, 1, ML.MAV_MISSION_TYPE_MISSION)
+            if self.m.recv_match(type="MISSION_COUNT", blocking=True, timeout=2) is not None:
+                self.m.mav.mission_ack_send(1, 1, ML.MAV_MISSION_ACCEPTED, ML.MAV_MISSION_TYPE_MISSION)
+                return
+
+    def _upload_once(self, items) -> tuple[bool, str]:
         self.m.mav.mission_count_send(1, 1, len(items), ML.MAV_MISSION_TYPE_MISSION)
-        sent = set()
         deadline = time.monotonic() + 30
         while time.monotonic() < deadline:
             msg = self.m.recv_match(type=["MISSION_REQUEST_INT", "MISSION_REQUEST", "MISSION_ACK"],
@@ -186,16 +205,20 @@ class _Flight:
             if msg is None:
                 continue
             if msg.get_type() == "MISSION_ACK":
-                if msg.type != ML.MAV_MISSION_ACCEPTED:
-                    raise RuntimeError(f"mission rejected: {msg.type}")
-                return len(items)
+                if msg.type == ML.MAV_MISSION_ACCEPTED:
+                    return True, "ok"
+                if msg.type == ML.MAV_MISSION_INVALID_SEQUENCE:
+                    # ArduPilot sends this for a late duplicate item but keeps the transfer open.
+                    continue
+                return False, f"rejected: {msg.type}"
             seq = msg.seq
+            if not 0 <= seq < len(items):
+                continue
             cmd, frame, lat, lon, alt = items[seq]
             self.m.mav.mission_item_int_send(1, 1, seq, frame, cmd, 0, 1, 0, 0, 0, 0,
                                              int(lat * 1e7), int(lon * 1e7), alt,
                                              ML.MAV_MISSION_TYPE_MISSION)
-            sent.add(seq)
-        raise TimeoutError("mission upload timed out")
+        return False, "timed out"
 
     def wait_ready_and_arm(self, sim_timeout_s=120):
         """Retry arming in GUIDED until prearm checks (EKF, GPS) pass."""
@@ -211,7 +234,7 @@ class _Flight:
 
 
 def fly(sc: Scenario, seed: int, workdir: Path, *, speedup: int = 5,
-        vendor_param_file: Path | None = None, cpus: float = 1.5) -> RunResult:
+        vendor_param_file: Path | None = None, cpus: float = 1.5, keep_logs: bool = False) -> RunResult:
     wall0 = time.monotonic()
     pert = seed_perturbation(sc, seed)
     extra = dict(pert)
@@ -258,7 +281,7 @@ def fly(sc: Scenario, seed: int, workdir: Path, *, speedup: int = 5,
         res.outcome, res.reason = "error", f"{type(exc).__name__}: {exc}"
     finally:
         sitl.stop()
-        res.log_files = [str(p) for p in sitl.logs()]
+        _post_process(res, sitl.logs(), workdir, keep_logs)
         res.wall_s = round(time.monotonic() - wall0, 2)
         (workdir / "result.json").write_text(json.dumps(asdict(res), indent=2))
     return res
@@ -303,3 +326,22 @@ def _classify(res: RunResult, f: _Flight, sc: Scenario, finished: bool, t_arm: f
         outcome, why = "diverted", f"ended {true_goal:.0f} m from goal"
     res.outcome, res.reason = outcome, why
     res.passed = outcome in sc.expect.allowed_outcomes
+
+
+def _post_process(res: RunResult, bins: list[Path], workdir: Path, keep_logs: bool) -> None:
+    from astra import evaluate, logs
+
+    if not bins:
+        return
+    try:
+        fl = logs.load(bins[-1])
+        logs.save_npz(fl, workdir / "flight.npz")
+        res.windows = evaluate.evaluate_dicts(fl) if fl.is_sitl else []
+    except Exception as exc:  # noqa: BLE001
+        res.reason = (res.reason + f" | log post-process failed: {exc}").strip(" |")
+    if keep_logs:
+        res.log_files = [str(p) for p in bins]
+    else:
+        for p in bins:
+            p.unlink(missing_ok=True)
+        res.log_files = []
