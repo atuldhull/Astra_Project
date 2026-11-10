@@ -31,16 +31,26 @@ cost lakhs to crores and test the *receiver*, not whether the *drone* completes 
 | **Persistent drag-off 0.5–2 m/s** | **0/9**: landed 143 m off target believing it had arrived, or chased the fake position for 1.8 km |
 
 **2. ASTRA's A2 monitor catches most of it, with no false alarms on held-out flights.**
-Design frozen, then tested once on untouched data: 80 new benign flights (6.9 h) and 96 new
-drag-off attacks with random bearings and ramps ([benchmarks/a2-final-v6.md](benchmarks/a2-final-v6.md)):
+Design frozen, then tested once on data never used for design: 80 new benign flights (7.2 h) and
+95 new drag-off attacks with random bearings and ramp-ins
+([benchmarks/a2-final-v7.md](benchmarks/a2-final-v7.md)):
 
 | | Stock | A2, GPS+IMU only | A2, + optical flow |
 |---|---|---|---|
-| False alarms (6.9 h held-out) | – | **0** (95% upper bound 0.54/h) | **0** (UB 0.54/h) |
-| All 96 slow drag-offs (0.25–2 m/s) | 10 | **40** | **65** |
-| Naive spoof ≥ 0.5 m/s | 10/36 | **36/36** | 36/36, alarm at 21–45 m off |
-| Consistent spoof ≥ 1 m/s | 0/24 | 0/24 | **23/24**, alarm at 40–92 m off |
-| 0.25 m/s | 0/24 | 2/24 | 2/24 (**unsolved**) |
+| False alarms (7.2 h held-out) | – | **0** (95% upper bound 0.51/h) | **0** (UB 0.51/h) |
+| All 95 slow drag-offs (0.25–2 m/s) | 9 (9%) | **39** (41%) | **84 (88%)** |
+| Consistent spoof ≥ 0.5 m/s | 0/24 | 0/24 | **24/24**, alarm at 20–110 m off |
+| Consistent spoof 0.25 m/s | 0/11 | 0/11 | **9/11** |
+| Naive spoof ≥ 0.5 m/s | 9/24 | **23/24** | 23/24 |
+| Naive spoof 0.25 m/s | 0/12 | 4/12 | 4/12 (**weakest case**) |
+
+**ASTRA Shield** is the same GPS-consistency check running **onboard** as an ArduPilot Lua script.
+Held-out: 0 false alarms in 6.7 h, naive drags ≥ 0.5 m/s 35/35 caught at 14–31 m off course, and
+its in-flight alarms match the offline replay exactly (6/6). With LAND-on-alarm it turned 6/6
+diversions into safe aborts ([benchmarks/shield-v1.md](benchmarks/shield-v1.md)).
+
+**EKF tuning alone** (A6, [benchmarks/a6-params-v1.md](benchmarks/a6-params-v1.md)) closes most of the
+*naive* gap (0/12 → 12/12) at a small alert cost, but not the *consistent* one (≤ 3/12).
 
 **3. The honest physics** ([docs/v4/05-DETECTION-PHYSICS.md](docs/v4/05-DETECTION-PHYSICS.md)): a
 careful spoofer that biases position *and* velocity consistently, ramped in slowly, is
@@ -81,6 +91,9 @@ astra packs                                                                # lis
 astra run baseline-v1 --out runs/my-airframe --params my.parm --seeds 3    # fly the pack
 astra verify runs/my-airframe/report.json --trust $(astra key)             # check a report
 astra diagnose path/to/flight.BIN                                          # forensics on a log
+astra html runs/my-airframe                                                # HTML report with path maps
+astra advise --params my.parm --out runs/advise                            # EKF-tuning trade-off
+astra shield export --log-only --out shield.lua                            # onboard monitor (see docs)
 ```
 
 Throughput on a laptop (Ryzen 7 8845HS): 4 parallel at 20× is about 3 cores. 8 parallel at 20×

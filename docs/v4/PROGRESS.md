@@ -148,3 +148,9 @@ hand vendors a measured, low-cost param change for naive spoofing. Consistent sp
 of large flow excursions came from range > 45 m. The flow threshold halves (295 → 142). Dev:
 consistent drag-off 23/24 (v6 13/24), incl. 0.25 m/s 5/6. Frozen; held-out test on fresh corpora
 benign-v3 + attack-test2 pending.
+
+**A2 v7 held-out** (`benchmarks/a2-final-v7.md`; fresh corpora benign-v3 + attack-test2, design frozen
+before generation): **0 false alarms in 7.2 h** (UB 0.51/h). Slow drag-off detection: stock **9/95**,
+A2 GPS+IMU **39/95**, **A2 +flow 84/95 (88%)**. Consistent ≥ 0.5 m/s 24/24, consistent 0.25 m/s 9/11,
+naive ≥ 0.5 m/s 23/24, naive 0.25 m/s 4/12 (weakest). Error at alarm for 1–2 m/s: 19–34 m.
+1 errored run (harness takeoff flake, excluded and listed). The bundled calibration is now v7.

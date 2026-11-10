@@ -20,7 +20,13 @@ docker build -t astra/ardupilot-sitl:copter-4.7.2 sim/ardupilot        # ~10 min
 .venv/Scripts/astra packs
 .venv/Scripts/astra run baseline-v1 --out runs/x --seeds 1 --parallel 4 --speedup 20
 .venv/Scripts/astra verify runs/x/report.json --trust $(.venv/Scripts/astra key)
-.venv/Scripts/astra diagnose runs/x/<scenario>__s0/flight.npz
+.venv/Scripts/astra diagnose runs/x/<scenario>__s0/flight.npz      # forensics (bundled or --cal)
+.venv/Scripts/astra html runs/x                                     # self-contained HTML report
+.venv/Scripts/astra calibrate <benign logs/dirs> --out cal.json      # per-airframe A2 calibration
+.venv/Scripts/astra shield export --log-only --out shield.lua        # 1) fly benign with this
+.venv/Scripts/astra shield calibrate <those logs> --out shield.json  # 2) fit constants
+.venv/Scripts/astra shield export --cal shield.json --out shield.lua [--on-alarm land]  # 3) armed
+.venv/Scripts/astra advise --params vendor.parm --out runs/adv       # EKF-tuning trade-off (A6)
 ```
 
 Corpus/benchmark scripts: `benchmarks/run_pack.py`, `summarize.py`, `a2_eval.py`, `a1_sitl.py`.
@@ -39,6 +45,8 @@ Thermals: 4 parallel SITL at 20× is about 3 cores. 8 at 20× is about 5 cores (
 | `src/astra/search.py`, `search_sitl.py` | A1: GP level-set failure-boundary mapping |
 | `src/astra/integrity/`, `report.py` | Canonical JSON, Ed25519 envelopes with trust check, ledger, reports |
 | `src/astra/forensics.py`, `cli.py` | `astra diagnose`, the CLI |
+| `src/astra/onboard.py`, `data/astra_shield.lua` | ASTRA Shield: onboard C3 Lua monitor (+ calibration from its own logs) |
+| `src/astra/calibrate.py`, `advise.py`, `html_report.py` | Per-airframe calibration, A6 advisor, HTML report |
 
 ## Known limitations (don't paper over them)
 
@@ -65,5 +73,12 @@ See 04-ALGORITHMS.md for designs. Status is in PROGRESS.md.
 5. **A5 incident → scenario inversion** (fit drag rate/bearing/onset from C2/C3 residuals).
 6. **Real-data validation:** IEEE DataPort PX4 ULog sets (needs a pyulog adapter for `logs.py`).
 7. **A4 terrain anchoring:** needs SITL terrain following a DEM. Check SITL terrain support first.
-8. **Rotor-drag wind channel (C4)** for GPS+IMU-only airframes. Expected weak (wind ambiguity), so
+8. **Shield v2 mitigation:** on alarm, switch the EKF to a pre-configured no-GPS source set
+   (`ahrs:set_posvelyaw_source_set`) before landing. LAND alone still drifts with the spoof
+   (benchmarks/shield-v1.md).
+9. **Onboard C2 (flow) in Shield:** needs an upstream ArduPilot Lua binding for
+   `AP_OpticalFlow` flow/body rates (bindings.desc). A small upstream PR, high value.
+10. **Flow realism:** texture-dependent quality/noise model (sand, water, night) in the SITL
+    flow sim, so C2 numbers stop being an upper bound.
+11. **Rotor-drag wind channel (C4)** for GPS+IMU-only airframes. Expected weak (wind ambiguity), so
    measure before believing.
