@@ -64,8 +64,7 @@ Thermals: 4 parallel SITL at 20× is about 3 cores. 8 at 20× is about 5 cores (
 
 - Working: SIH image, simulator-only GPS patch (5 models), in-container control, ULog truth and attack
   windows, `--autopilot px4` in run/batch/report. Baseline: same slow-drag blind spot as ArduPilot.
-- A2 C3 on PX4: naive drags 41/48 (stock 10/48). The FAR calibration is being redone on 80 PX4 benign
-  flights (`px4-benign-cal`; held-out `px4-benign`).
+- A2 C3 on PX4 (80-flight calibration): naive drags 36/48 vs stock 10/48, held-out FAR 0 in 3.8 h.
 - Not yet: meaconing/chaotic models, Shield (needs PX4 module or MAVLink-side monitor, since PX4 has no Lua),
   `astra advise` for EKF2 params, slim runtime image (5.4 GB now; multi-stage copy of
   build/px4_sitl_default + bc + python3/pymavlink should work), speed-ups > 10× unverified.

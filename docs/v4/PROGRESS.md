@@ -235,3 +235,5 @@ It catches 2 m/s naive (ArduPilot didn't) but not 2 m/s consistent. Jumps 0.2 s,
 
 **A2 C3 on PX4** (`benchmarks/px4-a2-v1.md`): naive drag-off 41/48 vs stock 10/48. FAR not yet
 established (1 alarm in 1.8 h from a 20-flight calibration). Needs ≥ 80 PX4 benign flights.
+
+**A2 C3 on PX4, recalibrated** (`benchmarks/px4-a2-v2.md`, 80 calibration flights): held-out FAR 0 in 3.8 h (UB 0.98/h). Naive drag-off **36/48 vs stock 10/48**. Supersedes v1 (41/48 with a too-low 20-flight threshold).

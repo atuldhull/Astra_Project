@@ -52,6 +52,10 @@ diversions into safe aborts ([benchmarks/shield-v1.md](benchmarks/shield-v1.md))
 **EKF tuning alone** (A6, [benchmarks/a6-params-v1.md](benchmarks/a6-params-v1.md)) closes most of the
 *naive* gap (0/12 → 12/12) at a small alert cost, but not the *consistent* one (≤ 3/12).
 
+**PX4 too.** Stock PX4 v1.17 has the same blind spot (slow drag-offs ≤ 1 m/s noticed 0/16 times during
+the attack). ASTRA's GPS-only check catches naive drag-offs 36/48 vs stock 10/48 on PX4, with 0 false
+alarms in 3.8 held-out hours ([benchmarks/px4-a2-v2.md](benchmarks/px4-a2-v2.md)).
+
 **3. Checked on real flights, not just simulation.** 39 real benign quadrotor missions from public PX4
 logs (5.6 h): the shipped checks raise **0/39** false alarms, and `astra diagnose` says "no anomaly" on all 39.
 That same check *removed* one channel the simulator had made look fine
