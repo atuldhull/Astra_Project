@@ -232,3 +232,6 @@ headline flow numbers need a good sensor at operating altitude. README and pitch
 **PX4 baseline** (`benchmarks/px4-baseline-v1.md`, 48 runs, 42 valid; 6 = unsupported models): stock
 PX4 v1.17 is blind to drag-off ≤ 1 m/s during the attack (0/16). Persistent 0.5–1 m/s → diverted 134–270 m.
 It catches 2 m/s naive (ArduPilot didn't) but not 2 m/s consistent. Jumps 0.2 s, denial 5 s.
+
+**A2 C3 on PX4** (`benchmarks/px4-a2-v1.md`): naive drag-off 41/48 vs stock 10/48. FAR not yet
+established (1 alarm in 1.8 h from a 20-flight calibration). Needs ≥ 80 PX4 benign flights.

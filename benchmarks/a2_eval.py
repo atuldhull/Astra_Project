@@ -73,20 +73,26 @@ def main():
     else:
         train = [c for i, (_, c) in enumerate(chs) if i % 2 == 0]
         test = [c for i, (_, c) in enumerate(chs) if i % 2 == 1]
-    M = features.fit_flow_model(train)
-    for c in train:
-        apply_flow(c, M)
-    B = features.fit_flow_nuisance(train)
-    for c in train + test:
-        apply_flow(c, M, B)
+    has_flow = any(c.c2 is not None and c.c2_valid.any() for c in train)
+    if has_flow:
+        M = features.fit_flow_model(train)
+        for c in train:
+            apply_flow(c, M)
+        B = features.fit_flow_nuisance(train)
+        for c in train + test:
+            apply_flow(c, M, B)
+    else:  # e.g. PX4 SIH logs: no optical flow -> GPS-only configuration only
+        M = B = None
+        for k in [k for k in CONFIGS if "flow" in k]:
+            CONFIGS.pop(k)
 
     lines = [f"# A2 monitor evaluation\n", f"benign flights: {len(train)} calibration / {len(test)} held-out test\n",
-             f"flow model (fitted on calibration only): {np.round(M, 3).tolist()}\n"]
+             f"flow model (fitted on calibration only): {np.round(M, 3).tolist() if M is not None else 'n/a (no flow in logs)'}\n"]
     cals = {}
     for cfg, chans in CONFIGS.items():
         cal = monitor.calibrate(train, chans)
-        cal.flow_model = M.tolist()
-        cal.flow_nuisance = B.tolist()
+        cal.flow_model = M.tolist() if M is not None else None
+        cal.flow_nuisance = B.tolist() if B is not None else None
         cals[cfg] = cal
         fa, hours, by = 0, 0.0, collections.Counter()
         for c in test:
@@ -110,7 +116,9 @@ def main():
             continue
         onset = wins[0][0]
         try:
-            ch = apply_flow(features.compute(fl), M, B)
+            ch = features.compute(fl)
+            if M is not None:
+                ch = apply_flow(ch, M, B)
         except ValueError:
             continue
         te, err = nav_error_series(fl)
