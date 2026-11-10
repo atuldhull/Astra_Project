@@ -164,3 +164,44 @@ def calibrate_from_logs(paths, margin: float = 1.25) -> tuple[dict, dict]:
     info = {"flights": len(blocks), "airborne_hours": round(hours, 3), "skipped": skipped,
             "warning": None if hours >= 0.5 else "less than 0.5 h of benign blocks: threshold unreliable"}
     return cal, info
+
+
+def shield_blocks(fl) -> tuple[np.ndarray, np.ndarray]:
+    """Python mirror of the onboard Lua arithmetic: (block end times, block-median residuals (B,2)).
+
+    Per GNSS fix while airborne (> 3 m): r = (p_i − p_j0)/Δt − v_mid over the trailing SPAN_S window,
+    collected into BLOCK_S blocks and reduced by median. Used to replay Shield on any log.
+    Checked against the onboard-logged blocks in SITL: identical block count, values within ~0.016 m/s
+    median (log rounding of GPS speed/course vs the exact values Lua reads).
+    """
+    from astra.geo import latlon_to_ne
+
+    g = fl["GPS"]
+    ok = g["Status"] >= 3
+    t, la, lo = g["t"][ok], g["Lat"][ok], g["Lng"][ok]
+    if len(t) < 3:
+        return np.zeros(0), np.zeros((0, 2))
+    n, e = latlon_to_ne(la[0], lo[0], la, lo)
+    crs = np.radians(g["GCrs"][ok])
+    vn, ve = g["Spd"][ok] * np.cos(crs), g["Spd"][ok] * np.sin(crs)
+    air = np.interp(t, fl["POS"]["t"], fl["POS"]["RelHomeAlt"]) > 3
+    T, B, bn, be, bstart, j0 = [], [], [], [], None, 0
+    for i in range(len(t)):
+        while i - j0 > 2 and t[i] - t[j0] > SPAN_S:
+            j0 += 1
+        if not air[i] or i - j0 < 2:
+            bn, be, bstart = [], [], None
+            continue
+        dt = t[i] - t[j0]
+        if dt < 0.5 * SPAN_S:
+            continue
+        mid = j0 + (i - j0 + 2) // 2 - 1  # Lua: hist[(#hist + 1) // 2] with hist = j0..i (1-based)
+        bn.append((n[i] - n[j0]) / dt - vn[mid])
+        be.append((e[i] - e[j0]) / dt - ve[mid])
+        if bstart is None:
+            bstart = t[i]
+        if t[i] - bstart >= BLOCK_S:
+            T.append(t[i])
+            B.append((float(np.median(bn)), float(np.median(be))))
+            bn, be, bstart = [], [], None
+    return np.asarray(T), np.asarray(B).reshape(-1, 2)
