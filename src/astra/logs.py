@@ -32,6 +32,7 @@ WANTED = {
     "CTUN": ("ThO", "Alt", "DAlt"),
     "RCOU": ("C1", "C2", "C3", "C4"),
     "ASTK": ("Act", "Code", "OfsN", "OfsE", "VbN", "VbE", "En", "Jam"),
+    "ASTM": ("rN", "rE", "q", "S", "Al"),  # ASTRA Shield onboard monitor blocks
 }
 # Messages with an instance/core column: keep the primary only (C/I == 0).
 PRIMARY_ONLY = {"XKF1": "C", "XKF2": "C", "XKF3": "C", "XKF4": "C", "IMU": "I", "BARO": "I", "RFND": "Instance"}

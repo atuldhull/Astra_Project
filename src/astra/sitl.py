@@ -35,6 +35,7 @@ class SitlConfig:
     extra_params: dict[str, float] = field(default_factory=dict)
     vendor_param_file: Path | None = None
     lua_script: str | None = None
+    extra_scripts: dict[str, str] = field(default_factory=dict)  # e.g. onboard monitor under test
     image: str = DEFAULT_IMAGE
     cpus: float = 1.5
     memory: str = "768m"

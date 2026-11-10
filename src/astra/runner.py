@@ -269,7 +269,8 @@ class _Flight:
 
 
 def fly(sc: Scenario, seed: int, workdir: Path, *, speedup: int = 5,
-        vendor_param_file: Path | None = None, cpus: float = 1.5, keep_logs: bool = False) -> RunResult:
+        vendor_param_file: Path | None = None, cpus: float = 1.5, keep_logs: bool = False,
+        extra_scripts: dict[str, str] | None = None) -> RunResult:
     wall0 = time.monotonic()
     pert = seed_perturbation(sc, seed)
     extra = {**pert, **sensor_params(sc)}
@@ -278,6 +279,7 @@ def fly(sc: Scenario, seed: int, workdir: Path, *, speedup: int = 5,
         home=(sc.home.lat, sc.home.lon, sc.home.alt_m, sc.home.heading_deg),
         workdir=workdir, speedup=speedup, extra_params=extra,
         vendor_param_file=vendor_param_file, lua_script=lua_script(sc), cpus=cpus,
+        extra_scripts=dict(extra_scripts or {}),
     )
     res = RunResult(sc.id, sc.content_hash(), seed, "error", False, "", perturbation=pert)
     sitl = Sitl(cfg)

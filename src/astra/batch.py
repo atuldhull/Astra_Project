@@ -27,7 +27,8 @@ def default_parallel() -> int:
 
 def run_batch(jobs: Iterable[tuple[Scenario, int]], out_dir: Path, *, parallel: int | None = None,
               speedup: int = 5, vendor_param_file: Path | None = None, cpus: float = 1.5,
-              on_result: Callable[[RunResult], None] | None = None, keep_logs: bool = False) -> dict:
+              on_result: Callable[[RunResult], None] | None = None, keep_logs: bool = False,
+              extra_scripts: dict[str, str] | None = None) -> dict:
     jobs = list(jobs)
     parallel = parallel or default_parallel()
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -36,7 +37,8 @@ def run_batch(jobs: Iterable[tuple[Scenario, int]], out_dir: Path, *, parallel: 
     with ThreadPoolExecutor(max_workers=parallel) as ex:
         futs = {
             ex.submit(fly, sc, seed, out_dir / f"{sc.id}__s{seed}", speedup=speedup,
-                      vendor_param_file=vendor_param_file, cpus=cpus, keep_logs=keep_logs): (sc.id, seed)
+                      vendor_param_file=vendor_param_file, cpus=cpus, keep_logs=keep_logs,
+                      extra_scripts=extra_scripts): (sc.id, seed)
             for sc, seed in jobs
         }
         for fut in as_completed(futs):
