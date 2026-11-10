@@ -52,7 +52,12 @@ diversions into safe aborts ([benchmarks/shield-v1.md](benchmarks/shield-v1.md))
 **EKF tuning alone** (A6, [benchmarks/a6-params-v1.md](benchmarks/a6-params-v1.md)) closes most of the
 *naive* gap (0/12 → 12/12) at a small alert cost, but not the *consistent* one (≤ 3/12).
 
-**3. The honest physics** ([docs/v4/05-DETECTION-PHYSICS.md](docs/v4/05-DETECTION-PHYSICS.md)): a
+**3. Checked on real flights, not just simulation.** 39 real benign quadrotor missions from public PX4
+logs (5.6 h): the shipped checks raise **0/39** false alarms, and `astra diagnose` says "no anomaly" on all 39.
+That same check *removed* one channel the simulator had made look fine
+([benchmarks/real-far-v1.md](benchmarks/real-far-v1.md)). Real *attack* logs haven't been tested yet.
+
+**4. The honest physics** ([docs/v4/05-DETECTION-PHYSICS.md](docs/v4/05-DETECTION-PHYSICS.md)): a
 careful spoofer that biases position *and* velocity consistently, ramped in slowly, is
 **undetectable with GPS + IMU alone by any software, ours included**. ASTRA reports that as a
 robustness margin and tells you which witness sensor closes it, rather than claiming detection.
@@ -73,8 +78,9 @@ vendor params    ──►  ArduPilot SITL in Docker (pinned 4.7.2, unmodified v
   drag-off (consistent or naive, with ramp-in), meaconing (replay delay).
 - **Realistic sensors by default:** MEMS IMU bias and vibration, about 1 m Gauss-Markov GNSS
   error. Upstream SITL GPS is noise-free, which would inflate every detector's score.
-- **A2 monitor:** three physical consistency channels (GPS Δv vs IMU, GPS position-rate vs
-  reported velocity, optical flow vs GPS) → block-median CUSUM, calibrated on benign flights only.
+- **A2 monitor:** physical consistency checks (GPS position-rate vs reported velocity, range-whitened
+  optical flow vs GPS, per-fix position steps) → block-median CUSUM, calibrated on benign flights only.
+  A third channel (GPS Δv vs IMU) was **dropped** after false-alarming on 35/39 real flights.
 - **A1 failure-boundary mapping:** a GP level-set search that finds the attack region that
   defeats your airframe undetected, in a fraction of the runs of a grid sweep.
 - **Integrity:** canonical JSON, Ed25519 signatures with an explicit trusted-key check,
@@ -104,8 +110,10 @@ gives **90× real time** (16 flight-hours in about 11 minutes).
 - Simulation is pre-qualification, not a replacement for range trials.
 - SITL optical flow assumes ideal ground texture. Real flow over sand, water or at night is worse.
 - No RF-level attack synthesis, so receiver-internal spoof flags can't be validated here yet.
-- ArduCopter only (PX4 and fixed-wing are planned). The A2 calibration is from simulated receivers;
-  a real deployment calibrates on the vendor's own benign logs.
+- Simulation: ArduCopter only (PX4 SITL and fixed-wing planned). PX4 *logs* can be diagnosed (`.ulg`).
+- Calibrations shipped are from simulated receivers. Calibrate per airframe on the vendor's own benign
+  logs (`astra calibrate`, `astra shield calibrate`) before trusting alarms. Shield with simulation
+  constants false-alarmed on 1/39 real flights.
 
 ## Docs
 
