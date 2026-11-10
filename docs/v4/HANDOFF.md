@@ -58,7 +58,20 @@ Thermals: 4 parallel SITL at 20× is about 3 cores. 8 at 20× is about 5 cores (
 5. The stealthy consistent spoof with GPS + IMU only is fundamentally undetectable on short horizons
    (05-DETECTION-PHYSICS §1). The product answer is a robustness margin + witness-sensor advice.
 
+## Rules learned the hard way (keep enforcing)
+
+- Every channel must pass a **real benign flight check** (`benchmarks/real_far.py` on public PX4 logs)
+  before it ships. C1 passed simulation and failed reality (35/39 false alarms).
+- Never iterate on a held-out set. When a design changes, generate fresh corpora (`benign-v3`,
+  `attack-test2`, `mixed-test` were each used once).
+- Harness failures are `error`, never airframe outcomes. Audit old results after every harness fix.
+- Prefer the physically honest metric: true displacement over nav error, "detected during the attack"
+  over "noticed at release".
+
 ## Algorithm backlog (ordered by value, with entry criteria)
+
+0. **Real attack data.** Get the IEEE DataPort live-RF spoofing/jamming PX4 logs (free account; the
+   user must download them). Run `astra diagnose` on them via the ULog adapter. This closes S3/S8.
 
 See 04-ALGORITHMS.md for designs. Status is in PROGRESS.md.
 
