@@ -26,7 +26,8 @@ for line in Path("runs/attack-test2/results.jsonl").read_text().splitlines():
     brg_true = (np.degrees(np.arctan2(a["OfsE"][k], a["OfsN"][k]))) % 360
     berr = abs((inv.bearing_deg - brg_true + 180) % 360 - 180)
     rows.append({"rate": rate, "ramp": ramp, "kind": kind, "kind_ok": inv.kind == kind,
-                 "rate_err": abs(inv.rate_ms - rate) / rate, "brg_err": berr, "onset_err": inv.onset_s - on_true})
+                 "rate_err": abs(inv.rate_ms - rate) / rate, "brg_err": berr, "onset_err": inv.onset_s - on_true,
+                 "ramp_true": ramp, "ramp_est": inv.ramp_s})
 g = collections.defaultdict(list)
 for x in rows: g[(x["kind"], x["rate"])].append(x)
 lines = ["# A5 incident inversion: parameter recovery (attack-test2, detected runs, bundled v7 calibration)\n",
@@ -40,4 +41,9 @@ alle = rows
 lines.append(f"\n**All {len(alle)} detected runs:** kind correct {sum(x['kind_ok'] for x in alle)}/{len(alle)}, median rate error "
              f"{100*st.median(x['rate_err'] for x in alle):.0f}%, median bearing error {st.median(x['brg_err'] for x in alle):.0f}°, "
              f"median onset error {st.median(x['onset_err'] for x in alle):+.0f} s")
-text = "\n".join(lines); print(text); Path("benchmarks/a5-inversion-v1.md").write_text(text + "\n", encoding="utf-8")
+lines.append("\n| true ramp | runs | estimated ramp s (median) | within ±15 s |\n|---|---|---|---|")
+for R in (0, 15, 60):
+    xs = [x for x in rows if x["ramp_true"] == R]
+    if xs:
+        lines.append(f"| {R} s | {len(xs)} | {st.median(x['ramp_est'] for x in xs):.0f} | {sum(abs(x['ramp_est'] - R) <= 15 for x in xs)}/{len(xs)} |")
+text = "\n".join(lines); print(text); Path("benchmarks/a5-inversion-v2.md").write_text(text + "\n", encoding="utf-8")

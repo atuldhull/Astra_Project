@@ -254,3 +254,5 @@ calibrate` now also works on logs without onboard blocks (PX4, real flights), vi
 `benchmarks/a5-inversion-v1.md`: on 84 detected held-out drag-offs, attack type correct **84/84**, median
 rate error **9%**, bearing **2°**, onset **0 s**. Re-flying the estimated attack reproduces the outcome
 class 4/4, with miss distance within about ±50% (ramp not yet estimated; start time estimated from take-off).
+
+**A5 v2 (ramp + refined onset):** ramp within ±15 s in 59/84. Re-fly reproduction within 8% for 3/4 incidents (v1 2/4). The weak spot is slow consistent drags (noisy flow residual).

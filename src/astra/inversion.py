@@ -33,11 +33,13 @@ class Inversion:
     bearing_deg: float
     alarm_s: float
     n_blocks: int
+    ramp_s: float = 0.0
 
     def scenario_attack(self, after_arm_s: float | None = None) -> dict:
         start = {"after_arm_s": round(after_arm_s, 1)} if after_arm_s is not None else {"after_arm_s": 0.0}
         return {"model": "spoof_drag", "start": start, "duration_s": 3600, "rate_ms": round(self.rate_ms, 2),
-                "bearing_deg": round(self.bearing_deg % 360, 1), "consistent": self.kind == "consistent"}
+                "bearing_deg": round(self.bearing_deg % 360, 1), "consistent": self.kind == "consistent",
+                "ramp_s": round(self.ramp_s, 0)}
 
 
 def _onset_from_cusum(T: np.ndarray, S: np.ndarray, alarm_idx: int) -> float:
@@ -79,5 +81,21 @@ def invert(fl, cal: monitor.Calibration) -> Inversion | None:
         kind = "consistent"
     else:
         return None
-    return Inversion(name, kind, onset, math.hypot(vn, ve), math.degrees(math.atan2(ve, vn)) % 360,
-                     float(T[ia]), int(post.sum()))
+    rate = math.hypot(vn, ve)
+    brg = math.atan2(ve, vn)
+    # Ramp + refined onset: fit v(t) = rate * clip((t - t0) / R, 0, 1) to the residual projected on the
+    # spoof direction, over a window around the CUSUM onset (grid search, least squares).
+    if name == "c3":
+        tt, proj, okm = T, Rm[:, 0] * math.cos(brg) + Rm[:, 1] * math.sin(brg), ok
+    else:
+        tt, proj, okm = ch.t, n_ * math.cos(brg) + e_ * math.sin(brg), np.isfinite(n_) & ch.airborne
+    win = okm & (tt > onset - 120) & (tt <= T[ia] + 60)
+    best = (np.inf, onset, 0.0)
+    if win.sum() >= 4 and rate > 0:
+        for R in (0.0, 5, 10, 15, 20, 30, 45, 60, 75, 90, 120):
+            for t0 in np.arange(onset - 90, onset + 10, 2.0):
+                model = rate * np.clip((tt[win] - t0) / max(R, 1e-6), 0, 1) if R > 0 else rate * (tt[win] >= t0)
+                sse = float(np.sum((proj[win] - model) ** 2))
+                if sse < best[0]:
+                    best = (sse, float(t0), float(R))
+    return Inversion(name, kind, best[1], rate, math.degrees(brg) % 360, float(T[ia]), int(post.sum()), best[2])
