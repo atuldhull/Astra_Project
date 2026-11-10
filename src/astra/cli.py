@@ -105,6 +105,11 @@ def _cmd_shield(a):
           f"Copy to the autopilot's APM/scripts/ and set SCR_ENABLE=1.")
 
 
+def _cmd_html(a):
+    from astra.html_report import render
+    print(render(Path(a.run_dir)))
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(prog="astra", description="ASTRA Proving Ground")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -136,6 +141,9 @@ def main(argv=None):
     c.add_argument("logs", nargs="+")
     c.add_argument("--out", required=True)
     c.set_defaults(fn=_cmd_calibrate)
+    hp = sub.add_parser("html", help="self-contained HTML view of a run directory")
+    hp.add_argument("run_dir")
+    hp.set_defaults(fn=_cmd_html)
     sh = sub.add_parser("shield", help="ASTRA Shield onboard monitor (ArduPilot Lua)")
     shs = sh.add_subparsers(dest="action_name", required=True)
     sc_ = shs.add_parser("calibrate", help="fit constants from benign logs flown with the log-only script")

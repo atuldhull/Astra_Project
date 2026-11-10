@@ -354,6 +354,8 @@ def _classify(res: RunResult, f: _Flight, sc: Scenario, finished: bool, t_arm: f
         n_alerts=len(f.alerts),
         final_mode=last.mode,
         stuck_armed_on_ground=bool(f.landed_on_ground and f.armed),
+        goal_n_m=round(gn, 1),
+        goal_e_m=round(ge, 1),
     )
     R = sc.expect.goal_radius_m
     aborted = any(md in ("LAND", "RTL", "ALT_HOLD", "BRAKE", "SMART_RTL") for _, md in f.modes[1:])
