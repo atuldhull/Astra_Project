@@ -136,3 +136,15 @@ and otherwise marks the run `error` (excluded and listed), never an airframe out
 results: 4 affected runs (a6 default benign ×1, attack-dev ×1, shield atk ×1, shield far ×1). None
 of the published A2 held-out numbers are affected (0 runs in benign-v2/attack-test). The Shield
 cells already excluded those runs (no airborne blocks).
+
+## 2026-11-11: A6 parameter advisor v1 + A2 v7 (range whitening)
+
+**A6** (`benchmarks/a6-params-v1.md`): stock EKF tuning catches naive drag-off 0/12 → 12/12
+(POS/VEL gates 300, POSNE 0.2, VELNE 0.1, GLITCH_RAD 10), with nav alerts in 2/20 benign flights
+(about 1.7 h, indicative only). Consistent drag-off: ≤ 3/12. Product implication: the advisor can
+hand vendors a measured, low-cost param change for naive spoofing. Consistent spoofing needs a witness.
+
+**A2 v7** (dev only so far): flow residual whitened by slant range. Benign-v1 diagnosis showed 88%
+of large flow excursions came from range > 45 m. The flow threshold halves (295 → 142). Dev:
+consistent drag-off 23/24 (v6 13/24), incl. 0.25 m/s 5/6. Frozen; held-out test on fresh corpora
+benign-v3 + attack-test2 pending.
