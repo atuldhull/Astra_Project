@@ -17,6 +17,8 @@ from astra.geo import latlon_to_ne
 from astra.logs import FlightLog
 
 G = 9.80665
+FLOW_WHITEN = True  # v7 (range whitening of the flow channel)
+FLOW_REF_RANGE_M = 30.0
 DT = 0.1  # 10 Hz analysis grid
 
 
@@ -115,8 +117,9 @@ def compute(fl: FlightLog, w1_s: float = 3.0, pos_vel_s: float = 2.0,
     c2 = c2_valid = None
     if fl.has("OF") and fl.has("RFND"):
         vd = _interp(t, gt, gps["VZ"][ok])
-        c2, c2_valid, u, vb = _flow_channel(fl, t, vn, ve, vd, flow_model)
-        meta_flow = {"flow_regressors": u, "gps_body_vel": vb, "c2_nuisance_X": _nuisance_X(fl, t, vb)}
+        c2, c2_valid, u, vb, d = _flow_channel(fl, t, vn, ve, vd, flow_model)
+        meta_flow = {"flow_regressors": u, "gps_body_vel": vb, "c2_nuisance_X": _nuisance_X(fl, t, vb),
+                     "flow_range": d}
     else:
         meta_flow = {}
     return Channels(t, airborne, c1, c3, c2, c2_valid,
@@ -141,18 +144,18 @@ def flow_regressors(fl: FlightLog, t: np.ndarray):
     R = _rot_body_to_ned(*(np.radians(_interp(t, att["t"], att[k])) for k in ("Roll", "Pitch", "Yaw")))
     u = np.stack([(fx - bx) * d, (fy - by) * d], axis=1)
     valid = (q > 10) & (np.round(st) == 4) & (d > 2.0) & np.isfinite(u).all(axis=1)
-    return u, valid, R
+    return u, valid, R, d
 
 
 def _flow_channel(fl, t, vn, ve, vd, flow_model):
-    u, valid, R = flow_regressors(fl, t)
+    u, valid, R, d = flow_regressors(fl, t)
     v_ned = np.stack([vn, ve, vd], axis=1)
     vb = np.einsum("nji,nj->ni", R, v_ned)[:, :2]  # R^T v: body-frame x/y velocity
     valid &= np.isfinite(vb).all(axis=1)
     M = flow_model if flow_model is not None else np.array([[0.0, 1.0], [-1.0, 0.0]])
     c2 = vb - u @ M.T
     c2[~valid] = np.nan
-    return c2, valid, u, vb
+    return c2, valid, u, vb, d
 
 
 def fit_flow_model(chs: list[Channels]) -> np.ndarray:
@@ -209,6 +212,9 @@ def apply_flow(ch: Channels, M: np.ndarray, B: np.ndarray | None = None) -> Chan
     c2 = vb - u @ np.asarray(M).T
     if B is not None:
         c2 = c2 - ch.meta["c2_nuisance_X"] @ np.asarray(B)
+    if FLOW_WHITEN and "flow_range" in ch.meta:
+        # v7: flow noise is proportional to slant range (angular-rate noise x range), so whiten by it.
+        c2 = c2 * (FLOW_REF_RANGE_M / np.clip(ch.meta["flow_range"], 5.0, None))[:, None]
     c2[~ch.c2_valid] = np.nan
     ch.c2 = c2
     return ch
