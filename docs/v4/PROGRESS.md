@@ -177,3 +177,7 @@ seeded sample, analysed locally only). Simulation-calibrated detectors: **C1 fal
 first). **C3 0/39, position-step check 0/39, diagnose "no anomaly" 39/39.** Shield (sim constants)
 1/39, so per-airframe calibration is required before arming. Added the PX4 ULog adapter (`astra.ulog`),
 and `astra diagnose` now reads .ulg files.
+
+**A1 4-D on SITL** (`benchmarks/a1-sitl-4d.md`): stealthy failures are 4.5% of the rate×ramp×bearing×onset
+space. At 48 runs each, FBM found **16** stealthy failures vs random **2** (8×). F1 0.89 vs 0.57 on 200
+flown ground-truth points. S9 met in 4-D (one seed per method; repeat before quoting).

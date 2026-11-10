@@ -197,4 +197,4 @@ Algorithms and free tiers: [Control-invariant attack detection, CCS'18](https://
 | S6 | ≥ 95% lower cost per campaign | Fully open source, laptop-only (vs RF simulators priced "on request" in the lakhs–crores) | ✅ by construction |
 | S7 | 0 undetected report alterations | Tamper tests: every field change → signature mismatch. Attacker key → untrusted | ✅ (unit-tested; no external red team yet) |
 | S8 | ≥ 80% sim-to-real agreement | **Partial:** false-alarm behaviour on 39 real benign PX4 flights. C3/step/diagnose transfer (0/39). C1 failed (35/39) and was removed. Shield 1/39 with sim constants. Real *attacks* not yet tested | ⚠️ partial: benign side measured, attack side open |
-| S9 | ≥ 1.5× failures found per sim-hour vs random (A1) | Synthetic: 34–86% lower boundary error. SITL 2-D: no gain (97.6% vs 100%). SITL 4-D: see `benchmarks/a1-sitl-4d.md` | ⚠️ unproven on SITL |
+| S9 | ≥ 1.5× failures found per sim-hour vs random (A1) | SITL 4-D: **16 vs 2 stealthy failures found (8×)**, F1 0.89 vs 0.57. SITL 2-D (large simple region): no gain. Synthetic: 34–86% lower boundary error | ✅ in 4-D (single seed per method; repeat before quoting) |
