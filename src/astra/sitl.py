@@ -82,9 +82,12 @@ class Sitl:
         scripts = wd / "scripts"
         if scripts.exists():
             shutil.rmtree(scripts)
-        if self.cfg.lua_script:
+        if self.cfg.lua_script or self.cfg.extra_scripts:
             scripts.mkdir()
+        if self.cfg.lua_script:
             (scripts / "astra_attack.lua").write_text(self.cfg.lua_script, encoding="ascii", newline="\n")
+        for name, body in self.cfg.extra_scripts.items():
+            (scripts / name).write_text(body, encoding="ascii", newline="\n")
         return defaults
 
     # ── lifecycle ───────────────────────────────────────────────────────
