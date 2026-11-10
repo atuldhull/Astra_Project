@@ -50,6 +50,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("benign"); ap.add_argument("attack")
     ap.add_argument("--out"); ap.add_argument("--save-cal")
+    ap.add_argument("--benign-test", help="separate held-out benign dir: calibrate on ALL of BENIGN_DIR, test FAR here")
     a = ap.parse_args()
 
     benign = load_runs(Path(a.benign))
@@ -59,8 +60,17 @@ def main():
             chs.append((r, features.compute(logs.load_npz(npz))))
         except ValueError as exc:
             print("skip", r["scenario_id"], exc, file=sys.stderr)
-    train = [c for i, (_, c) in enumerate(chs) if i % 2 == 0]
-    test = [c for i, (_, c) in enumerate(chs) if i % 2 == 1]
+    if a.benign_test:
+        train = [c for _, c in chs]
+        test = []
+        for r, npz in load_runs(Path(a.benign_test)):
+            try:
+                test.append(features.compute(logs.load_npz(npz)))
+            except ValueError as exc:
+                print("skip", r["scenario_id"], exc, file=sys.stderr)
+    else:
+        train = [c for i, (_, c) in enumerate(chs) if i % 2 == 0]
+        test = [c for i, (_, c) in enumerate(chs) if i % 2 == 1]
     M = features.fit_flow_model(train)
     for c in train:
         apply_flow(c, M)

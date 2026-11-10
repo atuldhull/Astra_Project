@@ -72,9 +72,10 @@ def diagnose(path: Path) -> dict:
     if cal_all:
         cfg = "gps+imu+flow" if fl.has("OF") and fl.has("RFND") else "gps+imu"
         cal = monitor.Calibration(**cal_all[cfg])
-        M = np.asarray(cal.flow_model) if cal.flow_model else None
         try:
-            ch = features.compute(fl, flow_model=M)
+            ch = features.compute(fl)
+            if cal.flow_model:
+                features.apply_flow(ch, cal.flow_model, cal.flow_nuisance)
             det, stats = monitor.run(ch, cal)
             a2 = {"available": True, "config": cfg, "alarm": det.alarm,
                   "alarm_t": None if det.t_alarm is None else round(det.t_alarm, 1),

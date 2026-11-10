@@ -44,8 +44,10 @@ class SitlEvaluator:
         wins = fl.attack_windows()
         if not wins:
             return False
-        M = np.asarray(self.cal.flow_model) if self.cal.flow_model else None
-        det, _ = monitor.run(features.compute(fl, flow_model=M), self.cal)
+        ch = features.compute(fl)
+        if self.cal.flow_model:
+            features.apply_flow(ch, self.cal.flow_model, self.cal.flow_nuisance)
+        det, _ = monitor.run(ch, self.cal)
         return det.alarm and det.t_alarm >= wins[0][0]
 
     def __call__(self, params: list[dict]) -> list[bool]:
