@@ -1,0 +1,39 @@
+# ASTRA Proving Ground: one page for drone makers and evaluators
+
+## The problem
+After Operation Sindoor, Indian Army GPS-denied trials reportedly failed all 46 indigenous drone
+makers tested (secondary reporting). Makers get one shot on a range, most can't legally test real
+jamming at all, and hardware GNSS simulators cost lakhs to crores while testing only the receiver.
+
+## What ASTRA does (software only, open source, one laptop)
+1. **Test:** flies *your* ArduPilot firmware + parameters through 7 GNSS attack models (jamming,
+   drag-off spoofing, jumps, replay) at 80–90× real time, and scores mission outcomes.
+2. **Detect:** an independent monitor (A2) catches the spoofing your autopilot misses.
+3. **Protect:** ASTRA Shield, the same check as an onboard ArduPilot Lua script, alerts or lands safely.
+4. **Advise:** a measured EKF-parameter trade-off on *your* params (`astra advise`).
+5. **Prove:** Ed25519-signed reports bound to the exact firmware, params, scenarios and seeds,
+   verifiable offline by an evaluator.
+
+## Measured (scripts in `benchmarks/`; held-out = never used during design)
+
+| Finding | Number |
+|---|---|
+| Stock ArduCopter 4.7.2 detects slow drag-off spoofing (≤ 2 m/s) during the attack | **9/95** held-out |
+| ASTRA A2 with an optical-flow witness | **84/95**, 0 false alarms in 7.2 held-out hours |
+| ASTRA A2 with GPS+IMU only | 39/95 (naive spoofs 23/24; velocity-matched spoofs need a witness, as physics predicts) |
+| Shield onboard, naive drag ≥ 0.5 m/s | **35/35**, alarm at 14–31 m off course; onboard = offline replay 6/6 |
+| Shield "drop GPS then land" | 6/6 diversions → safe aborts; true post-alarm movement 46 → 19 m |
+| Forensics verdict (`astra diagnose`) | 209/223 correct; benign never accused |
+| EKF tuning alone (A6) | naive drag 0/12 → 12/12 detected; velocity-matched ≤ 3/12 |
+| **Real flights** (39 public PX4 missions, 5.6 h) | shipped checks **0/39** false alarms; one channel was *removed* because it failed this test |
+
+## Honest limits
+- Simulation is pre-qualification, not a range trial. Real *attack* logs aren't tested yet.
+- Optical-flow results assume good ground texture (an upper bound over sand, water or at night).
+- Calibrations shipped are simulation-derived. Calibrate on your own benign flights before arming.
+- ArduCopter SITL only today (PX4 logs can be diagnosed).
+
+## What we'd like from a pilot partner
+30–60 minutes of benign flight logs from one airframe (for calibration) and, if available, logs
+from any GPS-denied trial. In return: a signed qualification report, a robustness margin, and a
+calibrated Shield script for that airframe. Everything runs on your premises.
