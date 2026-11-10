@@ -170,3 +170,26 @@ def mixed_test(n_geom: int = 8, tag: str = "mixed-test") -> list[Scenario]:
 
 PACKS["mixed-test"] = mixed_test
 PACKS["mixed-dev"] = lambda: mixed_test(6, "mixed-dev")
+
+
+def _with_degraded_flow(scs: list[Scenario], suffix: str) -> list[Scenario]:
+    out = []
+    for s in scs:
+        d = s.model_dump(mode="json")
+        d["id"] = s.id.replace(s.id.split("-")[0], s.id.split("-")[0] + suffix, 1)
+        d["sensors"]["flow_noise"] = "degraded"
+        out.append(Scenario.model_validate(d))
+    return out
+
+
+def benign_flowdeg(n: int = 80) -> list[Scenario]:
+    rng = _random.Random("benign-flowdeg")
+    return _with_degraded_flow([_corpus_scenario(f"benign-{i:03d}", rng, []) for i in range(n)], "fd")
+
+
+def attack_flowdeg() -> list[Scenario]:
+    """Consistent drag-offs (flow is the only witness) with a degraded flow sensor, fresh geometries."""
+    return _with_degraded_flow([s for s in _attack_corpus("attack", 4) if s.id.endswith("-c")], "fd")
+
+
+PACKS.update({"benign-flowdeg": benign_flowdeg, "attack-flowdeg": attack_flowdeg})

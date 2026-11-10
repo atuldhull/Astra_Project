@@ -89,3 +89,9 @@ def test_packs_build_and_have_unique_ids(name):
     scs = PACKS[name]()
     ids = [s.id for s in scs]
     assert len(ids) == len(set(ids))
+
+
+def test_existing_scenario_hashes_are_stable():
+    """Signed reports reference scenario hashes: a schema change must not silently re-hash old scenarios."""
+    s = PACKS["attack-test2"]()[5]
+    assert s.content_hash() == "6db734196fdd5426a6a9f115d7868b659342d330e418ffa2f017bd3fc9818158"

@@ -139,6 +139,10 @@ class Sensors(_Strict):
     imu: Literal["ideal", "mems"] = Field(
         "mems", description="ideal = SITL default (near-perfect). mems = per-seed bias + vibration noise"
     )
+    flow_noise: Literal["ideal", "degraded"] = Field(
+        "ideal", description="ideal = SITL flow (good texture everywhere). degraded = 2-5x noise, +-5% scale "
+                             "error, 100-300 ms latency (poor texture / cheap sensor / imperfect calibration)"
+    )
     gps: Literal["ideal", "typical"] = Field(
         "typical", description="ideal = SITL default (perfect position). typical = single-frequency "
                                "receiver: ~1 m Gauss-Markov position error, ~0.08 m/s velocity noise"
@@ -169,7 +173,12 @@ class Scenario(_Strict):
     time_limit_s: float = Field(600.0, gt=10, le=7200)
 
     def content_hash(self) -> str:
-        return sha256_obj(self.model_dump(mode="json"))
+        d = self.model_dump(mode="json")
+        # Fields added after schema v1 are omitted at their default, so existing scenarios keep
+        # the exact hashes recorded in earlier signed reports.
+        if d["sensors"].get("flow_noise") == "ideal":
+            del d["sensors"]["flow_noise"]
+        return sha256_obj(d)
 
     def goal_offset(self) -> tuple[float, float]:
         wp = self.mission.waypoints[-1]

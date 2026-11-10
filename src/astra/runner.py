@@ -102,6 +102,16 @@ def seed_perturbation(sc: Scenario, seed: int) -> dict:
     return p
 
 
+def flow_degradation(sc: Scenario, seed: int) -> dict:
+    """Per-seed degraded optical-flow sensor (only when sensors.flow_noise == 'degraded')."""
+    if not (sc.sensors.optical_flow and sc.sensors.flow_noise == "degraded"):
+        return {}
+    rng = random.Random(f"{sc.content_hash()}:{seed}:flow")
+    return {"SIM_FLOW_RND": round(rng.uniform(0.10, 0.25), 3),
+            "FLOW_FXSCALER": round(rng.uniform(-50, 50)), "FLOW_FYSCALER": round(rng.uniform(-50, 50)),
+            "SIM_FLOW_DELAY": rng.choice([1, 2, 3])}
+
+
 def sensor_params(sc: Scenario) -> dict:
     """Passive extra sensors: present and logged, NOT selected as EKF sources (EK3_SRC* untouched)."""
     p: dict = {}
@@ -273,7 +283,7 @@ def fly(sc: Scenario, seed: int, workdir: Path, *, speedup: int = 5,
         extra_scripts: dict[str, str] | None = None) -> RunResult:
     wall0 = time.monotonic()
     pert = seed_perturbation(sc, seed)
-    extra = {**pert, **sensor_params(sc)}
+    extra = {**pert, **sensor_params(sc), **flow_degradation(sc, seed)}
     extra["WPNAV_SPEED"] = sc.mission.speed_ms * 100  # mission cruise speed is a scenario property
     cfg = SitlConfig(
         home=(sc.home.lat, sc.home.lon, sc.home.alt_m, sc.home.heading_deg),
