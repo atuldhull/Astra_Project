@@ -213,3 +213,18 @@ A2 v7 frozen, calibration refit on 40 degraded-flow benign flights. Consistent d
 20/22, but alarm at 178–365 m error (ideal flow: 19–34 m). 0.5 m/s 1/12, 0.25 m/s 1/12. 1 false alarm
 in 3.5 h. The residual is noise-dominated (2.7 vs 0.85 m/s); latency compensation doesn't help. The
 headline flow numbers need a good sensor at operating altitude. README and pitch updated.
+
+## 2026-11-11: PX4 support working end to end
+
+- `sim/px4/`: pinned PX4 v1.17.0 SIH image + simulator-only patch (`sensor_gps_sim`: 5 attack models,
+  Gauss–Markov noise, timeline in seconds after arming). Launched via a shell wrapper (PX4 must start
+  in rootfs to link `etc/`). `bc` added (rcS scales failsafe timeouts by the speed factor).
+- **Docker Desktop UDP forwarding doesn't carry PX4 MAVLink replies**, so the flight controller runs
+  *inside* the container (`sim/px4/px4_control.py`, localhost) and writes `control.json` + the ULog.
+- ULog adapter: simulator truth (`vehicle_global_position_groundtruth` → SIM), attack window rebuilt
+  from logged `ASTRA_ATK_*` params + arming time, EKF2 GPS innovation test ratios → XKF4 names, and
+  text messages from the ULog message section (they aren't a data topic).
+- **PX4 V1:** 800 m no-attack mission → success, 1.7 m from goal (36 s wall @5×).
+- **PX4 V3 (stock EKF2, default params):** consistent drag 1 m/s → **diverted 221 m, undetected**
+  (test-ratio peak 0.23). Naive drag 1 m/s → **diverted 222 m, undetected** (peak 0.46). 60 s denial →
+  detected in 5 s ("Failsafe: blind land"). PX4 shares ArduPilot's slow-drag blind spot.

@@ -116,10 +116,8 @@ def load_ulog(path: str | Path) -> FlightLog:
     elif "SIM" in fl.series:
         z = np.zeros(2)
         fl.series["XKF4"] = {"t": np.array([t[0], t[-1]]), **{k: z for k in ("C", "SV", "SP", "SH", "SM", "FS", "TS", "SS", "GPS")}}
-    lm = by.get("logged_messages")
-    if lm is not None:
-        txt = ["".join(chr(int(c)) for c in row if int(c) != 0) for row in
-               np.stack([lm[k] for k in sorted((k for k in lm if k.startswith("message[")),
-                                               key=lambda s: int(s[8:-1]))], axis=1)]
-        fl.messages = list(zip((lm["timestamp"] / 1e6).tolist(), txt))
+    # PX4 text messages live in the ULog message section, not in a data topic.
+    import re
+    ansi = re.compile(r"\[[0-9;]*m")
+    fl.messages = [(m.timestamp / 1e6, ansi.sub("", m.message).strip()) for m in u.logged_messages]
     return fl

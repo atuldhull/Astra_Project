@@ -26,7 +26,7 @@ from pymavlink import mavutil
 from astra.geo import latlon_to_ne, ne_to_latlon
 from astra.runner import RunResult, seed_perturbation
 from astra.scenario import (JamDegrade, JamDenial, JamIntermittent, Scenario, SpoofDrag, SpoofJump)
-from astra.sitl import free_port, read_params
+from astra.sitl import read_params
 
 ML = mavutil.mavlink
 PX4_IMAGE = "astra/px4-sitl:v1.17.0"
@@ -73,7 +73,8 @@ def _env(sc: Scenario, seed: int, speedup: int, vendor: Path | None) -> tuple[di
     if "SIM_GPS1_PNSE" in pert:
         params.update(ASTRA_GPS_PNSE=pert["SIM_GPS1_PNSE"], ASTRA_GPS_PTAU=pert["SIM_GPS1_PTAU"])
     params.update(MPC_XY_CRUISE=sc.mission.speed_ms, MIS_TAKEOFF_ALT=sc.mission.takeoff_alt_m,
-                  COM_RCL_EXCEPT=4, NAV_RCL_ACT=0, NAV_DLL_ACT=0, COM_DISARM_LAND=2.0)
+                  COM_RCL_EXCEPT=4, NAV_RCL_ACT=0, NAV_DLL_ACT=0, COM_DISARM_LAND=2.0,
+                  MAV_0_BROADCAST=1)
     for k, v in params.items():
         env[f"PX4_PARAM_{k}"] = str(v)
     return env, t0
@@ -88,41 +89,51 @@ def fly_px4(sc: Scenario, seed: int, workdir: Path, *, speedup: int = 10,
     workdir.mkdir(parents=True, exist_ok=True)
     (workdir / "log").mkdir(exist_ok=True)
     res = RunResult(sc.id, sc.content_hash(), seed, "error", False, "")
-    name, port = f"astra-px4-{uuid.uuid4().hex[:10]}", free_port()
+    name = f"astra-px4-{uuid.uuid4().hex[:10]}"
     try:
         env, t0 = _env(sc, seed, speedup, vendor_param_file)
     except ValueError as exc:
         res.reason = str(exc)
         return res
     res.perturbation = {"px4_trigger_s": t0}
-    cmd = ["docker", "run", "-d", "--rm", "--name", name, "--cpus", str(cpus), "--memory", "1g",
-           "-p", f"127.0.0.1:{port}:18570/udp", "-v", f"{(workdir / 'log').resolve()}:{ROOTFS}/log"]
+    h = sc.home
+    items = [[int(ML.MAV_CMD_NAV_TAKEOFF), h.lat, h.lon, sc.mission.takeoff_alt_m]]
+    for w in sc.mission.waypoints:
+        lat, lon = ne_to_latlon(h.lat, h.lon, w.north_m, w.east_m)
+        items.append([int(ML.MAV_CMD_NAV_WAYPOINT), lat, lon, w.alt_m])
+    last = sc.mission.waypoints[-1]
+    glat, glon = ne_to_latlon(h.lat, h.lon, last.north_m, last.east_m)
+    end_cmd = {"land": ML.MAV_CMD_NAV_LAND, "rtl": ML.MAV_CMD_NAV_RETURN_TO_LAUNCH,
+               "loiter": ML.MAV_CMD_NAV_LOITER_UNLIM}[sc.mission.end]
+    items.append([int(end_cmd), glat, glon, 0.0])
+    (workdir / "mission.json").write_text(json.dumps(
+        {"items": items, "wall_limit_s": max(120.0, 2.5 * sc.time_limit_s / speedup)}))
+    ctl = Path(__file__).resolve().parents[2] / "sim" / "px4" / "px4_control.py"
+    cmd = ["docker", "run", "--rm", "--name", name, "--cpus", str(cpus), "--memory", "1g",
+           "-v", f"{(workdir / 'log').resolve()}:{ROOTFS}/log", "-v", f"{workdir.resolve()}:/work",
+           "-v", f"{ctl}:/astra/px4_control.py:ro"]
     for k, v in env.items():
         cmd += ["-e", f"{k}={v}"]
-    cmd += [PX4_IMAGE, "-d", ETC]
-    m = None
+    cmd += ["--entrypoint", "bash", PX4_IMAGE, "-c",
+            f"cd {ROOTFS} && (../bin/px4 -d ../etc > /work/px4.out 2>&1 &) && "
+            "python3 /astra/px4_control.py /work/mission.json /work/control.json"]
+    finished = False
     try:
-        subprocess.run(cmd, check=True, capture_output=True, text=True)
-        m = mavutil.mavlink_connection(f"udpout:127.0.0.1:{port}", source_system=255)
-        deadline = time.monotonic() + 90
-        while time.monotonic() < deadline:
-            m.mav.heartbeat_send(ML.MAV_TYPE_GCS, ML.MAV_AUTOPILOT_INVALID, 0, 0, 0)
-            hb = m.recv_match(type="HEARTBEAT", blocking=True, timeout=1)
-            if hb and hb.get_srcSystem() == 1:
-                break
-        else:
-            raise TimeoutError("no heartbeat from PX4")
-        _upload_px4(m, sc)
-        armed_at = _arm_in_mission(m, speedup)
-        texts, finished = _monitor(m, sc, speedup)
-        res.texts = texts
+        subprocess.run(cmd, check=True, capture_output=True, text=True,
+                       timeout=max(300.0, 3.0 * sc.time_limit_s / speedup + 240))
+        ctl_out = json.loads((workdir / "control.json").read_text())
+        res.texts, res.modes = ctl_out["texts"], ctl_out["modes"]
+        finished = ctl_out["finished"]
+        if not ctl_out["ok"]:
+            res.reason = "harness: " + str(ctl_out["error"])
+            res.wall_s = round(time.monotonic() - wall0, 2)
+            (workdir / "result.json").write_text(json.dumps(asdict(res), indent=2))
+            return res  # harness failure: outcome stays "error"
     except Exception as exc:  # noqa: BLE001
-        res.reason = f"{type(exc).__name__}: {exc}"
-        finished = False
-    finally:
-        if m is not None:
-            m.close()
+        res.reason = f"harness: {type(exc).__name__}: {exc}"
         subprocess.run(["docker", "rm", "-f", name], capture_output=True)
+        res.wall_s = round(time.monotonic() - wall0, 2)
+        return res
     ulgs = sorted((workdir / "log").rglob("*.ulg"))
     if not ulgs:
         res.reason = (res.reason + " | no ULog").strip(" |")
@@ -138,70 +149,6 @@ def fly_px4(sc: Scenario, seed: int, workdir: Path, *, speedup: int = 10,
     res.wall_s = round(time.monotonic() - wall0, 2)
     (workdir / "result.json").write_text(json.dumps(asdict(res), indent=2))
     return res
-
-
-def _upload_px4(m, sc: Scenario) -> None:
-    h = sc.home
-    items = [(ML.MAV_CMD_NAV_TAKEOFF, h.lat, h.lon, sc.mission.takeoff_alt_m)]
-    for w in sc.mission.waypoints:
-        lat, lon = ne_to_latlon(h.lat, h.lon, w.north_m, w.east_m)
-        items.append((ML.MAV_CMD_NAV_WAYPOINT, lat, lon, w.alt_m))
-    last = sc.mission.waypoints[-1]
-    glat, glon = ne_to_latlon(h.lat, h.lon, last.north_m, last.east_m)
-    end = {"land": ML.MAV_CMD_NAV_LAND, "rtl": ML.MAV_CMD_NAV_RETURN_TO_LAUNCH,
-           "loiter": ML.MAV_CMD_NAV_LOITER_UNLIM}[sc.mission.end]
-    items.append((end, glat, glon, 0.0))
-    for _attempt in range(5):
-        m.mav.mission_count_send(1, 1, len(items), ML.MAV_MISSION_TYPE_MISSION)
-        deadline = time.monotonic() + 20
-        while time.monotonic() < deadline:
-            msg = m.recv_match(type=["MISSION_REQUEST_INT", "MISSION_REQUEST", "MISSION_ACK"], blocking=True, timeout=2)
-            if msg is None:
-                continue
-            if msg.get_type() == "MISSION_ACK":
-                if msg.type == ML.MAV_MISSION_ACCEPTED:
-                    return
-                break
-            cmd, lat, lon, alt = items[msg.seq]
-            m.mav.mission_item_int_send(1, 1, msg.seq, ML.MAV_FRAME_GLOBAL_RELATIVE_ALT_INT, cmd, 0, 1,
-                                        0, 0, 0, float("nan"), int(lat * 1e7), int(lon * 1e7), alt,
-                                        ML.MAV_MISSION_TYPE_MISSION)
-        time.sleep(1)
-    raise RuntimeError("PX4 mission upload failed")
-
-
-def _arm_in_mission(m, speedup: int) -> float:
-    deadline = time.monotonic() + 120
-    while time.monotonic() < deadline:
-        m.set_mode("MISSION")
-        m.mav.command_long_send(1, 1, ML.MAV_CMD_COMPONENT_ARM_DISARM, 0, 1, 0, 0, 0, 0, 0, 0)
-        t_end = time.monotonic() + 3
-        while time.monotonic() < t_end:
-            hb = m.recv_match(type="HEARTBEAT", blocking=True, timeout=1)
-            if hb and hb.get_srcSystem() == 1 and hb.base_mode & ML.MAV_MODE_FLAG_SAFETY_ARMED:
-                return time.monotonic()
-        time.sleep(1.0)
-    raise TimeoutError("PX4 never armed (pre-arm checks)")
-
-
-def _monitor(m, sc: Scenario, speedup: int) -> tuple[list, bool]:
-    texts, armed_seen, t_last = [], False, time.monotonic()
-    wall_limit = max(120.0, 2.5 * sc.time_limit_s / speedup)
-    t_end = time.monotonic() + wall_limit
-    while time.monotonic() < t_end:
-        msg = m.recv_match(blocking=True, timeout=1)
-        if msg is None:
-            continue
-        typ = msg.get_type()
-        if typ == "HEARTBEAT" and msg.get_srcSystem() == 1:
-            armed = bool(msg.base_mode & ML.MAV_MODE_FLAG_SAFETY_ARMED)
-            if armed:
-                armed_seen = True
-            elif armed_seen:
-                return texts, True
-        elif typ == "STATUSTEXT":
-            texts.append([round(time.monotonic() - t_last, 1), msg.text])
-    return texts, False
 
 
 def _classify_px4(res: RunResult, fl, sc: Scenario, finished: bool) -> None:

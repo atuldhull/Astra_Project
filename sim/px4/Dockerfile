@@ -15,7 +15,10 @@ RUN bash Tools/setup/ubuntu.sh --no-nuttx --no-sim-tools && rm -rf /var/lib/apt/
 COPY astra-px4-gps.patch /src/astra-px4-gps.patch
 RUN git apply --check /src/astra-px4-gps.patch && git apply /src/astra-px4-gps.patch
 RUN make px4_sitl_default && git rev-parse HEAD > /src/PX4_COMMIT
+# bc: rcS scales link-loss timeouts by PX4_SIM_SPEED_FACTOR with it (missing => failsafes unscaled)
+RUN apt-get update && apt-get install -y --no-install-recommends bc && rm -rf /var/lib/apt/lists/*
 WORKDIR /src/px4/build/px4_sitl_default/rootfs
-# SIH quadrotor airframe. MAVLink GCS link on UDP 18570 (PX4 replies to whoever sends to it).
+# SIH quadrotor airframe. MAVLink GCS link on UDP 18570 (set MAV_0_BROADCAST=1 so Docker port
+# forwarding can reach it). Launched from rootfs via a shell so PX4 links etc/ into the working dir.
 ENV PX4_SYS_AUTOSTART=10040 PX4_SIM_MODEL=sihsim_quadx HEADLESS=1
-ENTRYPOINT ["/src/px4/build/px4_sitl_default/bin/px4"]
+ENTRYPOINT ["bash", "-c", "cd /src/px4/build/px4_sitl_default/rootfs && exec ../bin/px4 -d ../etc"]
