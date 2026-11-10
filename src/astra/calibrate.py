@@ -38,7 +38,9 @@ def _collect(paths: list[Path]) -> list[Path]:
 
 
 def calibrate_logs(paths: list[Path], margin: float = 1.25) -> tuple[dict, dict]:
-    chs, skipped = [], []
+    from astra.forensics import _step_residual
+
+    chs, skipped, step_peaks = [], [], []
     for p in _collect(paths):
         try:
             fl = logs.load_npz(p) if p.suffix == ".npz" else logs.load(p)
@@ -46,6 +48,9 @@ def calibrate_logs(paths: list[Path], margin: float = 1.25) -> tuple[dict, dict]
                 skipped.append((str(p), "contains an ASTRA attack label; not benign"))
                 continue
             chs.append(features.compute(fl))
+            _, ss = _step_residual(fl)
+            if len(ss):
+                step_peaks.append(float(ss.max()))
         except (ValueError, KeyError, OSError) as exc:
             skipped.append((str(p), str(exc)))
     if not chs:
@@ -65,6 +70,8 @@ def calibrate_logs(paths: list[Path], margin: float = 1.25) -> tuple[dict, dict]
         cal = monitor.calibrate(chs, ("c1", "c2", "c3"), margin)
         cal.flow_model, cal.flow_nuisance = M.tolist(), B.tolist()
         out["gps+imu+flow"] = json.loads(cal.to_json())
+    if step_peaks:
+        out["step"] = {"thresh_m": round(1.5 * max(step_peaks), 2), "calibrated_on": f"{len(step_peaks)} benign flights"}
     info = {"flights": len(chs), "airborne_hours": round(hours, 3), "skipped": skipped,
             "configs": list(out), "warning": None}
     if hours < MIN_HOURS:
