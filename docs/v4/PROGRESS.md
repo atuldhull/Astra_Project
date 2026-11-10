@@ -184,3 +184,9 @@ flown ground-truth points. S9 met in 4-D (one seed per method; repeat before quo
 
 **A1 4-D repeated over 5 seeds:** FBM finds 14.2 vs 2.2 stealthy failures (≈6.5×), F1 0.90 ± 0.06 vs
 0.39 ± 0.14, and wins 5/5 seeds. The single-seed caveat is removed.
+
+**Tried: raw-fix C3 ("c3r", the Shield arithmetic) as the offline default.** Dev set: same detections as
+c3, about 10–25% earlier and at lower error (1 m/s naive: 13.8 vs 18.6 m at alarm). Real-flight gate: **1/39
+false alarm** (peak 1.22× threshold) vs c3 0/39 (peak 0.89×). **Rejected as default** (the real-data gate
+wins). It's kept as an option (`ASTRA_C3=raw` in a2_eval, channel `c3r`). It also explains Shield's 1/39
+real false alarm: same arithmetic, so Shield must be calibrated per airframe before arming.

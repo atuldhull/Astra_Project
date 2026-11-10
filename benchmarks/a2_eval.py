@@ -23,7 +23,9 @@ from astra import logs
 from astra.detect import features, monitor
 from astra.evaluate import nav_error_series
 
-CONFIGS = {"gps+imu": ["c3"], "gps+imu+flow": ["c2", "c3"]}  # c1 dropped: see real-far-v1.md
+import os
+CONFIGS = ({"gps+imu": ["c3"], "gps+imu+flow": ["c2", "c3"]} if os.environ.get("ASTRA_C3") != "raw"
+           else {"gps+imu": ["c3r"], "gps+imu+flow": ["c2", "c3r"]})  # c1 dropped: see real-far-v1.md
 
 
 def load_runs(d: Path):

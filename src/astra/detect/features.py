@@ -122,8 +122,10 @@ def compute(fl: FlightLog, w1_s: float = 3.0, pos_vel_s: float = 2.0,
                      "flow_range": d}
     else:
         meta_flow = {}
+    from astra.onboard import shield_blocks
+    c3r = shield_blocks(fl)  # raw-fix C3, identical arithmetic to the onboard Shield script
     return Channels(t, airborne, c1, c3, c2, c2_valid,
-                    meta={"vn": vn, "ve": ve, "pn": pn, "pe": pe, **meta_flow})
+                    meta={"vn": vn, "ve": ve, "pn": pn, "pe": pe, "c3r_blocks": c3r, **meta_flow})
 
 
 def flow_regressors(fl: FlightLog, t: np.ndarray):

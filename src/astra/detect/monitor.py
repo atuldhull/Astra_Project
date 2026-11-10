@@ -24,9 +24,9 @@ from astra.detect.features import DT, Channels
 
 CHANNELS = ("c2", "c3")  # c1 disabled by default: false-alarms on real flights (benchmarks/real-far-v1.md)
 RESEARCH_CHANNELS = ("c1", "c2", "c3")
-BLOCK_S = {"c1": 2.0, "c2": 4.0, "c3": 4.0}
+BLOCK_S = {"c1": 2.0, "c2": 4.0, "c3": 4.0, "c3r": 4.0}
 # Smallest shift each channel is designed to catch, in block-σ units. Larger = fewer, faster alarms.
-DELTA_DESIGN = {"c1": 2.0, "c2": 1.0, "c3": 1.0}
+DELTA_DESIGN = {"c1": 2.0, "c2": 1.0, "c3": 1.0, "c3r": 1.0}
 C1_DETREND_TAU_S = 60.0  # removes the per-flight accel-bias offset from the Δv channel
 H_MIN = 8.0
 
@@ -53,7 +53,7 @@ def residual(ch: Channels, name: str) -> np.ndarray | None:
     return r
 
 
-ROBUST = {"c1": False, "c2": True, "c3": True}  # block median for channels with isolated spikes
+ROBUST = {"c1": False, "c2": True, "c3": True, "c3r": True}  # block median for channels with isolated spikes
 
 
 def blocks(t: np.ndarray, r: np.ndarray, valid: np.ndarray, block_s: float, min_frac: float = 0.7,
@@ -84,6 +84,9 @@ def blocks(t: np.ndarray, r: np.ndarray, valid: np.ndarray, block_s: float, min_
 
 
 def _chan_blocks(ch: Channels, name: str):
+    if name == "c3r":  # pre-blocked on raw GNSS fixes (Shield arithmetic)
+        T, B = ch.meta.get("c3r_blocks", (np.zeros(0), np.zeros((0, 2))))
+        return T, B, np.ones(len(T), bool)
     r = residual(ch, name)
     if r is None:
         return None
