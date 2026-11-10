@@ -117,7 +117,7 @@ gives **90× real time** (16 flight-hours in about 11 minutes).
 
 ## Docs
 
-[Roadmap](docs/v4/00-ROADMAP.md) · [Research](docs/v4/01-RESEARCH.md) ·
+[**User guide**](docs/USER-GUIDE.md) · [One-page pitch](docs/v4/PITCH.md) · [Roadmap](docs/v4/00-ROADMAP.md) · [Research](docs/v4/01-RESEARCH.md) ·
 [Tech verification](docs/v4/02-TECH-VERIFICATION.md) · [Product spec](docs/v4/03-PRODUCT-SPEC.md) ·
 [Algorithms](docs/v4/04-ALGORITHMS.md) · [Detection physics](docs/v4/05-DETECTION-PHYSICS.md) ·
 [Progress log](docs/v4/PROGRESS.md) · [Handoff](docs/v4/HANDOFF.md)
