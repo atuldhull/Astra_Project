@@ -8,6 +8,8 @@
   astra diagnose LOG.BIN|flight.npz        forensics on a flight log (A2 monitor)
   astra calibrate LOGS... --out CAL.json   airframe-specific A2 calibration from benign logs
   astra shield calibrate|export ...        onboard Lua monitor (log-only -> calibrate -> armed)
+  astra advise --params P.parm --out DIR   measured EKF-tuning trade-off (A6)
+  astra html RUN_DIR                       self-contained HTML report
 """
 
 from __future__ import annotations
@@ -105,6 +107,12 @@ def _cmd_shield(a):
           f"Copy to the autopilot's APM/scripts/ and set SCR_ENABLE=1.")
 
 
+def _cmd_advise(a):
+    from astra.advise import advise, render
+    rows = advise(Path(a.params) if a.params else None, Path(a.out), a.nbenign, a.parallel)
+    print(render(rows, a.nbenign))
+
+
 def _cmd_html(a):
     from astra.html_report import render
     print(render(Path(a.run_dir)))
@@ -141,6 +149,12 @@ def main(argv=None):
     c.add_argument("logs", nargs="+")
     c.add_argument("--out", required=True)
     c.set_defaults(fn=_cmd_calibrate)
+    ad = sub.add_parser("advise", help="measured trade-off of EKF parameter changes on your params")
+    ad.add_argument("--params", help="vendor .parm (default: ArduPilot defaults)")
+    ad.add_argument("--out", required=True)
+    ad.add_argument("--nbenign", type=int, default=20)
+    ad.add_argument("--parallel", type=int, default=4)
+    ad.set_defaults(fn=_cmd_advise)
     hp = sub.add_parser("html", help="self-contained HTML view of a run directory")
     hp.add_argument("run_dir")
     hp.set_defaults(fn=_cmd_html)
