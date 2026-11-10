@@ -20,3 +20,18 @@ the case that matters for an already-hardened airframe.
 **Caveats:** one random seed per method (repeat with ≥ 5 seeds before quoting externally). The A2
 labels used the calibration loaded at launch, which still contained channel C1 (since removed).
 C1 never fires first in SITL, so the effect on labels is expected to be nil, but it isn't re-verified.
+
+## Repeated over 5 seeds (same 200-point flown ground truth)
+
+| seed | FBM failures found | random found | FBM F1 | random F1 | FBM bal. acc | random bal. acc |
+|---|---|---|---|---|---|---|
+| 0 | 16 | 2 | 0.889 | 0.571 | 0.942 | 0.720 |
+| 1 | 16 | 2 | 0.824 | 0.286 | 0.886 | 0.603 |
+| 2 | 13 | 2 | 0.889 | 0.400 | 0.942 | 0.659 |
+| 3 | 12 | 2 | 0.889 | 0.500 | 0.942 | 0.667 |
+| 4 | 14 | 3 | 1.000 | 0.190 | 1.000 | 0.585 |
+| **mean** | **14.2** | **2.2** | **0.898 ± 0.057** | **0.390 ± 0.138** | **0.942** | **0.647** |
+
+FBM wins on F1 in **5/5** seeds and finds about **6.5× more** stealthy failures at equal budget. Seeds 1–4
+used the current calibration (C1 removed); seed 0 and the ground truth used the launch calibration
+with C1 (it never fires first in SITL).

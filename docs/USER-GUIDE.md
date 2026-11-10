@@ -63,7 +63,7 @@ python benchmarks/a1_sitl.py runs/myframe-a1 --dims 4 --ntest 200 --budget 48 --
 ```
 
 This maps the region of drag-off rate × ramp × bearing × onset that diverts your airframe without
-detection. In tests it found 8× more such cases than random sampling at equal budget.
+detection. In tests (5 seeds) it found about 6.5× more such cases than random sampling at equal budget.
 
 ## 5. Get a measured tuning recommendation
 

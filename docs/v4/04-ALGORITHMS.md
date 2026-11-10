@@ -136,7 +136,7 @@ a wrong scenario.
 
 | ID | Built | Measured result | Verdict vs kill criterion |
 |---|---|---|---|
-| A1 FBM | ✅ `astra.search`, `search_sitl` | SITL 4-D: **8× more stealthy failures found** than random at equal budget (16 vs 2), F1 0.89 vs 0.57. SITL 2-D: no gain. Synthetic: 34–86% | Passes the kill criterion in 4-D (single seed). Keep |
+| A1 FBM | ✅ `astra.search`, `search_sitl` | SITL 4-D, 5 seeds: **≈6.5× more stealthy failures found** (14.2 vs 2.2), F1 0.90 vs 0.39, wins 5/5. SITL 2-D: no gain | Passes the kill criterion in 4-D. Keep |
 | A2 monitor | ✅ v6 `astra.detect` | Held-out: 0 false alarms in 6.9 h. Slow drag-off detection 10/96 (stock) → 40/96 (GPS+IMU) → 65/96 (+flow) | S1 target met with a flow witness (+57 pp). C1 (Δv onset) contributes almost nothing (thresholds very high), candidate for removal |
 | A2 onboard ("Shield", C3 in Lua) | ✅ `astra.onboard` | Evaluation in progress | – |
 | A3 classifier | partial: rule-based verdict in `astra.forensics` | Not yet scored (needs jamming corpus + real logs) | – |

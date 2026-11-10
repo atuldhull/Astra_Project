@@ -181,3 +181,6 @@ and `astra diagnose` now reads .ulg files.
 **A1 4-D on SITL** (`benchmarks/a1-sitl-4d.md`): stealthy failures are 4.5% of the rate×ramp×bearing×onset
 space. At 48 runs each, FBM found **16** stealthy failures vs random **2** (8×). F1 0.89 vs 0.57 on 200
 flown ground-truth points. S9 met in 4-D (one seed per method; repeat before quoting).
+
+**A1 4-D repeated over 5 seeds:** FBM finds 14.2 vs 2.2 stealthy failures (≈6.5×), F1 0.90 ± 0.06 vs
+0.39 ± 0.14, and wins 5/5 seeds. The single-seed caveat is removed.
