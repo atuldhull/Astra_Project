@@ -6,6 +6,7 @@
   astra key                                show this installation's signing fingerprint
   astra ledger verify                      re-walk the local hash-chained ledger
   astra diagnose LOG.BIN|flight.npz        forensics on a flight log (A2 monitor)
+  astra calibrate LOGS... --out CAL.json   airframe-specific A2 calibration from benign logs
 """
 
 from __future__ import annotations
@@ -79,7 +80,14 @@ def _cmd_ledger(a):
 
 def _cmd_diagnose(a):
     from astra.forensics import diagnose
-    print(json.dumps(diagnose(Path(a.log)), indent=1, default=str))
+    print(json.dumps(diagnose(Path(a.log), cal_file=Path(a.cal) if a.cal else None), indent=1, default=str))
+
+
+def _cmd_calibrate(a):
+    from astra.calibrate import calibrate_logs
+    cal, info = calibrate_logs([Path(p) for p in a.logs])
+    Path(a.out).write_text(json.dumps(cal, indent=1))
+    print(json.dumps(info, indent=1))
 
 
 def main(argv=None):
@@ -107,7 +115,12 @@ def main(argv=None):
     lg.set_defaults(fn=_cmd_ledger)
     d = sub.add_parser("diagnose")
     d.add_argument("log")
+    d.add_argument("--cal", help="airframe calibration from `astra calibrate` (default: bundled generic)")
     d.set_defaults(fn=_cmd_diagnose)
+    c = sub.add_parser("calibrate", help="per-airframe A2 calibration from benign logs")
+    c.add_argument("logs", nargs="+")
+    c.add_argument("--out", required=True)
+    c.set_defaults(fn=_cmd_calibrate)
     a = p.parse_args(argv)
     a.fn(a)
 

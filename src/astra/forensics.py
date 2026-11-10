@@ -49,7 +49,7 @@ def _intervals(t: np.ndarray, mask: np.ndarray, min_len_s: float = 1.0) -> list[
     return out
 
 
-def diagnose(path: Path) -> dict:
+def diagnose(path: Path, cal_file: Path | None = None) -> dict:
     from astra.detect import features, monitor
 
     fl = _load(Path(path))
@@ -67,7 +67,7 @@ def diagnose(path: Path) -> dict:
         rep["receiver"]["max_reported_hacc_m"] = round(float(np.nanmax(g["HAcc"])), 2)
     rep["stock_alerts"] = [[round(t, 1), m] for t, m in fl.messages if any(w in m.lower() for w in ALERT_WORDS)]
 
-    cal_all = _bundled_calibration()
+    cal_all = json.loads(Path(cal_file).read_text()) if cal_file else _bundled_calibration()
     a2 = {"available": False}
     if cal_all:
         cfg = "gps+imu+flow" if fl.has("OF") and fl.has("RFND") else "gps+imu"
