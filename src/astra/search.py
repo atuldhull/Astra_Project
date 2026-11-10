@@ -146,3 +146,21 @@ def robustness_margin(model, dims: list[Dim], along: str, others: dict, n: int =
     p = predict(model, U, False)
     idx = np.nonzero(p > 0.5)[0]
     return float(dims[i].scale(U[idx[0], i])) if len(idx) else None
+
+
+def failure_extent(model, dims: list[Dim], along: str, others: dict, n: int = 400) -> tuple[float, float] | None:
+    """(min, max) of `along` predicted to be a stealthy failure with the others fixed, or None.
+
+    For drag-off rate, the *max* is the useful robustness number: "drags slower than X go undetected".
+    (robustness_margin returns only the min, which is uninformative when failures start at the
+    bottom of the range.)
+    """
+    i = [d.name for d in dims].index(along)
+    U = np.zeros((n, len(dims)))
+    for j, d in enumerate(dims):
+        U[:, j] = (others[d.name] - d.lo) / (d.hi - d.lo) if d.name in others else 0.5
+    U[:, i] = np.linspace(0, 1, n)
+    idx = np.nonzero(predict(model, U, False) > 0.5)[0]
+    if not len(idx):
+        return None
+    return float(dims[i].scale(U[idx[0], i])), float(dims[i].scale(U[idx[-1], i]))

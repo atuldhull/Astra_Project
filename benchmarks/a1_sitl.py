@@ -18,7 +18,7 @@ import numpy as np
 from astra.detect import monitor
 from astra.packs import THAR
 from astra.scenario import Scenario
-from astra.search import FBM, Dim, History, _fit, predict, random_baseline, robustness_margin
+from astra.search import FBM, Dim, History, _fit, failure_extent, predict, random_baseline
 from astra.search_sitl import SitlEvaluator
 
 warnings.filterwarnings("ignore")
@@ -67,7 +67,7 @@ def main():
         "detector": a.detector, "budget": a.budget, "grid": a.grid,
         "grid_stealthy_failure_fraction": float(y_grid.mean()),
         "fbm_grid_accuracy": acc(f.hist), "random_grid_accuracy": acc(r),
-        "fbm_margin_rate_at_ramp": {str(rp): robustness_margin(f.model(), DIMS, "rate", {"ramp": rp})
+        "fbm_undetected_rate_range_at_ramp": {str(rp): failure_extent(f.model(), DIMS, "rate", {"ramp": rp})
                                     for rp in (0, 30, 60, 90)},
         "grid": [{"rate": round(float(DIMS[0].scale(u[0])), 3), "ramp": round(float(DIMS[1].scale(u[1])), 1),
                   "stealthy_failure": bool(y)} for u, y in zip(U_grid, y_grid)],
