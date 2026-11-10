@@ -58,6 +58,33 @@ HARNESS_PARAMS: dict[str, float] = {
 }
 
 
+def read_params(path: Path) -> dict[str, float]:
+    """Parse ArduPilot (NAME VALUE), Mission Planner (NAME,VALUE) or QGroundControl
+    (sys<TAB>comp<TAB>NAME<TAB>VALUE<TAB>type) parameter files into {NAME: value}."""
+    out: dict[str, float] = {}
+    for raw in Path(path).read_text(encoding="utf-8", errors="replace").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        cols = line.split("\t")
+        if len(cols) >= 4 and cols[0].strip().isdigit() and cols[1].strip().isdigit():
+            name, val = cols[2].strip(), cols[3].strip()
+        else:
+            parts = line.replace(",", " ").split()
+            if len(parts) < 2:
+                continue
+            name, val = parts[0], parts[1]
+        try:
+            out[name] = float(val)
+        except ValueError:
+            continue
+    return out
+
+
+def write_params(params: dict[str, float], path: Path) -> None:
+    path.write_text("".join(f"{k} {v:g}\n" for k, v in params.items()), encoding="ascii")
+
+
 class Sitl:
     def __init__(self, cfg: SitlConfig):
         self.cfg = cfg
@@ -72,7 +99,7 @@ class Sitl:
         (wd / "logs").mkdir(exist_ok=True)
         defaults = ["/opt/ardupilot/copter.parm"]
         if self.cfg.vendor_param_file:
-            shutil.copyfile(self.cfg.vendor_param_file, wd / "vendor.parm")
+            write_params(read_params(self.cfg.vendor_param_file), wd / "vendor.parm")
             defaults.append("/work/vendor.parm")
         params = {**HARNESS_PARAMS, "SIM_SPEEDUP": self.cfg.speedup, **self.cfg.extra_params}
         (wd / "astra.parm").write_text(
