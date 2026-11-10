@@ -43,7 +43,8 @@ class SitlConfig:
 
 
 # Applied last, so they override vendor params. Only simulation, logging,
-# scripting and telemetry-rate settings: nothing that changes flight behaviour.
+# scripting and telemetry-rate settings. (The runner additionally sets WPNAV_SPEED from the
+# scenario's mission speed: the one flight parameter the harness controls; documented in USER-GUIDE.)
 HARNESS_PARAMS: dict[str, float] = {
     "SCR_ENABLE": 1,
     "SCR_HEAP_SIZE": 200000,

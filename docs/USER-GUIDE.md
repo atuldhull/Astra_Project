@@ -22,7 +22,9 @@ Keys and the local audit ledger live in `ASTRA_HOME` (default `~/.astra`). Set `
 In Mission Planner: *Config → Full Parameter List → Save to file* (or QGroundControl: *Parameters →
 Tools → Save to file*). You get a `.parm` / `.params` file with lines like `EK3_POS_I_GATE 500`.
 ASTRA loads it **after** ArduPilot's defaults and **before** its own harness settings. The harness
-only changes simulation, logging, scripting and telemetry-rate parameters, never flight behaviour.
+changes simulation, logging, scripting and telemetry-rate parameters, plus **one flight parameter:
+`WPNAV_SPEED`**, the mission cruise speed. That's part of the scenario (like the waypoints), so every
+airframe is tested on the same mission. Everything else (EKF, failsafes, gains) is yours.
 
 > If your firmware is a modified ArduPilot fork, the stock image tests stock ArduPilot with your
 > params. To test your fork, apply `sim/ardupilot/astra-sitl-gps.patch` (simulator-only) to your
