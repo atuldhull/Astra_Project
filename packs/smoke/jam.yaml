@@ -1,0 +1,12 @@
+id: smoke-jam-denial
+title: "Smoke: total GPS denial for 60 s mid-leg"
+home: {lat: 27.0, lon: 71.0, alt_m: 200}
+mission:
+  takeoff_alt_m: 30
+  speed_ms: 10
+  waypoints:
+    - {north_m: 2000, east_m: 0, alt_m: 30}
+  end: land
+attacks:
+  - {model: jam_denial, start: {at_waypoint: 1, delay_s: 20}, duration_s: 60}
+time_limit_s: 600

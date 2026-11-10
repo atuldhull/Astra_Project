@@ -1,0 +1,43 @@
+diff --git a/libraries/SITL/SIM_GPS.cpp b/libraries/SITL/SIM_GPS.cpp
+index 8ac0465..b4b78d0 100644
+--- a/libraries/SITL/SIM_GPS.cpp
++++ b/libraries/SITL/SIM_GPS.cpp
+@@ -154,6 +154,13 @@ const AP_Param::GroupInfo SIM::GPSParms::var_info[] = {
+     // @User: Advanced
+     AP_GROUPINFO("OPTIONS",  18, GPSParms, options, 0),
+ 
++    // @Param: SPFV
++    // @DisplayName: GPS spoof velocity bias
++    // @Description: ASTRA test-harness extension. Constant velocity bias added to the simulated GPS velocity in NED, used with GLTCH to model a kinematically consistent drag-off spoof
++    // @Units: m/s
++    // @User: Advanced
++    AP_GROUPINFO("SPFV",     19, GPSParms, spoof_vel, 0),
++
+     AP_GROUPEND
+ };
+ }
+@@ -560,6 +567,12 @@ void GPS::update()
+     d.longitude += glitch_offsets.y;
+     d.altitude += glitch_offsets.z;
+ 
++    // ASTRA: consistent spoof velocity bias (zero by default = upstream behaviour)
++    const Vector3f spoof_vel = params.spoof_vel;
++    d.speedN += spoof_vel.x;
++    d.speedE += spoof_vel.y;
++    d.speedD += spoof_vel.z;
++
+     if (params.jam == 1) {
+         simulate_jamming(d);
+     }
+diff --git a/libraries/SITL/SITL.h b/libraries/SITL/SITL.h
+index c548c31..bd9b1db 100644
+--- a/libraries/SITL/SITL.h
++++ b/libraries/SITL/SITL.h
+@@ -338,6 +338,7 @@ public:
+         AP_Int8 jam; // jamming simulation enable
+         AP_Float heading_offset; // heading offset in degrees
+         AP_Int32 options; // GPS options bitmask
++        AP_Vector3f spoof_vel; // ASTRA: constant GPS velocity bias in NED (m/s), for consistent drag-off spoofing
+     };
+     GPSParms gps[AP_SIM_MAX_GPS_SENSORS];
+ 

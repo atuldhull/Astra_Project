@@ -1,0 +1,11 @@
+id: smoke-baseline
+title: "Smoke: 800 m out-and-land, no attack"
+home: {lat: 27.0, lon: 71.0, alt_m: 200}
+mission:
+  takeoff_alt_m: 30
+  speed_ms: 10
+  waypoints:
+    - {north_m: 800, east_m: 0, alt_m: 30}
+  end: land
+attacks: []
+time_limit_s: 300

@@ -1,0 +1,36 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "astra-proving-ground"
+version = "0.1.0.dev0"
+description = "Software test lab for drone navigation under GPS jamming and spoofing"
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.11"
+authors = [{ name = "Atul Dhull" }]
+dependencies = [
+  "pymavlink>=2.4.40",
+  "numpy>=1.26",
+  "scipy>=1.11",
+  "pydantic>=2.6",
+  "cryptography>=42",
+  "pyyaml>=6",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+astra = "astra.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/astra"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = [
+  "sitl: needs Docker + the astra/ardupilot-sitl image (slow)",
+]

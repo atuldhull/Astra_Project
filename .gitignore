@@ -72,3 +72,8 @@ desktop.ini
 .local/
 .DS_Store
 Thumbs.db
+
+# ASTRA v4
+.astra/
+runs/
+*.BIN
