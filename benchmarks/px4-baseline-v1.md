@@ -32,3 +32,11 @@
 - bl1-meacon-1000 seed 1: attack model meaconing not supported on PX4 yet
 - bl1-meacon-3000 seed 0: attack model meaconing not supported on PX4 yet
 - bl1-meacon-3000 seed 1: attack model meaconing not supported on PX4 yet
+
+**Reading (stock PX4 v1.17.0 EKF2, default params, SIH, 2 seeds):** PX4 shares ArduPilot's blind spot.
+Drag-off ≤ 1 m/s (consistent or naive) is noticed only at release (0/16 during). Persistent 0.5–1 m/s
+drag-offs divert the drone 134–270 m undetected. PX4 does catch a 2 m/s *naive* drag (2/2, ~12 s), which
+ArduPilot 4.7.2 didn't, but not a 2 m/s consistent one. Jumps (0.2 s) and denial (5 s) are caught as on
+ArduPilot. Errors: 6 runs, all from the 2 attack models not yet ported to PX4 (by design, listed).
+Throughput: 24× aggregate (4 parallel @ 10×). Waypoint-triggered attacks were approximated as seconds
+after arming (see USER-GUIDE).

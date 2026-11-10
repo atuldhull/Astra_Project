@@ -228,3 +228,7 @@ headline flow numbers need a good sensor at operating altitude. README and pitch
 - **PX4 V3 (stock EKF2, default params):** consistent drag 1 m/s → **diverted 221 m, undetected**
   (test-ratio peak 0.23). Naive drag 1 m/s → **diverted 222 m, undetected** (peak 0.46). 60 s denial →
   detected in 5 s ("Failsafe: blind land"). PX4 shares ArduPilot's slow-drag blind spot.
+
+**PX4 baseline** (`benchmarks/px4-baseline-v1.md`, 48 runs, 42 valid; 6 = unsupported models): stock
+PX4 v1.17 is blind to drag-off ≤ 1 m/s during the attack (0/16). Persistent 0.5–1 m/s → diverted 134–270 m.
+It catches 2 m/s naive (ArduPilot didn't) but not 2 m/s consistent. Jumps 0.2 s, denial 5 s.
