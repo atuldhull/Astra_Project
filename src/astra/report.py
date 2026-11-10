@@ -24,6 +24,8 @@ from astra.sitl import DEFAULT_IMAGE
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 PATCH = REPO_ROOT / "sim" / "ardupilot" / "astra-sitl-gps.patch"
+PX4_PATCH = REPO_ROOT / "sim" / "px4" / "astra-px4-gps.patch"
+PX4_IMAGE = "astra/px4-sitl:v1.17.0"
 
 
 def astra_home() -> Path:
@@ -34,17 +36,23 @@ def signer() -> Signer:
     return Signer.load_or_create(astra_home() / "keys" / "astra.ed25519")
 
 
-def image_identity(image: str = DEFAULT_IMAGE) -> dict:
+def image_identity(image: str = DEFAULT_IMAGE, commit_file: str = "/opt/ardupilot/AP_COMMIT") -> dict:
     ident = {"image": image, "image_id": None, "ardupilot_commit": None}
     try:
         ident["image_id"] = subprocess.run(
             ["docker", "image", "inspect", "--format", "{{.Id}}", image],
             capture_output=True, text=True, check=True).stdout.strip()
         ident["ardupilot_commit"] = subprocess.run(
-            ["docker", "run", "--rm", "--entrypoint", "cat", image, "/opt/ardupilot/AP_COMMIT"],
+            ["docker", "run", "--rm", "--entrypoint", "cat", image, commit_file],
             capture_output=True, text=True, check=True).stdout.strip()
     except (OSError, subprocess.CalledProcessError):
         pass
+    return ident
+
+
+def _px4_identity() -> dict:
+    ident = image_identity(PX4_IMAGE, "/src/PX4_COMMIT")
+    ident["px4_commit"] = ident.pop("ardupilot_commit")
     return ident
 
 
@@ -75,7 +83,7 @@ def summarise(results: list[dict]) -> dict:
 
 
 def build_body(pack_name: str, scenarios: list[Scenario], results: list[dict], *, seeds: int,
-               speedup: int, vendor_param_file: Path | None) -> dict:
+               speedup: int, vendor_param_file: Path | None, autopilot: str = "ardupilot") -> dict:
     slim = [{k: r[k] for k in ("scenario_id", "scenario_sha256", "seed", "outcome", "passed", "reason",
                                "metrics", "windows", "perturbation")} for r in results]
     return {
@@ -83,8 +91,10 @@ def build_body(pack_name: str, scenarios: list[Scenario], results: list[dict], *
         "pack": {"name": pack_name, "scenario_sha256": {s.id: s.content_hash() for s in scenarios},
                  "pack_sha256": sha256_obj(sorted(s.content_hash() for s in scenarios))},
         "inputs": {
-            "simulator": image_identity(),
-            "simulator_patch_sha256": sha256_file(PATCH) if PATCH.exists() else None,
+            "autopilot": autopilot,
+            "simulator": (_px4_identity() if autopilot == "px4" else image_identity()),
+            "simulator_patch_sha256": (sha256_file(PX4_PATCH) if autopilot == "px4" else sha256_file(PATCH))
+            if (PX4_PATCH if autopilot == "px4" else PATCH).exists() else None,
             "vendor_params_sha256": sha256_file(vendor_param_file) if vendor_param_file else None,
             "vendor_params_file": vendor_param_file.name if vendor_param_file else "ardupilot-defaults",
             "seeds": seeds,
@@ -127,8 +137,8 @@ def render_md(env: dict, info: dict | None = None) -> str:
         f"# ASTRA qualification report: pack `{b['pack']['name']}`", "",
         f"- Pass rate: **{s['passed_runs']}/{s['runs'] - s['errored_runs']}** valid runs "
         f"({s['errored_runs']} errored, listed below, excluded)",
-        f"- Simulator: `{b['inputs']['simulator']['image']}` (ArduPilot commit "
-        f"`{(b['inputs']['simulator']['ardupilot_commit'] or 'unknown')[:12]}`), patch sha256 "
+        f"- Simulator: `{b['inputs']['simulator']['image']}` (firmware commit "
+        f"`{(b['inputs']['simulator'].get('ardupilot_commit') or b['inputs']['simulator'].get('px4_commit') or 'unknown')[:12]}`), patch sha256 "
         f"`{(b['inputs']['simulator_patch_sha256'] or '')[:12]}`",
         f"- Vendor params: `{b['inputs']['vendor_params_file']}` "
         f"(sha256 `{(b['inputs']['vendor_params_sha256'] or '-')[:12]}`)",

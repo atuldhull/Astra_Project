@@ -167,7 +167,8 @@ def _classify_px4(res: RunResult, fl, sc: Scenario, finished: bool) -> None:
     _, err = nav_error_series(fl)
     res.metrics = {"final_true_dist_to_goal_m": round(true_goal, 2), "final_est_dist_to_goal_m": round(est_goal, 2),
                    "max_nav_error_m": round(float(err.max()), 2), "max_dist_from_home_m": round(far, 2),
-                   "goal_n_m": gn, "goal_e_m": ge, "autopilot": "px4"}
+                   "goal_n_m": gn, "goal_e_m": ge, "autopilot": "px4",
+                   "sim_duration_s": round(float(sim["t"][-1] - sim["t"][0]), 2)}
     R = sc.expect.goal_radius_m
     if far > sc.expect.geofence_radius_m:
         o, why = "flyaway", "left the geofence"

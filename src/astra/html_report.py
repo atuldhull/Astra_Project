@@ -87,7 +87,7 @@ def render(run_dir: Path, max_cards: int = 120) -> Path:
         out.append("<h2>Attestation</h2><div class=wrap><table>")
         for k, v in [("Pack", b["pack"]["name"]), ("Pack sha256", b["pack"]["pack_sha256"]),
                      ("Simulator", b["inputs"]["simulator"]["image"]),
-                     ("ArduPilot commit", b["inputs"]["simulator"]["ardupilot_commit"]),
+                     ("Firmware commit", b["inputs"]["simulator"].get("ardupilot_commit") or b["inputs"]["simulator"].get("px4_commit")),
                      ("Simulator patch sha256", b["inputs"]["simulator_patch_sha256"]),
                      ("Vendor params", f'{b["inputs"]["vendor_params_file"]} ({b["inputs"]["vendor_params_sha256"] or "-"})'),
                      ("Signer fingerprint", env["signer"]["fingerprint"])]:

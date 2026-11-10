@@ -46,9 +46,11 @@ def _cmd_run(a):
         n[0] += 1
         print(f"  [{n[0]}/{len(jobs)}] {r.scenario_id} s{r.seed}: {r.outcome} ({r.reason})", flush=True)
 
-    res = run_batch(jobs, out, parallel=a.parallel, speedup=a.speedup, vendor_param_file=vend, on_result=tick)
+    res = run_batch(jobs, out, parallel=a.parallel, speedup=a.speedup, vendor_param_file=vend, on_result=tick,
+                    autopilot=a.autopilot)
     results = [json.loads(x) for x in (out / "results.jsonl").read_text().splitlines()]
-    body = build_body(a.pack, scs, results, seeds=a.seeds, speedup=a.speedup, vendor_param_file=vend)
+    body = build_body(a.pack, scs, results, seeds=a.seeds, speedup=a.speedup, vendor_param_file=vend,
+                      autopilot=a.autopilot)
     info = sign_and_record(out, body, anchor=a.anchor)
     print(json.dumps(res["summary"]))
     print(f"report: {info['report']}  signer: {info['signer_fingerprint']}  anchored: {info['anchored']}")
@@ -131,6 +133,8 @@ def main(argv=None):
     r.add_argument("--speedup", type=int, default=10)
     r.add_argument("--only", default="", help="substring filter on scenario id")
     r.add_argument("--anchor", action="store_true", help="OpenTimestamps-anchor the report (sends its hash only)")
+    r.add_argument("--autopilot", default="ardupilot", choices=["ardupilot", "px4"],
+                   help="px4 needs the astra/px4-sitl image (sim/px4)")
     r.set_defaults(fn=_cmd_run)
     v = sub.add_parser("verify")
     v.add_argument("report")
