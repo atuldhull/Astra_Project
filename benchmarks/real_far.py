@@ -35,6 +35,7 @@ def main():
     a = ap.parse_args()
     cal_all = json.loads(Path("src/astra/data/a2-calibration.json").read_text())
     cal = monitor.Calibration(**cal_all["gps+imu"])
+    cal_full = monitor.Calibration(**json.loads(Path("runs/a2-cal-v7-final.json").read_text())["gps+imu"])
     rows, skipped, R = [], [], collections.defaultdict(list)
     for p in sorted(Path(a.dir).glob("*.ulg")):
         try:
@@ -47,13 +48,14 @@ def main():
         if hours < 0.02:
             skipped.append((p.name[:8], "under 72 s airborne"))
             continue
-        det, st = monitor.run(ch, cal, ["c1", "c3"])
+        det, st = monitor.run(ch, cal_full, ["c1", "c3"])
+        det3, _ = monitor.run(ch, cal, ["c3"])
         _, ss = _step_residual(fl)
         rep = diagnose(p)
         for nm in ("c1", "c3"):
             R[nm].append(stats(ch, nm))
-        rows.append({"log": p.name[:8], "hours": hours, "alarm": det.alarm, "channel": det.channel,
-                     "peak_over_h": {k: round(float(np.max(v, initial=0)) / cal.h[k], 2) for k, v in st.items()},
+        rows.append({"log": p.name[:8], "hours": hours, "alarm": det.alarm, "channel": det.channel, "alarm_c3": det3.alarm,
+                     "peak_over_h": {k: round(float(np.max(v, initial=0)) / cal_full.h[k], 2) for k, v in st.items()},
                      "max_step_m": round(float(ss.max()), 2) if len(ss) else None,
                      "step_hits": int((ss > cal_all["step"]["thresh_m"]).sum()) if len(ss) else 0,
                      "verdict": rep["verdict"].split(":")[0]})
@@ -68,8 +70,9 @@ def main():
     lines = ["# Sim-to-real check: real benign PX4 flights vs simulation-calibrated detectors\n",
              f"{len(rows)} real quadrotor mission flights ({H:.2f} airborne h) from public PX4 Flight Review logs "
              f"(seeded random sample; {len(skipped)} unusable). Calibration: bundled A2 v7 (simulated receivers only).\n",
-             f"- **A2 GPS+IMU false alarms: {fa}/{len(rows)} flights** "
+             f"- **A2 GPS+IMU v7 *with C1* false alarms: {fa}/{len(rows)} flights** "
              f"({fa / H:.2f}/h; simulated held-out was 0 in 7.2 h). By channel: {dict(collections.Counter(r['channel'] for r in rows if r['alarm']))}",
+             f"- **Default monitor after the fix (C3 only): {sum(r['alarm_c3'] for r in rows)}/{len(rows)} flights alarmed**",
              f"- **Position-step check (1.0 m, sim-calibrated): {sum(r['step_hits'] > 0 for r in rows)}/{len(rows)} flights** had ≥ 1 hit; "
              f"median per-flight max step {np.median([r['max_step_m'] for r in rows if r['max_step_m'] is not None]):.2f} m",
              f"- `astra diagnose` verdicts: {dict(collections.Counter(r['verdict'] for r in rows))}",

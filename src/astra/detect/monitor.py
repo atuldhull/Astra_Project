@@ -22,7 +22,8 @@ import numpy as np
 
 from astra.detect.features import DT, Channels
 
-CHANNELS = ("c1", "c2", "c3")
+CHANNELS = ("c2", "c3")  # c1 disabled by default: false-alarms on real flights (benchmarks/real-far-v1.md)
+RESEARCH_CHANNELS = ("c1", "c2", "c3")
 BLOCK_S = {"c1": 2.0, "c2": 4.0, "c3": 4.0}
 # Smallest shift each channel is designed to catch, in block-σ units. Larger = fewer, faster alarms.
 DELTA_DESIGN = {"c1": 2.0, "c2": 1.0, "c3": 1.0}

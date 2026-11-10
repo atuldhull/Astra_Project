@@ -168,3 +168,12 @@ benign-v1 max), stock "GPS glitch" alerts as evidence, and spoof evidence within
 **Shield v2** (`benchmarks/shield-v1.md`): drop GPS via EKF source set 2, then LAND. True displacement
 from alarm to touchdown: mean 46 m → **19 m** (6/6 safe aborts). Flow velocity as the post-alarm
 source gives no extra gain (18.6 m).
+
+## 2026-11-11: first sim-to-real check (real benign PX4 flights)
+
+`benchmarks/real-far-v1.md`: 39 public real quadrotor mission flights (5.6 h, PX4 Flight Review,
+seeded sample, analysed locally only). Simulation-calibrated detectors: **C1 false-alarmed on 35/39**
+(real noise about 4× simulated), so **C1 is removed** from defaults (it never caught a held-out attack
+first). **C3 0/39, position-step check 0/39, diagnose "no anomaly" 39/39.** Shield (sim constants)
+1/39, so per-airframe calibration is required before arming. Added the PX4 ULog adapter (`astra.ulog`),
+and `astra diagnose` now reads .ulg files.

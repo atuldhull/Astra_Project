@@ -23,7 +23,7 @@ from astra import logs
 from astra.detect import features, monitor
 from astra.evaluate import nav_error_series
 
-CONFIGS = {"gps+imu": ["c1", "c3"], "gps+imu+flow": ["c1", "c2", "c3"]}
+CONFIGS = {"gps+imu": ["c3"], "gps+imu+flow": ["c2", "c3"]}  # c1 dropped: see real-far-v1.md
 
 
 def load_runs(d: Path):

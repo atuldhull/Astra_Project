@@ -70,3 +70,4 @@ A spoofer can't alter a sensor that doesn't use GNSS. Useful witnesses on small 
 | Counting release snap-back as detection | Stock EKF would score 30/30 instead of 0/30 | "during" metric |
 | Copter never disarms after a spoofed landing | Outcome shown as "timeout" instead of "landed in the wrong place" | Ground detection in the runner |
 | Fitting a full 2×2 flow model | Degenerate (no lateral motion), so the lateral axis is ignored | Physically structured gains |
+| Simulated IMU/vibration far cleaner than real | C1 (Δv GPS vs IMU) looked usable in sim and false-alarmed on 35/39 real PX4 flights | C1 removed from defaults. Every channel must pass a real-benign-flight check before shipping |

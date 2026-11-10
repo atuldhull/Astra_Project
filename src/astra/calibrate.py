@@ -57,7 +57,7 @@ def calibrate_logs(paths: list[Path], margin: float = 1.25) -> tuple[dict, dict]
         raise ValueError("no usable benign logs")
     hours = sum(float(c.airborne.sum()) * features.DT for c in chs) / 3600
     out: dict = {}
-    base = monitor.calibrate(chs, ("c1", "c3"), margin)
+    base = monitor.calibrate(chs, ("c3",), margin)
     out["gps+imu"] = json.loads(base.to_json())
     flow = [c for c in chs if c.c2 is not None and c.c2_valid.any()]
     if flow:
@@ -67,7 +67,7 @@ def calibrate_logs(paths: list[Path], margin: float = 1.25) -> tuple[dict, dict]
         B = features.fit_flow_nuisance(flow)
         for c in flow:
             features.apply_flow(c, M, B)
-        cal = monitor.calibrate(chs, ("c1", "c2", "c3"), margin)
+        cal = monitor.calibrate(chs, ("c2", "c3"), margin)
         cal.flow_model, cal.flow_nuisance = M.tolist(), B.tolist()
         out["gps+imu+flow"] = json.loads(cal.to_json())
     if step_peaks:
