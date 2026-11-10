@@ -32,6 +32,13 @@ The IMU measures true acceleration p̈(t) plus bias β and noise.
 undetected"), not a promise of detection. That *is* the commercially useful finding: it tells the
 OEM what extra witness sensor they need.
 
+**Spoofing from power-on.** If the receiver is spoofed before the EKF initialises (e.g. a static
+offset from boot), there is no onset and no change to detect: GPS, IMU, flow and the EKF are all
+self-consistent around a wrong origin. Consistency monitors (ASTRA's included) can't see it. Only an
+**absolute** reference (a camera matched to a map, a known take-off point, an independent position
+source) can. All ASTRA attack corpora start mid-flight, so none of the published detection numbers
+cover this case.
+
 ## 2. Independent witnesses (what changes the picture)
 
 A spoofer can't alter a sensor that doesn't use GNSS. Useful witnesses on small drones:
