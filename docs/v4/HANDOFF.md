@@ -37,6 +37,8 @@ Thermals: 4 parallel SITL at 20× is about 3 cores. 8 at 20× is about 5 cores (
 | Path | What |
 |---|---|
 | `sim/ardupilot/` | Pinned ArduCopter 4.7.2 SITL image + **simulator-only** patch (velocity-bias spoof, GNSS noise model) |
+| `sim/px4/` | Pinned PX4 v1.17.0 SIH image + simulator-only patch (`make_patch.py` regenerates it) + in-container controller `px4_control.py` |
+| `src/astra/runner_px4.py`, `ulog.py` | PX4 runner (params via `PX4_PARAM_*` env at boot) and ULog → FlightLog (truth, attack window, EKF2 ratios, messages) |
 | `src/astra/scenario.py` | Scenario schema v1 (7 attack models, sensors profile) |
 | `src/astra/attacks.py` | Attack timeline → in-SITL Lua script (sim clock, writes SIM_GPS1_* only, logs ASTK labels) |
 | `src/astra/sitl.py`, `runner.py`, `batch.py` | Container lifecycle, one flight, parallel batches |

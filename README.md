@@ -93,8 +93,9 @@ Prereqs: Docker Desktop, Python ≥ 3.11.
 ```bash
 python -m venv .venv && .venv/Scripts/python -m pip install -e ".[dev]"   # Linux/macOS: .venv/bin/
 docker build -t astra/ardupilot-sitl:copter-4.7.2 sim/ardupilot           # ~10 min, once
+docker build -t astra/px4-sitl:v1.17.0 sim/px4                             # optional, PX4 (~40 min, 5.4 GB)
 astra packs                                                                # list scenario packs
-astra run baseline-v1 --out runs/my-airframe --params my.parm --seeds 3    # fly the pack
+astra run baseline-v1 --out runs/my-airframe --params my.parm --seeds 3    # fly the pack (add --autopilot px4 for PX4)
 astra verify runs/my-airframe/report.json --trust $(astra key)             # check a report
 astra diagnose path/to/flight.BIN                                          # forensics on a log
 astra html runs/my-airframe                                                # HTML report with path maps
@@ -112,7 +113,9 @@ gives **90× real time** (16 flight-hours in about 11 minutes).
   latency) consistent spoofs ≥ 1 m/s are still caught (20/22) but only at 180–365 m off course, and
   ≤ 0.5 m/s mostly not (2/24) ([benchmarks/a2-flowdeg-v7.md](benchmarks/a2-flowdeg-v7.md)).
 - No RF-level attack synthesis, so receiver-internal spoof flags can't be validated here yet.
-- Simulation: ArduCopter only (PX4 SITL and fixed-wing planned). PX4 *logs* can be diagnosed (`.ulg`).
+- Simulation: ArduCopter 4.7.2 and **PX4 v1.17 (SIH)** multicopters. PX4 supports 5 of the 7 attack
+  models (no meaconing or chaotic jamming yet), and waypoint-triggered attacks are approximated as seconds
+  after arming. Fixed-wing is planned. PX4 and ArduPilot *logs* can both be diagnosed (`.ulg`, `.BIN`).
 - Calibrations shipped are from simulated receivers. Calibrate per airframe on the vendor's own benign
   logs (`astra calibrate`, `astra shield calibrate`) before trusting alarms. Shield with simulation
   constants false-alarmed on 3/39 real flights (0–1/19 after calibrating on other real flights).

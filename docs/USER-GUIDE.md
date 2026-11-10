@@ -17,6 +17,18 @@ docker build -t astra/ardupilot-sitl:copter-4.7.2 sim/ardupilot   # ~10 min, pin
 
 Keys and the local audit ledger live in `ASTRA_HOME` (default `~/.astra`). Set `ASTRA_HOME` to put them elsewhere.
 
+### PX4 airframes
+
+```bash
+docker build -t astra/px4-sitl:v1.17.0 sim/px4      # ~40 min, 5.4 GB (contains the PX4 toolchain)
+astra run baseline-v1 --autopilot px4 --params my.params --out runs/myframe-px4 --seeds 3 --parallel 4 --speedup 10
+```
+
+PX4 runs use SIH (PX4's built-in simulator). Params are applied at boot. Supported attacks:
+denial, intermittent, degraded, jump and drag-off (naive/consistent, with ramp). Waypoint-triggered
+attacks are converted to "seconds after arming" (the value used is recorded per run as
+`px4_trigger_s`). ASTRA Shield (Lua) and `astra advise` are ArduPilot-only today.
+
 ## 1. Export your parameters
 
 In Mission Planner: *Config → Full Parameter List → Save to file* (or QGroundControl: *Parameters →
