@@ -65,7 +65,8 @@ Thermals: 4 parallel SITL at 20× is about 3 cores. 8 at 20× is about 5 cores (
 - Working: SIH image, simulator-only GPS patch (5 models), in-container control, ULog truth and attack
   windows, `--autopilot px4` in run/batch/report. Baseline: same slow-drag blind spot as ArduPilot.
 - A2 C3 on PX4 (80-flight calibration): naive drags 36/48 vs stock 10/48, held-out FAR 0 in 3.8 h.
-- Not yet: meaconing/chaotic models, Shield (needs PX4 module or MAVLink-side monitor, since PX4 has no Lua),
+- Shield for PX4: **Shield-Companion** (`astra.companion`), done and verified live.
+- Not yet: meaconing/chaotic models,
   `astra advise` for EKF2 params, speed-up: results invariant 5–20×, but no wall-time gain above 10× (use 10×). (Runtime image is slim: 0.9 GB, verified
   identical results to the full image.)
 

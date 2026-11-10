@@ -280,7 +280,7 @@ class _Flight:
 
 def fly(sc: Scenario, seed: int, workdir: Path, *, speedup: int = 5,
         vendor_param_file: Path | None = None, cpus: float = 1.5, keep_logs: bool = False,
-        extra_scripts: dict[str, str] | None = None) -> RunResult:
+        extra_scripts: dict[str, str] | None = None, companion: dict | None = None) -> RunResult:
     wall0 = time.monotonic()
     pert = seed_perturbation(sc, seed)
     extra = {**pert, **sensor_params(sc), **flow_degradation(sc, seed)}
@@ -296,6 +296,23 @@ def fly(sc: Scenario, seed: int, workdir: Path, *, speedup: int = 5,
     try:
         mav = sitl.start()
         f = _Flight(mav, sc)
+        comp_thread = comp_stop = None
+        comp_result: dict = {}
+        if companion:  # ASTRA Shield-Companion on the second MAVLink link
+            import threading
+            from astra.companion import monitor
+            comp_stop = threading.Event()
+
+            def _comp():
+                try:
+                    st = monitor(f"tcp:127.0.0.1:{sitl.port2}", companion["cal"],
+                                 on_alarm=companion.get("on_alarm", "alert"), stop=comp_stop)
+                    comp_result.update(alarm_boot_t=st.alarm_boot_t, blocks=len(st.blocks))
+                except Exception as exc:  # noqa: BLE001
+                    comp_result["error"] = f"{type(exc).__name__}: {exc}"
+
+            comp_thread = threading.Thread(target=_comp, daemon=True)
+            comp_thread.start()
         f.request_streams()
         f.run_until(lambda: f.t > 15 and f.true is not None, 60, wall_timeout_s=90)  # let storage/EKF initialise
         n_items = f.upload_mission()
@@ -341,6 +358,10 @@ def fly(sc: Scenario, seed: int, workdir: Path, *, speedup: int = 5,
         if sc.mission.end == "loiter" and finished:
             f.run_until(lambda: False, 10)  # let it settle in the loiter
         res.alerts, res.modes, res.texts = f.alerts, f.modes, f.texts
+        if comp_thread is not None:
+            comp_stop.set()
+            comp_thread.join(timeout=10)
+            res.metrics["companion"] = comp_result
         _classify(res, f, sc, finished, t_arm)
     except Exception as exc:  # noqa: BLE001 - a broken run is a result, not a crash of the batch
         res.outcome, res.reason = "error", f"{type(exc).__name__}: {exc}"

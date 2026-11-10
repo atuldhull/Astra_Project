@@ -239,3 +239,12 @@ established (1 alarm in 1.8 h from a 20-flight calibration). Needs ≥ 80 PX4 be
 **A2 C3 on PX4, recalibrated** (`benchmarks/px4-a2-v2.md`, 80 calibration flights): held-out FAR 0 in 3.8 h (UB 0.98/h). Naive drag-off **36/48 vs stock 10/48**. Supersedes v1 (41/48 with a too-low 20-flight threshold).
 
 **PX4 speed check:** the same drag attack gives final error 221.2 / 220.8 / 221.9 m at 5× / 10× / 20× (invariant). Wall time 68 / 42 / 42 s, so 20× gives no gain on PX4 SIH. Default stays 10×. Slim image 898 MB (was 5.4 GB), identical result.
+
+## 2026-11-11: ASTRA Shield-Companion (any MAVLink autopilot)
+
+`astra.companion`: the Shield check as a companion-computer process (GPS_RAW_INT + GLOBAL_POSITION_INT),
+same arithmetic and calibration format as the Lua script. **ArduPilot:** live companion vs onboard Lua
+alarm times within 0.0–0.3 s on 6/6 attacks. **PX4** (`benchmarks/companion-px4-v1.md`): calibrated on 80
+PX4 benign flights, offline replay: naive drag-offs **40/48 vs stock 10/48**, 0 FA in 3.0 held-out h. Live in
+the PX4 container: 4/4 attacks (2–9 s earlier than replay), 0 alarms on 20 benign flights. `astra shield
+calibrate` now also works on logs without onboard blocks (PX4, real flights), via the verified mirror.

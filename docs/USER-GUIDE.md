@@ -117,6 +117,19 @@ cut post-alarm movement from 46 m to 19 m on average.
 **Don't skip step (b).** With simulation-only constants Shield false-alarmed on 3 of 39 real flights.
 Test the armed script in SITL and on the bench before flying it.
 
+## 8. PX4 (or any MAVLink autopilot): ASTRA Shield-Companion
+
+PX4 has no Lua, so run the same check on the companion computer:
+
+```bash
+astra shield calibrate <your benign .ulg/.BIN logs> --out shield-cal.json   # no special logging needed
+python -m astra.companion --connect udp:0.0.0.0:14540 --cal shield-cal.json --on-alarm alert
+```
+
+Connect it to the autopilot's companion MAVLink link (PX4: the onboard link on UDP 14540 in SITL, or
+your TELEM2 serial via `--connect /dev/ttyAMA0,921600`). On alarm it sends a CRITICAL status text; with
+`--on-alarm land` it also commands LAND.
+
 ## What ASTRA can't tell you
 - How your drone behaves on a real range. Simulation is pre-qualification.
 - RF-level receiver behaviour (C/N0, AGC, constellation-specific effects).

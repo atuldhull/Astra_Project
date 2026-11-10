@@ -149,11 +149,17 @@ def calibrate_from_logs(paths, margin: float = 1.25) -> tuple[dict, dict]:
         if fl.attack_windows():
             skipped.append((str(p), "contains an ASTRA attack label; not benign"))
             continue
-        if not fl.has("ASTM") or len(fl["ASTM"]["t"]) < 5:
-            skipped.append((str(p), "no ASTM blocks (was the log-only Shield script loaded?)"))
+        if fl.has("ASTM") and len(fl["ASTM"]["t"]) >= 5:  # blocks logged by the onboard script
+            a = fl["ASTM"]
+            blocks.append(np.stack([a["rN"], a["rE"]], axis=1))
             continue
-        a = fl["ASTM"]
-        blocks.append(np.stack([a["rN"], a["rE"]], axis=1))
+        # No onboard blocks (PX4, real logs, or Shield not loaded): compute them with the mirror,
+        # which matches the onboard arithmetic (see shield_blocks).
+        _, B = shield_blocks(fl)
+        if len(B) >= 5:
+            blocks.append(B)
+        else:
+            skipped.append((str(p), "too few airborne GNSS blocks"))
     if not blocks:
         raise ValueError("no usable ASTM blocks")
     R = np.concatenate(blocks)

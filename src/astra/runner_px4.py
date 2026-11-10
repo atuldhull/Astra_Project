@@ -82,7 +82,7 @@ def _env(sc: Scenario, seed: int, speedup: int, vendor: Path | None) -> tuple[di
 
 
 def fly_px4(sc: Scenario, seed: int, workdir: Path, *, speedup: int = 10,
-            vendor_param_file: Path | None = None, cpus: float = 2.0) -> RunResult:
+            vendor_param_file: Path | None = None, cpus: float = 2.0, companion: dict | None = None) -> RunResult:
     from astra import evaluate, logs
     from astra.ulog import load_ulog
 
@@ -110,14 +110,25 @@ def fly_px4(sc: Scenario, seed: int, workdir: Path, *, speedup: int = 10,
     (workdir / "mission.json").write_text(json.dumps(
         {"items": items, "wall_limit_s": max(120.0, 2.5 * sc.time_limit_s / speedup)}))
     ctl = Path(__file__).resolve().parents[2] / "sim" / "px4" / "px4_control.py"
+    comp_cmd = ""
+    if companion:  # ASTRA Shield-Companion on PX4's onboard MAVLink link (as on a real companion computer)
+        (workdir / "shield_cal.json").write_text(json.dumps(companion["cal"]))
+        wl = max(120.0, 2.5 * sc.time_limit_s / speedup)
+        comp_cmd = ("(PYTHONPATH=/astra_src timeout " + str(int(wl + 60)) + " python3 -c \"import json; "
+                    "from astra.companion import monitor; "
+                    f"monitor('udpin:127.0.0.1:14540', json.load(open('/work/shield_cal.json')), wall_timeout_s={wl}, "
+                    "status_file='/work/companion.json')\" "
+                    "> /work/companion.out 2>&1 &) && ")
     cmd = ["docker", "run", "--rm", "--name", name, "--cpus", str(cpus), "--memory", "1g",
            "-v", f"{(workdir / 'log').resolve()}:{ROOTFS}/log", "-v", f"{workdir.resolve()}:/work",
-           "-v", f"{ctl}:/astra/px4_control.py:ro"]
+           "-v", f"{ctl}:/astra/px4_control.py:ro",
+           "-v", f"{Path(__file__).resolve().parent}:/astra_src/astra:ro"]
     for k, v in env.items():
         cmd += ["-e", f"{k}={v}"]
     cmd += ["--entrypoint", "bash", PX4_IMAGE, "-c",
-            f"cd {ROOTFS} && (../bin/px4 -d ../etc > /work/px4.out 2>&1 &) && "
-            "python3 /astra/px4_control.py /work/mission.json /work/control.json"]
+            f"cd {ROOTFS} && (../bin/px4 -d ../etc > /work/px4.out 2>&1 &) && " + comp_cmd +
+            "python3 /astra/px4_control.py /work/mission.json /work/control.json"
+            + (" && sleep 3" if companion else "")]
     finished = False
     try:
         subprocess.run(cmd, check=True, capture_output=True, text=True,
@@ -140,6 +151,8 @@ def fly_px4(sc: Scenario, seed: int, workdir: Path, *, speedup: int = 10,
         res.reason = (res.reason + " | no ULog").strip(" |")
         res.wall_s = round(time.monotonic() - wall0, 2)
         return res
+    if companion and (workdir / "companion.json").exists():
+        res.perturbation["companion"] = json.loads((workdir / "companion.json").read_text())
     fl = load_ulog(ulgs[-1])
     logs.save_npz(fl, workdir / "flight.npz")
     _classify_px4(res, fl, sc, finished)

@@ -91,6 +91,7 @@ class Sitl:
         self.cfg = cfg
         self.name = f"astra-sitl-{uuid.uuid4().hex[:10]}"
         self.port = free_port()
+        self.port2 = free_port()  # SERIAL1 (tcp 5762): second MAVLink link, e.g. a companion computer
         self.mav: mavutil.mavfile | None = None
 
     # ── files ───────────────────────────────────────────────────────────
@@ -125,7 +126,7 @@ class Sitl:
         cmd = [
             "docker", "run", "-d", "--rm", "--name", self.name,
             "--cpus", str(self.cfg.cpus), "--memory", self.cfg.memory,
-            "-p", f"127.0.0.1:{self.port}:5760",
+            "-p", f"127.0.0.1:{self.port}:5760", "-p", f"127.0.0.1:{self.port2}:5762",
             "-v", f"{self.cfg.workdir.resolve()}:/work",
             self.cfg.image,
             "--model", self.cfg.model,

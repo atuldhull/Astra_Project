@@ -20,7 +20,7 @@ FROM ubuntu:22.04
 ARG PX4_TAG=v1.17.0
 LABEL org.opencontainers.image.title="astra-px4-sitl" org.opencontainers.image.version="${PX4_TAG}"       org.opencontainers.image.licenses="BSD-3-Clause"
 # bc: rcS scales link-loss timeouts by PX4_SIM_SPEED_FACTOR with it (missing => failsafes unscaled)
-RUN apt-get update && apt-get install -y --no-install-recommends bc python3 python3-pip libstdc++6     && pip3 install --no-cache-dir pymavlink==2.4.41 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends bc python3 python3-pip libstdc++6     && pip3 install --no-cache-dir pymavlink==2.4.41 numpy && rm -rf /var/lib/apt/lists/*
 COPY --from=build /src/px4/build/px4_sitl_default /src/px4/build/px4_sitl_default
 COPY --from=build /src/PX4_COMMIT /src/PX4_COMMIT
 WORKDIR /src/px4/build/px4_sitl_default/rootfs
