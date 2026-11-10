@@ -88,3 +88,30 @@ random) until the exploration point was added. SITL evaluation is pending (`astr
 
 **In progress:** benign-v1 (160) and attack-dev (48) corpora with realistic sensors, then the A2
 evaluation (`benchmarks/a2_eval.py`).
+
+## 2026-11-11: A2 monitor, held-out result (design frozen at v6 before this test)
+
+Dev iterations v1–v6 are in `benchmarks/a2-dev-v*.md`. What changed and why (benign data only):
+block-averaged CUSUM (residuals are autocorrelated), drift k from the design shift, a geometric
+tilted-camera flow model (gain 0.98; the old fit of 1.22 was the wrong model being absorbed),
+tilt/speed nuisance regression (per-flight flow bias −70%, holds on held-out flights), block medians
+(isolated flow spikes of tens of m/s). **Reverted:** hAcc-normalising C3 (false alarms 0 → 3 in 7.5 h).
+
+**Final test** (`benchmarks/a2-final-v6.md`): calibrated on benign-v1 (160 flights, 15.3 h). False
+alarms measured on the untouched **benign-v2** (80 flights, 6.9 h). Detection on the untouched
+**attack-test** (96 persistent drag-offs, new geometries, random bearings, ramps 0/15/60 s).
+
+| | stock | A2 GPS+IMU | A2 +flow |
+|---|---|---|---|
+| False alarms (6.9 h held-out) | – | 0 (UB 0.54/h) | 0 (UB 0.54/h) |
+| All 96 drag-offs 0.25–2 m/s | 10/96 | **40/96** | **65/96** |
+| Naive ≥ 0.5 m/s (36) | 10/36 | **36/36** | 36/36 (alarm at 21–45 m error) |
+| Consistent ≥ 1 m/s (24) | 0/24 | 0/24 (physics limit) | **23/24** (alarm at 40–92 m error) |
+| Consistent 0.5 m/s (12) | 0/12 | 0/12 | 4/12 |
+| 0.25 m/s (24) | 0/24 | 2/24 | 2/24, **open problem** |
+| Pre-onset alarms | – | 0 | 0 |
+
+Against the S1 target (≥ +40 pp on slow drag-off): **met with a flow witness (+57 pp)**. GPS+IMU-only is
++31 pp overall, +72 pp on naive spoofs, and 0 on consistent ones, as physics predicts.
+Caveat: SITL flow has ideal texture (05-DETECTION-PHYSICS §2), so the +flow column is an upper bound.
+The calibration is bundled at `src/astra/data/a2-calibration.json` (used by `astra diagnose`).

@@ -71,7 +71,9 @@ def blocks(t: np.ndarray, r: np.ndarray, valid: np.ndarray, block_s: float, min_
     V = (valid[: nb * n] & np.isfinite(r[: nb * n]).all(axis=1)).reshape(nb, n)
     cnt = V.sum(axis=1)
     if robust:
-        with np.errstate(all="ignore"):
+        import warnings
+        with np.errstate(all="ignore"), warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)  # all-invalid blocks; masked by `ok` below
             Rm = np.nanmedian(np.where(V[..., None], R, np.nan), axis=1)
         Rm = np.nan_to_num(Rm)
     else:

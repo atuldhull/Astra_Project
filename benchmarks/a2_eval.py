@@ -131,7 +131,7 @@ def main():
         return f"{st.median(x):.1f}" if x else "-"
 
     for cfg in CONFIGS:
-        lines.append(f"\n## {cfg}: drag-off detection (attack-dev)\n")
+        lines.append(f"\n## {cfg}: drag-off detection ({Path(a.attack).name})\n")
         lines.append("| rate | ramp | velocity | runs | stock L0 detected | A2 detected | A2 latency s (median) | error at A2 alarm m (median) | pre-onset alarms | channel |")
         lines.append("|---|---|---|---|---|---|---|---|---|---|")
         tot = collections.Counter()

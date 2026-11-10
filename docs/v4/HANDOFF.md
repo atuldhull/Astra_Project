@@ -1,0 +1,69 @@
+# ASTRA v4 — Handoff (for the next model/session)
+
+> Read in this order: this file → [PROGRESS.md](PROGRESS.md) (what happened, with numbers) →
+> [05-DETECTION-PHYSICS.md](05-DETECTION-PHYSICS.md) (ground rules) → [04-ALGORITHMS.md](04-ALGORITHMS.md).
+> The planning docs 00–03 were written before any code. Where they disagree with PROGRESS.md,
+> PROGRESS.md (measured) wins.
+
+## What ASTRA is now
+
+A software-only test lab: it flies the vendor's real ArduPilot firmware + params in SITL under 7
+GNSS attack models, scores the outcomes, detects attacks the stock autopilot misses (A2), maps the
+failure boundary (A1), and issues signed, input-bound reports.
+
+## How to run (Windows, Docker Desktop, Python 3.13)
+
+```bash
+py -3.13 -m venv .venv && .venv/Scripts/python -m pip install -e ".[dev]"
+docker build -t astra/ardupilot-sitl:copter-4.7.2 sim/ardupilot        # ~10 min first time
+.venv/Scripts/python -m pytest -q -p no:warnings                       # unit tests (no Docker)
+.venv/Scripts/astra packs
+.venv/Scripts/astra run baseline-v1 --out runs/x --seeds 1 --parallel 4 --speedup 20
+.venv/Scripts/astra verify runs/x/report.json --trust $(.venv/Scripts/astra key)
+.venv/Scripts/astra diagnose runs/x/<scenario>__s0/flight.npz
+```
+
+Corpus/benchmark scripts: `benchmarks/run_pack.py`, `summarize.py`, `a2_eval.py`, `a1_sitl.py`.
+Thermals: 4 parallel SITL at 20× is about 3 cores. 8 at 20× is about 5 cores (90× real time). Default is 4.
+
+## Code map
+
+| Path | What |
+|---|---|
+| `sim/ardupilot/` | Pinned ArduCopter 4.7.2 SITL image + **simulator-only** patch (velocity-bias spoof, GNSS noise model) |
+| `src/astra/scenario.py` | Scenario schema v1 (7 attack models, sensors profile) |
+| `src/astra/attacks.py` | Attack timeline → in-SITL Lua script (sim clock, writes SIM_GPS1_* only, logs ASTK labels) |
+| `src/astra/sitl.py`, `runner.py`, `batch.py` | Container lifecycle, one flight, parallel batches |
+| `src/astra/logs.py`, `evaluate.py` | Dataflash parsing (+npz extract), ground-truth/L0 evaluation |
+| `src/astra/detect/` | A2: residual channels (C1 Δv, C2 flow, C3 pos-vs-vel) + block-median CUSUM |
+| `src/astra/search.py`, `search_sitl.py` | A1: GP level-set failure-boundary mapping |
+| `src/astra/integrity/`, `report.py` | Canonical JSON, Ed25519 envelopes with trust check, ledger, reports |
+| `src/astra/forensics.py`, `cli.py` | `astra diagnose`, the CLI |
+
+## Known limitations (don't paper over them)
+
+1. SITL flow assumes perfect texture. Real flow over sand, water or at night is worse. C2 is an upper bound.
+2. No RF-level attack synthesis, so receiver-internal detectors (C/N0, AGC, clock) can't be validated in SITL.
+3. Only ArduCopter. No PX4, no fixed-wing yet.
+4. The A2 calibration comes from simulated "typical" receivers. A real product must calibrate per airframe from
+   the vendor's own benign logs (about 30–60 min of flights).
+5. The stealthy consistent spoof with GPS + IMU only is fundamentally undetectable on short horizons
+   (05-DETECTION-PHYSICS §1). The product answer is a robustness margin + witness-sensor advice.
+
+## Algorithm backlog (ordered by value, with entry criteria)
+
+See 04-ALGORITHMS.md for designs. Status is in PROGRESS.md.
+
+1. **Per-airframe calibration workflow** (`astra calibrate <benign logs>`). FAR control by extreme-value
+   fit of benign CUSUM peaks instead of max × margin. *Entry:* the held-out FAR result is in.
+2. **Onboard A2** as an ArduPilot Lua script (C2/C3), raising a GCS alert and optionally a failsafe.
+   Measure script CPU/heap in SITL. *Why:* turns forensics into protection.
+3. **A1 in more dimensions** (bearing, onset phase, mission speed) + multi-fidelity (low speed-up
+   confirmation of boundary points).
+4. **A6 parameter advisor:** search EKF params (EK3_POSNE_M_NSE, EK3_VELNE_M_NSE, EK3_POS_I_GATE,
+   EK3_VEL_I_GATE, EK3_GLITCH_RAD) to maximise the A1 margin subject to a benign false-alarm budget.
+5. **A5 incident → scenario inversion** (fit drag rate/bearing/onset from C2/C3 residuals).
+6. **Real-data validation:** IEEE DataPort PX4 ULog sets (needs a pyulog adapter for `logs.py`).
+7. **A4 terrain anchoring:** needs SITL terrain following a DEM. Check SITL terrain support first.
+8. **Rotor-drag wind channel (C4)** for GPS+IMU-only airframes. Expected weak (wind ambiguity), so
+   measure before believing.
