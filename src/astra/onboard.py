@@ -45,7 +45,7 @@ local ARMED = {armed}
 local S00, S01, S11 = {s00}, {s01}, {s11}
 local K, H = {k}, {h}
 local BLOCK_MS, SPAN_MS = {block_ms}, {span_ms}
-local ACTION = {action}  -- 0 = alert only, 1 = also switch to LAND on alarm
+local ACTION = {action}  -- 0 = alert only, 1 = LAND on alarm, 2 = drop GPS (EKF source set 2) then LAND
 local M_PER_1E7 = 0.011131949079327357
 
 local hist = {{}}       -- {{t_ms, n, e, vn, ve}}
@@ -104,6 +104,7 @@ function update()
       if cusum > H and not alarmed then
         alarmed = true
         gcs:send_text(2, "ASTRA Shield: GNSS position/velocity inconsistent - possible spoofing")
+        if ACTION >= 2 then ahrs:set_posvelyaw_source_set(1) end  -- needs EK3_SRC2_* configured without GPS
         if ACTION >= 1 then vehicle:set_mode(9) end
       end
     end

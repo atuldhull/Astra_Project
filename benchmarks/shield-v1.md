@@ -52,3 +52,18 @@ flights (identical to the microsecond). So the table above is what the in-flight
 Worst deviation cut by about 80–85%. **Limit:** error still grows after the alarm (14–31 m at alarm to
 62–124 m), because LAND keeps using GPS horizontally while descending. Better action (backlog): switch
 the EKF to a pre-configured no-GPS source set (`ahrs:set_posvelyaw_source_set`) and then land.
+
+## Shield v2 mitigation: drop GPS (EKF source set 2), then LAND (`--on-alarm nogps-land`)
+
+Vendor config: `EK3_SRC2_POSXY 0, EK3_SRC2_VELXY 0, EK3_SRC2_POSZ 1, EK3_SRC2_YAW 1`. Same 6 attacks.
+
+| metric | LAND on alarm | **drop GPS + LAND** |
+|---|---|---|
+| nav error (truth vs belief), max | 62–124 m | 16–26 m |
+| **true displacement from alarm to touchdown** | 19–71 m (mean 46) | **6–24 m (mean 19)** |
+| outcome | 6/6 safe_abort | 6/6 safe_abort |
+
+**Use the true-displacement row.** After the source switch the EKF has no horizontal position
+reference, so the nav-error row overstates the gain. The honest improvement is about 58% less movement
+after the alarm. The remaining ~20 m is mostly braking from 10 m/s cruise plus wind drift. With an
+optical-flow sensor, `EK3_SRC2_VELXY 5` (flow) should cut drift further (not yet measured).

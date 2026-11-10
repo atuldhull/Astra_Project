@@ -101,7 +101,7 @@ def _cmd_shield(a):
         print(json.dumps(info, indent=1))
         return
     cal = None if a.log_only else json.loads(Path(a.cal).read_text())
-    script = onboard.lua_monitor(cal, action={"alert": 0, "land": 1}[a.on_alarm])
+    script = onboard.lua_monitor(cal, action={"alert": 0, "land": 1, "nogps-land": 2}[a.on_alarm])
     Path(a.out).write_text(script, encoding="ascii", newline="\n")
     print(f"wrote {a.out} ({'log-only' if cal is None else 'armed, on alarm: ' + a.on_alarm}). "
           f"Copy to the autopilot's APM/scripts/ and set SCR_ENABLE=1.")
@@ -168,7 +168,8 @@ def main(argv=None):
     g = se.add_mutually_exclusive_group(required=True)
     g.add_argument("--log-only", action="store_true", help="calibration-collection mode (no alarms)")
     g.add_argument("--cal", help="constants from `astra shield calibrate`")
-    se.add_argument("--on-alarm", choices=["alert", "land"], default="alert")
+    se.add_argument("--on-alarm", choices=["alert", "land", "nogps-land"], default="alert",
+                    help="nogps-land needs EK3_SRC2_POSXY=0, EK3_SRC2_VELXY=0 (or 5 with flow), EK3_SRC2_YAW=1")
     sh.set_defaults(fn=_cmd_shield)
     a = p.parse_args(argv)
     a.fn(a)
