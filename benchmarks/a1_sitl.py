@@ -46,6 +46,8 @@ def main():
     ap.add_argument("--parallel", type=int, default=6)
     ap.add_argument("--dims", type=int, default=2, choices=[2, 4])
     ap.add_argument("--ntest", type=int, default=200, help="4-D only: Sobol ground-truth points")
+    ap.add_argument("--reuse-grid", help="a1_result.json whose flown ground truth to reuse (same dims/ntest)")
+    ap.add_argument("--seed", type=int, default=0, help="search/baseline seed")
     a = ap.parse_args()
     global DIMS
     DIMS = DIMS4 if a.dims == 4 else DIMS2
@@ -61,13 +63,17 @@ def main():
     else:
         gx, gy = (int(v) for v in a.grid.split("x"))
         U_grid = np.array([[i / (gx - 1), j / (gy - 1)] for i in range(gx) for j in range(gy)])
-    e_grid = ev("grid")
-    y_grid = np.array(e_grid([{d.name: float(d.scale(u[k])) for k, d in enumerate(DIMS)} for u in U_grid]))
+    if a.reuse_grid:
+        y_grid = np.array([g["stealthy_failure"] for g in json.loads(Path(a.reuse_grid).read_text())["grid"]])
+        assert len(y_grid) == len(U_grid), "reused grid size mismatch"
+    else:
+        e_grid = ev("grid")
+        y_grid = np.array(e_grid([{d.name: float(d.scale(u[k])) for k, d in enumerate(DIMS)} for u in U_grid]))
 
     e_f = ev("fbm")
-    f = FBM(DIMS, e_f, batch=a.parallel, n_init=12, seed=0).run(a.budget)
+    f = FBM(DIMS, e_f, batch=a.parallel, n_init=12, seed=a.seed).run(a.budget)
     e_r = ev("random")
-    r = random_baseline(DIMS, e_r, a.budget, seed=0)
+    r = random_baseline(DIMS, e_r, a.budget, seed=a.seed)
 
     def scores(h: History):
         U, y = h.arrays()
@@ -83,7 +89,7 @@ def main():
         return scores(h)["accuracy"]
 
     res = {
-        "detector": a.detector, "budget": a.budget, "grid": a.grid,
+        "detector": a.detector, "budget": a.budget, "grid": a.grid, "seed": a.seed,
         "grid_stealthy_failure_fraction": float(y_grid.mean()),
         "fbm_grid_accuracy": acc(f.hist), "random_grid_accuracy": acc(r),
         "fbm_scores": scores(f.hist), "random_scores": scores(r),
