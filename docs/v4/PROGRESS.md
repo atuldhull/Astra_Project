@@ -258,3 +258,18 @@ class 4/4, with miss distance within about ±50% (ramp not yet estimated; start 
 **A5 v2 (ramp + refined onset):** ramp within ±15 s in 59/84. Re-fly reproduction within 8% for 3/4 incidents (v1 2/4). The weak spot is slow consistent drags (noisy flow residual).
 
 **PX4 patch v2:** meaconing (≈10 s history, 20 ms sampling) and chaotic jamming ported, so all 7 models run on PX4. Stock PX4 catches 2 s meaconing in 0.16 s and chaotic jamming in 2.6 s (repeated blind-land failsafes). The patch generator now asserts that every required edit is present (an earlier silent no-match caused a compile error).
+
+## 2026-11-11: fixed-wing (ArduPlane 4.7.2) working
+
+- Parametric Dockerfile (`AP_VEHICLE`, `AP_TAG`). Plane-4.7.2 is the **same ArduPilot commit** as
+  Copter-4.7.2 (fb773567), so it uses the identical simulator patch. Plane defaults come from
+  `models/plane.parm` (as sim_vehicle uses).
+- Runner: `vehicle: plane`, armed in AUTO (mission NAV_TAKEOFF, 15° min pitch), AIRSPEED_CRUISE from
+  the scenario, loiter at goal (goal radius must cover the loiter circle).
+- Fixed a metric bug exposed by planes: nav error and alerts now count only after arming (pre-init
+  EKF positions produced a 7,656 km "error"). Copter results unaffected (EKF initialised pre-arm there).
+- **Plane smoke:** 1.5 km leg, success (loitering 107 m from the goal point, max nav error 5 m).
+- **Plane attacks (stock, defaults):** 1 m/s drag-off consistent → diverted 196 m, naive → 204 m,
+  **both undetected** (EKF ratio 0.20/0.32; airspeed doesn't help). 60 s denial → mission completed,
+  5 m error (airspeed + compass dead reckoning), but **no operator alert at all** (zero STATUSTEXT while
+  the receiver reported no fix).

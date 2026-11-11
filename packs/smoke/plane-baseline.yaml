@@ -1,0 +1,12 @@
+id: smoke-plane-baseline
+title: "Smoke: fixed-wing 1.5 km leg, loiter at goal, no attack"
+vehicle: plane
+home: {lat: 27.0, lon: 71.0, alt_m: 200}
+mission:
+  takeoff_alt_m: 60
+  speed_ms: 22
+  waypoints:
+    - {north_m: 1500, east_m: 0, alt_m: 100}
+  end: loiter
+expect: {goal_radius_m: 150, geofence_radius_m: 4000}
+time_limit_s: 400

@@ -26,7 +26,9 @@ from pymavlink import mavutil
 from astra.attacks import lua_script
 from astra.geo import latlon_to_ne, ne_to_latlon
 from astra.scenario import Scenario
-from astra.sitl import Sitl, SitlConfig
+from astra.sitl import DEFAULT_IMAGE, Sitl, SitlConfig
+
+PLANE_IMAGE = "astra/ardupilot-sitl:plane-4.7.2"
 
 ML = mavutil.mavlink
 
@@ -260,7 +262,8 @@ class _Flight:
             if not 0 <= seq < len(items):
                 continue
             cmd, frame, lat, lon, alt = items[seq]
-            self.m.mav.mission_item_int_send(1, 1, seq, frame, cmd, 0, 1, 0, 0, 0, 0,
+            p1 = 15.0 if (cmd == ML.MAV_CMD_NAV_TAKEOFF and self.sc.vehicle == "plane") else 0  # min climb pitch
+            self.m.mav.mission_item_int_send(1, 1, seq, frame, cmd, 0, 1, p1, 0, 0, 0,
                                              int(lat * 1e7), int(lon * 1e7), alt,
                                              ML.MAV_MISSION_TYPE_MISSION)
         return False, "timed out"
@@ -284,11 +287,16 @@ def fly(sc: Scenario, seed: int, workdir: Path, *, speedup: int = 5,
     wall0 = time.monotonic()
     pert = seed_perturbation(sc, seed)
     extra = {**pert, **sensor_params(sc), **flow_degradation(sc, seed)}
-    extra["WPNAV_SPEED"] = sc.mission.speed_ms * 100  # mission cruise speed is a scenario property
+    if sc.vehicle == "plane":
+        extra["AIRSPEED_CRUISE"] = sc.mission.speed_ms  # mission cruise speed is a scenario property
+    else:
+        extra["WPNAV_SPEED"] = sc.mission.speed_ms * 100
     cfg = SitlConfig(
         home=(sc.home.lat, sc.home.lon, sc.home.alt_m, sc.home.heading_deg),
         workdir=workdir, speedup=speedup, extra_params=extra,
         vendor_param_file=vendor_param_file, lua_script=lua_script(sc), cpus=cpus,
+        model="plane" if sc.vehicle == "plane" else "+",
+        image=PLANE_IMAGE if sc.vehicle == "plane" else DEFAULT_IMAGE,
         extra_scripts=dict(extra_scripts or {}),
     )
     res = RunResult(sc.id, sc.content_hash(), seed, "error", False, "", perturbation=pert)
@@ -321,7 +329,16 @@ def fly(sc: Scenario, seed: int, workdir: Path, *, speedup: int = 5,
             return res
         t_arm = f.t
         climbed = False
-        for _attempt in range(3):
+        if sc.vehicle == "plane":
+            # Fixed-wing: arm in AUTO and let the mission's NAV_TAKEOFF fly the climb-out.
+            f.set_mode("AUTO")
+            for _attempt in range(3):
+                f.command(ML.MAV_CMD_COMPONENT_ARM_DISARM, 1)
+                if f.run_until(lambda: f.armed, 5):
+                    break
+            t_arm = f.t
+            climbed = f.run_until(lambda: f.est is not None and f.est[2] >= 0.8 * sc.mission.takeoff_alt_m, 120)
+        for _attempt in range(0 if sc.vehicle == "plane" else 3):
             if not f.armed and not f.wait_ready_and_arm(30):
                 break
             t_arm = f.t
@@ -333,7 +350,8 @@ def fly(sc: Scenario, seed: int, workdir: Path, *, speedup: int = 5,
             # A harness failure, not an airframe outcome: never score it as one.
             res.outcome, res.reason = "error", "harness: takeoff did not start after 3 attempts"
             return res
-        f.set_mode("AUTO")
+        if sc.vehicle != "plane":
+            f.set_mode("AUTO")
         last_item = n_items - 1
         geofence = sc.expect.geofence_radius_m
 
@@ -381,7 +399,8 @@ def _classify(res: RunResult, f: _Flight, sc: Scenario, finished: bool, t_arm: f
         return
     last = s[-1]
     true_goal = math.hypot(last.true_n - gn, last.true_e - ge)
-    errs = [math.hypot(x.true_n - x.est_n, x.true_e - x.est_e) for x in s if x.est_n is not None]
+    # only after arming: before the EKF initialises its reported position isn't meaningful
+    errs = [math.hypot(x.true_n - x.est_n, x.true_e - x.est_e) for x in s if x.est_n is not None and x.t >= t_arm]
     max_from_home = max(math.hypot(x.true_n, x.true_e) for x in s)
     est_goal = (math.hypot(last.est_n - gn, last.est_e - ge) if last.est_n is not None else None)
     m = res.metrics
@@ -392,8 +411,8 @@ def _classify(res: RunResult, f: _Flight, sc: Scenario, finished: bool, t_arm: f
         final_nav_error_m=round(errs[-1], 2) if errs else None,
         max_dist_from_home_m=round(max_from_home, 2),
         sim_duration_s=round(last.t - t_arm, 2),
-        first_alert_t=f.alerts[0][0] - t_arm if f.alerts else None,
-        n_alerts=len(f.alerts),
+        first_alert_t=next((t - t_arm for t, _ in f.alerts if t >= t_arm), None),
+        n_alerts=sum(1 for t, _ in f.alerts if t >= t_arm),
         final_mode=last.mode,
         stuck_armed_on_ground=bool(f.landed_on_ground and f.armed),
         goal_n_m=round(gn, 1),

@@ -163,7 +163,7 @@ class Scenario(_Strict):
     id: str = Field(pattern=r"^[a-z0-9][a-z0-9._-]{1,63}$")
     title: str
     description: str = ""
-    vehicle: Literal["copter"] = "copter"
+    vehicle: Literal["copter", "plane"] = "copter"
     home: Home
     mission: Mission
     environment: Environment = Environment()
