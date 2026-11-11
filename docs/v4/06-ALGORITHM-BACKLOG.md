@@ -102,6 +102,10 @@
   a fleet prior learned from the 497 real logs, and a second independent witness required before
   'spoofing-like' (C3 alone gives 'inconclusive').
 - **Acceptance:** ≤ 0.5% on a fresh ≥ 300-flight set, simulated A3 spoofing ≥ 90/111.
+- **Status 2026-11-11: met on the false-alarm side.** Strong-evidence rule (C3 > 1538 or step > 5 m) gives
+  **1/339 (0.3%)** on fresh flights (`real-gate-v5.md`); simulated spoofing 89/111 + 11 inconclusive (1 short
+  of the 90 target). Open: 10/339 'inconclusive' (2.9%); 2 'jamming-like' from 1–2 s satellite-count dips
+  (consider a ≥ 3 s minimum, then score on a fresh set); per-receiver noise models would let thresholds come down.
 
 ## How to judge any new algorithm (copy this checklist)
 

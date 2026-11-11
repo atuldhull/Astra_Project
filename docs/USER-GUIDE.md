@@ -125,8 +125,8 @@ Copy the script to the autopilot's `APM/scripts/` and set `SCR_ENABLE 1`. On ala
 cut post-alarm movement from 46 m to 19 m on average.
 
 **Don't skip step (b).** With simulation-only constants Shield false-alarmed on 13 of 159 real flights.
-`astra diagnose` itself wrongly says 'spoofing-like' on about 1.5% of real benign flights
-(3/195), so treat one verdict as a lead, not proof. Test the armed script in SITL and on the bench before flying it.
+`astra diagnose` itself wrongly says 'spoofing-like' on about 0.3% of real benign flights
+(1/339) and 'inconclusive' on about 3%, so treat one verdict as a lead, not proof. Test the armed script in SITL and on the bench before flying it.
 
 ## 8. PX4 (or any MAVLink autopilot): ASTRA Shield-Companion
 

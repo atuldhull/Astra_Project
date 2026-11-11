@@ -67,9 +67,9 @@ alarms in 3.8 held-out hours ([benchmarks/px4-a2-v2.md](benchmarks/px4-a2-v2.md)
 **3. Checked on real flights, not just simulation.** 497 real benign quadrotor missions from public PX4
 logs. An early 39-flight check looked clean (0/39), but 159 flights exposed **7 false spoofing accusations
 (4.4%)**: real receivers are noisier than simulated ones, and 1-Hz logs break the position/velocity check.
-After fixes designed on those flights, the frozen `astra diagnose` was scored once on **195 fresh flights:
-3 false spoofing accusations (1.5%, 95% upper bound 4.5%)**, plus 4 "inconclusive"
-([benchmarks/real-gate-v4.md](benchmarks/real-gate-v4.md)). Real checks also *removed* one channel and
+After two rounds of fixes, each designed on earlier flights and then scored once on new ones, the frozen
+`astra diagnose` gives **1 false spoofing accusation in 339 fresh flights (0.3%, 95% upper bound 1.6%)**,
+with 10 (2.9%) marked "inconclusive" ([benchmarks/real-gate-v5.md](benchmarks/real-gate-v5.md)). Real checks also *removed* one channel and
 *rejected* a new one that simulation had made look excellent. Real *attack* logs haven't been tested yet.
 
 **4. The honest physics** ([docs/v4/05-DETECTION-PHYSICS.md](docs/v4/05-DETECTION-PHYSICS.md)): a
@@ -133,8 +133,8 @@ gives **90× real time** (16 flight-hours in about 11 minutes).
 - Calibrations shipped are from simulated receivers. Calibrate per airframe on the vendor's own benign
   logs (`astra calibrate`, `astra shield calibrate`) before trusting alarms. Shield with simulation
   constants false-alarmed on 13/159 real flights (0–1/19 after calibrating on other real flights).
-- GPS-only forensics keep a ~1.5% false-accusation tail on real flights; treat a single 'spoofing-like'
-  verdict as a lead to investigate, not proof.
+- GPS-only forensics: ~0.3% false 'spoofing-like' and ~3% 'inconclusive' on real benign flights. A verdict is
+  a lead to investigate, not proof.
 
 ## Docs
 

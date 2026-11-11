@@ -309,3 +309,16 @@ thread-spin bug (companion threads now always stop; monitors exit when the link 
 - Simulation A3 after the changes: jamming 32/32 (was 29/32), spoofing 90/111 + 10 inconclusive (was
   100/111), benign 80/80 (`a3-final-v4.md`).
 - Lesson: a 39-flight gate cannot show a 1–4% tail. Use ≥ 150 fresh flights per gate.
+
+## 2026-11-11: strong-evidence rule; fresh 339-flight gate 1/339
+
+- The remaining v4 accusations were 1–4 m position glitches while the receiver reported a healthy fix,
+  plus a C3 heavy tail (real worst 1230). Persistence ("does the jump stay") didn't separate glitches,
+  but size did: real steps ≤ 4.0 m vs simulated jumps/meaconing ≥ 18 m.
+- 'Spoofing-like' now needs C3 > 1538 or a step > 5 m (1.25 × worst of 499 real flights). Weaker evidence
+  gives 'inconclusive'. Simulation A3: spoofing 89/111 + 11 inconclusive, jamming 32/32, benign 80/80.
+- **Fresh set v5** (339 flights, 47.7 h, frozen a5f9657, scored once): **1/339 false spoofing (0.3%, UB 1.6%)**,
+  10 inconclusive, 4 jamming-like (2 genuine airborne fix losses, 2 brief satellite dips) (`real-gate-v5.md`).
+- Real-flight corpus is now 838 usable public PX4 flights (~110 airborne h), all local in `runs/px4real*`.
+- Download tip: write curl output to `.part` and `mv` on success (an `rm` inside `sh -c` is blocked by the
+  harness safety check).

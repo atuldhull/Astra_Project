@@ -48,7 +48,8 @@ used while designing or tuning that component. Superseded results are kept in th
 
 | Claim | Number | Data | File |
 |---|---|---|---|
-| `diagnose` false spoofing accusations on real benign flights (final, fresh) | **3/195 (1.5%, 95% UB 4.5%)**, 27 h; +4 inconclusive, 2 airborne fix-loss 'jamming' | 195 fresh public PX4 flights, code frozen first | `real-gate-v4.md` |
+| `diagnose` false spoofing accusations on real benign flights (final, fresh) | **1/339 (0.3%, 95% UB 1.6%)**, 47.7 h; 10 inconclusive (2.9%); 4 'jamming-like' (2 real airborne fix losses, 2 brief satellite dips) | 339 fresh public PX4 flights, code frozen first | `real-gate-v5.md` |
+| Previous version (v3 rules) | 3/195 (1.5%) | 195 fresh flights | `real-gate-v4.md` |
 | Same, first fresh set (before the v3 fixes) | 2/143 (1.4%) | 143 fresh flights | `real-gate-v3.md` |
 | Before real-data fixes (sim thresholds) | **7/159 (4.4%)**; C3 4/159, step 3/159 | 159 flights | `real-far-v2.md` |
 | Earlier small gate (underpowered, superseded) | 0/39 | 39 flights | `real-far-v1.md` |
@@ -60,7 +61,7 @@ used while designing or tuning that component. Superseded results are kept in th
 
 | Claim | Number | Data | File |
 |---|---|---|---|
-| `diagnose` verdict accuracy (sim, with real-flight gate) | **202/223**; jamming 32/32, spoofing 90/111 (+10 'inconclusive'), benign 80/80 | mixed-test + attack-test2 + benign-v3 | `a3-final-v4.md` |
+| `diagnose` verdict accuracy (sim, with real-flight gate) | **201/223**; jamming 32/32, spoofing 89/111 (+11 'inconclusive'), benign 80/80 | mixed-test + attack-test2 + benign-v3 | `a3-final-v5.md` |
 | `invert` attack recovery | type 84/84, rate 9%, bearing 2°, onset ~0 s | attack-test2 | `a5-inversion-v1/v2.md` |
 | `invert` re-fly reproduction | outcome 4/4; miss distance within 8% for 3/4 | 4 incidents | `a5-inversion-v2.md` |
 | Failure-boundary search (A1), 4-D | **14.2 vs 2.2** stealthy failures found (≈6.5×), F1 0.90 vs 0.39, 5/5 seeds | 200 flown ground-truth points | `a1-sitl-4d.md` |
@@ -78,7 +79,7 @@ used while designing or tuning that component. Superseded results are kept in th
 
 ## Not established (don't quote)
 
-- A zero false-accusation rate on real flights: GPS-only checks keep a ~1.5% real tail (3/195).
+- A zero false-accusation rate on real flights: 1/339 remains (one 6.5 m glitch with a healthy fix).
 - Long-window displacement (C5): rejected on real data (`c5-displacement-v1.md`).
 - Detection of **real** spoofing/jamming (no labelled real attack logs yet).
 - Optical-flow results on real sensors (simulated flow only; degraded-sensor result is a bound).
