@@ -103,7 +103,21 @@ vendor params    ──►  ArduPilot SITL in Docker (pinned 4.7.2, unmodified v
 - **Integrity:** canonical JSON, Ed25519 signatures with an explicit trusted-key check,
   hash-chained ledger, optional OpenTimestamps anchoring (hash only).
 
-## Quick start
+## Try it in 2 minutes (no Docker)
+
+Prereq: Python ≥ 3.11. Forensics on the bundled example logs (`examples/`, simulated):
+
+```bash
+python -m venv .venv && .venv/Scripts/python -m pip install .          # Linux/macOS: .venv/bin/
+.venv/Scripts/astra diagnose examples/spoof-jump.npz --html spoof.html  # open spoof.html in a browser
+.venv/Scripts/astra diagnose examples/jamming-denial.npz --html jam.html
+.venv/Scripts/astra diagnose examples/slow-drag-missed.npz              # a 0.25 m/s drag it misses (honest limit)
+```
+
+Your own logs work the same way: ArduPilot `.BIN` or PX4 `.ulg`. Add `--takeoff LAT,LON` if you know the real
+take-off point (catches a spoof present from power-on).
+
+## Quick start (simulator)
 
 Prereqs: Docker Desktop, Python ≥ 3.11.
 

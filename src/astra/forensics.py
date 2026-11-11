@@ -211,7 +211,7 @@ def diagnose(path: Path, cal_file: Path | None = None, takeoff: tuple | None = N
         elif len(hits):
             weak_ev.append((float(hits[0]), "position step (small)"))
     for t, m in rep["stock_alerts"]:
-        if "glitch" in m.lower():
+        if "glitch" in m.lower() and "cleared" not in m.lower():
             spoof_ev.append((t, "stock: " + m))
     for a, _b in self_rep.get("spoofing", {}).get("level3_intervals_s", []):
         spoof_ev.append((a, "receiver self-report: multiple spoofing indications"))

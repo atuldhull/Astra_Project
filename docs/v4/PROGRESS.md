@@ -369,3 +369,7 @@ conclusion is possible (`benchmarks/realflow-v1.md`). Real flow validation needs
 - 'jamming-like' verdict now states outage count, longest and total; isolated dropouts (< 3 s, < 3 times) are
   tagged 'brief'. A minimum length was rejected: simulated intermittent jamming has 2.0–2.2 s outages. Sim: 32/32
   jamming still 'jamming-like', none tagged brief.
+- Usability: `astra diagnose LOG --html OUT.html` (readable verdict, timeline, evidence, limits; JSON embedded);
+  `examples/` with 4 simulated logs incl. an honest miss; README "Try it in 2 minutes (no Docker)". Verified with a
+  clean `pip install .` in a fresh venv (bundled calibration found). Fix: stock "Glitch cleared" message no longer
+  counted as spoofing evidence (sim A3 unchanged).
