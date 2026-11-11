@@ -162,7 +162,7 @@ class Detection:
 
 
 def run(ch: Channels, cal: Calibration, channels=None) -> tuple[Detection, dict]:
-    channels = channels or list(cal.sigma_inv)
+    channels = list(cal.sigma_inv) if channels is None else channels
     first, stats = {}, {}
     for name in channels:
         if name not in cal.sigma_inv:

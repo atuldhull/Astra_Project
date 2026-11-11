@@ -36,6 +36,8 @@ def verdict(rep: dict) -> str:
         return "spoofing"
     if v.startswith("mixed"):
         return "mixed"
+    if v.startswith("inconclusive"):
+        return "inconclusive"
     return "none"
 
 
@@ -59,8 +61,8 @@ def main():
                 model = f"spoof_drag {rate[1:]} m/s"
             conf[t, v] += 1
             by_model[model][v] += 1
-    classes, verdicts = ["jamming", "spoofing", "none"], ["jamming", "spoofing", "mixed", "none"]
-    lines = ["# A3: forensics verdict accuracy (`astra diagnose`, bundled A2 v7 calibration)\n",
+    classes, verdicts = ["jamming", "spoofing", "none"], ["jamming", "spoofing", "mixed", "inconclusive", "none"]
+    lines = ["# A3: forensics verdict accuracy (`astra diagnose`, bundled calibration with real-flight gate)\n",
              "Confusion (rows = truth, columns = verdict):\n",
              "| truth \\ verdict | " + " | ".join(verdicts) + " | correct |", "|---|" + "---|" * (len(verdicts) + 1)]
     for t in classes:

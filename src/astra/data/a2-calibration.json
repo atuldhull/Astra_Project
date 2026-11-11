@@ -147,8 +147,14 @@
   "version": 2
  },
  "step": {
-  "thresh_m": 1.01,
-  "calibrated_on": "benign-v1 (160 flights)"
+  "thresh_m": 1.4,
+  "calibrated_on": "benign-v1 (sim, 1.01 m) floored by 1.25 x worst of 159 real PX4 flights (1.35 m)",
+  "sim_thresh_m": 1.01
  },
- "note": "C1 (GPS dv vs IMU) removed 2026-11-11: 35/39 false alarms on real PX4 flights; real residual noise ~4x simulated; it never caught a held-out attack first."
+ "note": "C1 (GPS dv vs IMU) removed 2026-11-11: 35/39 false alarms on real PX4 flights; real residual noise ~4x simulated; it never caught a held-out attack first.",
+ "real_gate": {
+  "c3_min_gps_interval_s": 0.3,
+  "c3_strong_h": 1060.0,
+  "note": "Designed 2026-11-11 on 159 public PX4 flights (runs/px4real, px4real2). C3 is skipped when the GPS log rate is below ~3 Hz (1-Hz logs gave 3 of 4 real C3 false alarms). C3 alarms below c3_strong_h (1.25 x worst real 5-Hz flight) are reported as weak/inconclusive, never as spoofing. Scored once on fresh flights: benchmarks/real-gate-v3.md"
+ }
 }
