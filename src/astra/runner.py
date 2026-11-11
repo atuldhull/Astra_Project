@@ -319,8 +319,23 @@ def fly(sc: Scenario, seed: int, workdir: Path, *, speedup: int = 5,
                 except Exception as exc:  # noqa: BLE001
                     comp_result["error"] = f"{type(exc).__name__}: {exc}"
 
-            comp_thread = threading.Thread(target=_comp, daemon=True)
-            comp_thread.start()
+            comp_thread = threading.Thread(target=_comp, daemon=True) if companion.get("cal") else None
+            if comp_thread:
+                comp_thread.start()
+            if companion.get("flow_cal"):
+                from astra.companion import flow_monitor
+
+                def _flow():
+                    try:
+                        fst = flow_monitor(f"tcp:127.0.0.1:{sitl.port2}", companion["flow_cal"], stop=comp_stop)
+                        comp_result.update(flow_alarm_boot_t=fst.alarm_t, flow_blocks=len(fst.blocks),
+                                           flow_raw=[[round(a, 2), round(b, 4), round(c, 4)] for a, b, c in fst.raw])
+                    except Exception as exc:  # noqa: BLE001
+                        comp_result["flow_error"] = f"{type(exc).__name__}: {exc}"
+
+                flow_thread = threading.Thread(target=_flow, daemon=True)
+                flow_thread.start()
+                comp_result["_flow_thread"] = flow_thread
         f.request_streams()
         f.run_until(lambda: f.t > 15 and f.true is not None, 60, wall_timeout_s=90)  # let storage/EKF initialise
         n_items = f.upload_mission()
@@ -376,14 +391,21 @@ def fly(sc: Scenario, seed: int, workdir: Path, *, speedup: int = 5,
         if sc.mission.end == "loiter" and finished:
             f.run_until(lambda: False, 10)  # let it settle in the loiter
         res.alerts, res.modes, res.texts = f.alerts, f.modes, f.texts
-        if comp_thread is not None:
+        if comp_stop is not None:
             comp_stop.set()
-            comp_thread.join(timeout=10)
+            if comp_thread is not None:
+                comp_thread.join(timeout=10)
+            ft = comp_result.pop("_flow_thread", None)
+            if ft is not None:
+                ft.join(timeout=10)
             res.metrics["companion"] = comp_result
         _classify(res, f, sc, finished, t_arm)
     except Exception as exc:  # noqa: BLE001 - a broken run is a result, not a crash of the batch
         res.outcome, res.reason = "error", f"{type(exc).__name__}: {exc}"
     finally:
+        _stop = locals().get("comp_stop")
+        if _stop is not None:
+            _stop.set()
         sitl.stop()
         _post_process(res, sitl.logs(), workdir, keep_logs)
         res.wall_s = round(time.monotonic() - wall0, 2)

@@ -49,6 +49,10 @@ Held-out: 0 false alarms in 6.7 h, naive drags ≥ 0.5 m/s 35/35 caught at 14–
 its in-flight alarms match the offline replay exactly (6/6). With LAND-on-alarm it turned 6/6
 diversions into safe aborts ([benchmarks/shield-v1.md](benchmarks/shield-v1.md)).
 
+**Flow-Shield** (companion computer + optical-flow sensor) catches even the *velocity-matched* spoofs
+in flight: **42/47 consistent drag-offs vs stock 0**, 0 false alarms in 3.3 held-out hours, with no firmware
+change ([benchmarks/flowshield-v1.md](benchmarks/flowshield-v1.md); needs a good flow sensor).
+
 **Shield-Companion** runs the same check on a companion computer (Raspberry Pi/Jetson) for **any
 MAVLink autopilot**. On PX4 it caught naive drag-offs 40/48 vs stock 10/48 with 0 false alarms in 3.0
 held-out hours, and it was verified live in the loop ([benchmarks/companion-px4-v1.md](benchmarks/companion-px4-v1.md)).

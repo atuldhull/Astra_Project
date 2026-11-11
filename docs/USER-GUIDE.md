@@ -140,6 +140,19 @@ Connect it to the autopilot's companion MAVLink link (PX4: the onboard link on U
 your TELEM2 serial via `--connect /dev/ttyAMA0,921600`). On alarm it sends a CRITICAL status text; with
 `--on-alarm land` it also commands LAND.
 
+## 9. Flow-Shield: catching velocity-matched spoofs (needs optical flow + rangefinder)
+
+Flow-Shield compares GNSS velocity with what your optical-flow sensor sees, on the companion computer:
+
+```python
+from astra.companion import flow_monitor          # see benchmarks/flowshield_eval.py for the full recipe
+st = flow_monitor("udp:0.0.0.0:14550", flow_cal)  # flow_cal: an A2 'gps+imu+flow' calibration
+```
+
+Calibrate it on **its own live residuals** from 30–60 min of your benign flights (collect with
+`h = inf`, then fit, as `benchmarks/flowshield_eval.py` does). Constants from offline logs aren't
+transferable: telemetry differs from logs.
+
 ## What ASTRA can't tell you
 - How your drone behaves on a real range. Simulation is pre-qualification.
 - RF-level receiver behaviour (C/N0, AGC, constellation-specific effects).

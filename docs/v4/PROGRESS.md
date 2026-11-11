@@ -275,3 +275,10 @@ class 4/4, with miss distance within about ±50% (ramp not yet estimated; start 
   the receiver reported no fix).
 
 **Plane A2 C3** (`benchmarks/plane-a2-v1.md`): stock 1/48 vs ASTRA 16/48 (naive ≥ 0.5 m/s 16/18; consistent 0/24, physics). 0 FA in 2.3 held-out h (small).
+
+## 2026-11-11: Flow-Shield (companion, optical-flow witness), live
+
+`astra.companion.flow_monitor`: C2 online from MAVLink telemetry. Offline-log constants → 1 live FA in 6
+benign flights, so it's **self-calibrated** on its own live residuals (39 flights, h = 66.6). Held-out live:
+**0 FA in 3.26 h** (UB 1.13/h). **Consistent drag-off 42/47** (stock 0), alarm at 20–48 m error. Fixed a
+thread-spin bug (companion threads now always stop; monitors exit when the link goes silent).

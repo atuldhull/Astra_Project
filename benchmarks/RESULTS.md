@@ -41,6 +41,7 @@ used while designing or tuning that component. Superseded results are kept in th
 |---|---|---|---|
 | Shield, naive drag ≥ 0.5 m/s | **35/35**, alarm at 14–31 m; 0 FA in 6.7 h | attack-test / benign-v2 | `shield-v1.md` |
 | Onboard = offline replay | 6/6 identical; companion vs Lua within 0.3 s (6/6) | SITL | `shield-v1.md`, PROGRESS |
+| **Flow-Shield** (companion, flow witness), consistent drag | **42/47** live (stock 0), 0 FA in 3.3 h held-out live | SITL, good flow | `flowshield-v1.md` |
 | Drop-GPS-then-land mitigation | 6/6 safe aborts; true post-alarm movement 46 → 19 m | SITL | `shield-v1.md` |
 
 ## Real flights (sim-to-real)

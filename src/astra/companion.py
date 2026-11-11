@@ -95,10 +95,15 @@ def monitor(conn: str, cal: dict, *, on_alarm: str = "alert", stop: threading.Ev
             with open(status_file, "w") as fh:
                 json.dump({"alarm_boot_t": st.alarm_boot_t, "blocks": len(st.blocks)}, fh)
     t_end = time.monotonic() + wall_timeout_s
+    last_rx = time.monotonic()
     while (stop is None or not stop.is_set()) and time.monotonic() < t_end:
         msg = m.recv_match(type=["GPS_RAW_INT", "GLOBAL_POSITION_INT"], blocking=True, timeout=1)
         if msg is None:
+            if time.monotonic() - last_rx > 15:  # link gone (vehicle/simulator stopped)
+                break
+            time.sleep(0.05)
             continue
+        last_rx = time.monotonic()
         if msg.get_type() == "GLOBAL_POSITION_INT":
             rel_alt = msg.relative_alt / 1000.0
             boot_t = msg.time_boot_ms / 1000.0
@@ -137,3 +142,101 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# ── Flow-Shield: the optical-flow witness channel (C2) online, on a companion computer ──────────────
+@dataclass
+class FlowShieldState:
+    """Online version of the offline C2 channel (astra.detect): geometric flow model, tilt/speed nuisance
+    correction, range whitening, 4 s block medians, CUSUM. Uses an A2 'gps+imu+flow' calibration as-is."""
+    M: np.ndarray
+    B: np.ndarray | None
+    sigma_inv: np.ndarray
+    k: float
+    h: float
+    block_s: float = 4.0
+    ref_range: float = 30.0
+    buf: list = field(default_factory=list)
+    bstart: float | None = None
+    cusum: float = 0.0
+    alarm_t: float | None = None
+    blocks: list = field(default_factory=list)
+    raw: list = field(default_factory=list)  # (t, rN, rE) block residuals, for self-calibration
+
+    def feed(self, t: float, comp_x: float, comp_y: float, quality: int, slant_m: float,
+             roll: float, pitch: float, yaw: float, vn: float, ve: float, vd: float, airborne: bool) -> bool:
+        if not airborne:
+            self.buf, self.bstart = [], None
+            return False
+        if quality > 10 and slant_m > 2.0:
+            cr, sr, cp, sp, cy, sy = (math.cos(roll), math.sin(roll), math.cos(pitch), math.sin(pitch),
+                                      math.cos(yaw), math.sin(yaw))
+            # R^T v (body x/y), same ZYX convention as astra.detect.features
+            vbx = cp * cy * vn + cp * sy * ve - sp * vd
+            vby = (sr * sp * cy - cr * sy) * vn + (sr * sp * sy + cr * cy) * ve + sr * cp * vd
+            u = np.array([comp_x * slant_m, comp_y * slant_m])
+            r = np.array([vbx, vby]) - self.M @ u
+            if self.B is not None:
+                X = np.array([1.0, roll, pitch, vbx, vby, pitch * vbx, roll * vby])
+                r = r - X @ self.B
+            r = r * (self.ref_range / max(slant_m, 5.0))
+            self.buf.append(r)
+        if self.bstart is None:
+            self.bstart = t
+        if t - self.bstart < self.block_s:
+            return False
+        fired = False
+        if len(self.buf) >= 0.7 * self.block_s * 10 * 0.5:  # enough valid samples in the block (~10 Hz)
+            rm = np.median(np.asarray(self.buf), axis=0)
+            self.raw.append((t, float(rm[0]), float(rm[1])))
+            q = float(rm @ self.sigma_inv @ rm)
+            self.cusum = max(0.0, self.cusum + min(q, 100.0) - self.k)
+            self.blocks.append((t, float(rm[0]), float(rm[1]), q, self.cusum))
+            if self.cusum > self.h and self.alarm_t is None:
+                self.alarm_t, fired = t, True
+        self.buf, self.bstart = [], None
+        return fired
+
+
+def flow_monitor(conn: str, a2_flow_cal: dict, *, stop: threading.Event | None = None,
+                 wall_timeout_s: float = 1e9) -> FlowShieldState:
+    """With a2_flow_cal['h']['c2'] = inf it only collects residuals (calibration mode)."""
+    """Companion-side C2 monitor. a2_flow_cal: the 'gps+imu+flow' entry of an A2 calibration."""
+    c = a2_flow_cal
+    st = FlowShieldState(np.asarray(c["flow_model"]), np.asarray(c["flow_nuisance"]) if c.get("flow_nuisance") else None,
+                         np.asarray(c["sigma_inv"]["c2"]), float(c["k"]["c2"]), float(c["h"]["c2"]))
+    m = mavutil.mavlink_connection(conn, source_system=254, source_component=192)
+    m.wait_heartbeat(timeout=60)
+    for mid, hz in ((ML.MAVLINK_MSG_ID_OPTICAL_FLOW, 10), (ML.MAVLINK_MSG_ID_DISTANCE_SENSOR, 10),
+                    (ML.MAVLINK_MSG_ID_ATTITUDE, 10), (ML.MAVLINK_MSG_ID_GPS_RAW_INT, 5),
+                    (ML.MAVLINK_MSG_ID_GLOBAL_POSITION_INT, 10)):
+        m.mav.command_long_send(m.target_system, m.target_component, ML.MAV_CMD_SET_MESSAGE_INTERVAL,
+                                0, mid, int(1e6 / hz), 0, 0, 0, 0, 0)
+    att = (0.0, 0.0, 0.0)
+    slant, rel_alt, vd, vn, ve, boot_t = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    t_end = time.monotonic() + wall_timeout_s
+    last_rx = time.monotonic()
+    while (stop is None or not stop.is_set()) and time.monotonic() < t_end:
+        msg = m.recv_match(type=["OPTICAL_FLOW", "DISTANCE_SENSOR", "ATTITUDE", "GPS_RAW_INT", "GLOBAL_POSITION_INT"],
+                           blocking=True, timeout=1)
+        if msg is None:
+            if time.monotonic() - last_rx > 15:
+                break
+            time.sleep(0.05)
+            continue
+        last_rx = time.monotonic()
+        typ = msg.get_type()
+        if typ == "ATTITUDE":
+            att = (msg.roll, msg.pitch, msg.yaw)
+        elif typ == "DISTANCE_SENSOR":
+            slant = msg.current_distance / 100.0
+        elif typ == "GLOBAL_POSITION_INT":
+            rel_alt, vd, boot_t = msg.relative_alt / 1000.0, msg.vz / 100.0, msg.time_boot_ms / 1000.0
+        elif typ == "GPS_RAW_INT" and msg.fix_type >= 3:
+            spd, cog = msg.vel / 100.0, math.radians(msg.cog / 100.0)
+            vn, ve = spd * math.cos(cog), spd * math.sin(cog)
+        elif typ == "OPTICAL_FLOW":
+            if st.feed(boot_t, msg.flow_comp_m_x, msg.flow_comp_m_y, msg.quality, slant, *att, vn, ve, vd, rel_alt > 3.0):
+                m.mav.statustext_send(ML.MAV_SEVERITY_CRITICAL, b"ASTRA Flow-Shield: GNSS vs optical flow mismatch")
+    m.close()
+    return st
