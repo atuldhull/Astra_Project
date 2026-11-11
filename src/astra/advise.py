@@ -55,16 +55,22 @@ def _with_gps(scs, profile: str | None):
 
 def advise(vendor: Path | None, out: Path, nbenign: int = 20, parallel: int = 4,
            autopilot: str = "ardupilot", gps_profile: str | None = None,
-           attack_from: Path | None = None) -> list[dict]:
+           attack_from: Path | None = None, settings: list[str] | None = None) -> list[dict]:
     """gps_profile: override the benign flights' GNSS noise model ("harsh" = noisier real receivers),
     so the benign cost isn't measured on unrealistically clean GPS.
     attack_from: reuse the attack flights of an earlier advise run with the same candidates (attack
-    flights don't depend on the benign GNSS profile), so only benign flights are flown."""
+    flights don't depend on the benign GNSS profile), so only benign flights are flown.
+    settings: fly only these candidate names (e.g. to confirm a shortlist on a larger benign sample)."""
     out.mkdir(parents=True, exist_ok=True)
     benign = _with_gps(PACKS["benign-v2"]()[:nbenign], gps_profile)
     atk = [s for s in PACKS["attack-test"]() if ("-g0-" in s.id or "-g1-" in s.id)
            and s.id.split("-")[-3] in ("r0.5", "r1")]
     cands = CANDIDATES_PX4 if autopilot == "px4" else CANDIDATES
+    if settings:
+        unknown = set(settings) - set(cands)
+        if unknown:
+            raise ValueError(f"unknown settings {sorted(unknown)}; choose from {list(cands)}")
+        cands = {k: v for k, v in cands.items() if k in settings}
     speed = 10 if autopilot == "px4" else 20
     rows = []
     for name, overlay in cands.items():
