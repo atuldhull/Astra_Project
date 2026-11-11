@@ -322,3 +322,11 @@ thread-spin bug (companion threads now always stop; monitors exit when the link 
 - Real-flight corpus is now 836 usable public PX4 flights (118.5 airborne h), all local in `runs/px4real*`.
 - Download tip: write curl output to `.part` and `mv` on success (an `rm` inside `sh -c` is blocked by the
   harness safety check).
+
+## 2026-11-11: C4 fixed-wing air-data witness: killed on real data
+
+Designed on real logs first, as the earlier lesson required: 120 public PX4 fixed-wing missions. Only 24% had
+a valid airspeed sensor. Real wind estimates shift by 1.3–2.3 m/s (median worst per flight; up to 4.8 m/s,
+PX4's own EKF wind up to 9 m/s) within minutes, even in straight flight with a per-flight airspeed-scale fit.
+Consistent 1–2 m/s spoofs can't be separated from wind. Not shipped; negative result in
+`benchmarks/c4-airwind-v1.md`.

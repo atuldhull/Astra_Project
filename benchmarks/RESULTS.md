@@ -84,4 +84,5 @@ used while designing or tuning that component. Superseded results are kept in th
 - Detection of **real** spoofing/jamming (no labelled real attack logs yet).
 - Optical-flow results on real sensors (simulated flow only; degraded-sensor result is a bound).
 - Spoofing from power-on (undetectable by consistency checks; not tested).
-- Fixed-wing: consistent-spoof detection (no witness yet); larger FAR sample.
+- Fixed-wing: consistent-spoof detection. The airspeed/wind witness was measured on real fixed-wing logs and
+  can't separate 1–2 m/s spoofs from real wind change (`c4-airwind-v1.md`).

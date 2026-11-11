@@ -44,6 +44,10 @@
   *with variable wind*.
 - **Kill:** if with realistic wind the benign false-alarm budget forces detection below 25%, publish the
   negative result and stop.
+- **Status 2026-11-11: killed on real data** (`benchmarks/c4-airwind-v1.md`). Only 24% of 105 real PX4
+  fixed-wing logs had a valid airspeed sensor. Real wind estimates shift 1.3–2.3 m/s (median worst, up to
+  4.8) within minutes, so consistent drags of 1–2 m/s are undetectable; only gross spoofs ≥ 3–6 m/s are.
+  Remaining idea: test whether stock PX4's airspeed validator blames the airspeed sensor under a spoof.
 
 ### 3. Low-rate naive spoof (0.25 m/s) improvement
 - **Why:** weakest remaining naive case (offline 4/12; Shield 6/12).
