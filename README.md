@@ -57,8 +57,10 @@ change ([benchmarks/flowshield-v1.md](benchmarks/flowshield-v1.md); needs a good
 MAVLink autopilot**. On PX4 it caught naive drag-offs 40/48 vs stock 10/48 with 0 false alarms in 3.0
 held-out hours, and it was verified live in the loop ([benchmarks/companion-px4-v1.md](benchmarks/companion-px4-v1.md)).
 
-**EKF tuning alone** (A6, [benchmarks/a6-v2.md](benchmarks/a6-v2.md)) closes about half of the *naive* gap
-safely (ArduPilot 6/12 with 1/20 alerts; PX4 5/12 with 0/20, both on noisy GPS). The aggressive setting
+**EKF tuning alone** (A6, [benchmarks/a6-v2.md](benchmarks/a6-v2.md)) helps only on PX4. Confirmed on 80 benign
+flights with noisy GPS ([benchmarks/a6-confirm-px4.md](benchmarks/a6-confirm-px4.md)): PX4 tighter gates catch 5/12 naive
+drags with 0/78 extra alerts. ArduPilot's best candidate (6/12) alerts on 7/79 noisy-GPS flights
+([benchmarks/a6-confirm-ardupilot.md](benchmarks/a6-confirm-ardupilot.md)), so no ArduPilot setting is recommended for average receivers. The aggressive setting
 that catches 12/12 alerts on 14 of 16 benign flights with a noisy receiver. Tuning never fixes the
 *consistent* case (≤ 3/12).
 

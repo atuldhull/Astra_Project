@@ -373,3 +373,11 @@ conclusion is possible (`benchmarks/realflow-v1.md`). Real flow validation needs
   `examples/` with 4 simulated logs incl. an honest miss; README "Try it in 2 minutes (no Docker)". Verified with a
   clean `pip install .` in a fresh venv (bundled calibration found). Fix: stock "Glitch cleared" message no longer
   counted as spoofing evidence (sim A3 unchanged).
+
+## 2026-11-12 — A6 80-flight confirmation (harsh GNSS)
+- PX4 `tight-gates`: 0/78 benign alerts (stock 0/76), naive 5/12. **Confirmed.**
+- ArduPilot `low-noise`: **7/79** benign alerts (stock 0/75), naive 6/12. The 20-flight screen (1/20) was optimistic;
+  not recommended for average receivers. README, RESULTS, PITCH, a6-v2 corrected.
+- Harness bug found and fixed: PX4 SIH sensor stalls (baro/compass stop, vehicle never takes off, EKF dead-reckons
+  km away) were classified as mission timeouts/aborts. Now `error` (`runner_px4.sim_stalled`). 6 flights in this
+  run; no other saved PX4 run affected.

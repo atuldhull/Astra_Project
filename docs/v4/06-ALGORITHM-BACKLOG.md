@@ -83,6 +83,8 @@
 - **Status 2026-11-11:** PX4 support and a realistic `harsh` GNSS profile were added (`a6-v2.md`). With harsh
   GNSS the v1 'best' ArduPilot setting alerts on 14/16 benign flights. Any optimiser must score benign cost
   on `harsh`, not `typical`.
+- **80-flight confirmation 2026-11-12:** PX4 `tight-gates` meets the acceptance bar (5/12 naive, 0/78 alerts).
+  ArduPilot `low-noise` fails it (7/79 alerts). An ArduPilot optimiser is the open part.
 - **Why:** v1 is a fixed sweep on a tiny benign sample.
 - **Approach:** Bayesian optimisation over EK3 gates/noises/glitch radius with constraint FA ≤ budget
   (measured on ≥ 80 benign flights), objective = A1 robustness margin. Report a Pareto table, never a single

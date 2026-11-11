@@ -170,6 +170,12 @@ def fly_px4(sc: Scenario, seed: int, workdir: Path, *, speedup: int = 10,
     return res
 
 
+def sim_stalled(fl, max_dist_from_home_m: float) -> bool:
+    """True when the simulated sensors dropped out and the vehicle never flew (harness failure)."""
+    dropout = any("No valid data from" in m for _, m in fl.messages)
+    return dropout and max_dist_from_home_m < 10.0
+
+
 def _classify_px4(res: RunResult, fl, sc: Scenario, finished: bool) -> None:
     from astra.evaluate import nav_error_series
     if not fl.is_sitl:
@@ -189,6 +195,12 @@ def _classify_px4(res: RunResult, fl, sc: Scenario, finished: bool) -> None:
                    "goal_n_m": gn, "goal_e_m": ge, "autopilot": "px4",
                    "sim_duration_s": round(float(sim["t"][-1] - sim["t"][0]), 2)}
     R = sc.expect.goal_radius_m
+    if sim_stalled(fl, far):
+        # SIH sensor stall under host load: baro/compass stop, the vehicle never leaves the pad and the EKF
+        # dead-reckons kilometres away. A harness failure, not a navigation result (a6-confirm-px4.md).
+        res.outcome, res.reason = "error", "harness: simulator sensors stopped before take-off"
+        res.passed = False
+        return
     if far > sc.expect.geofence_radius_m:
         o, why = "flyaway", "left the geofence"
     elif not finished:

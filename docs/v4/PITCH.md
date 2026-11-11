@@ -30,7 +30,7 @@ jamming at all, and hardware GNSS simulators cost lakhs to crores while testing 
 | Shield onboard, naive drag ≥ 0.5 m/s | **35/35**, alarm at 14–31 m off course; onboard = offline replay 6/6 |
 | Shield "drop GPS then land" | 6/6 diversions → safe aborts; true post-alarm movement 46 → 19 m |
 | Forensics verdict (`astra diagnose`) | 201/223 correct in simulation; simulated benign never accused |
-| EKF tuning alone (A6) | safely closes ~half the naive gap (6/12 ArduPilot, 5/12 PX4); the 12/12 setting false-alerts on noisy receivers; velocity-matched ≤ 3/12 |
+| EKF tuning alone (A6) | PX4: catches 5/12 naive drags with 0/78 extra alerts (80-flight check). ArduPilot: no setting safe on noisy receivers (best 6/12 costs 7/79 alerts); velocity-matched ≤ 3/12 |
 | **Real flights** (339 fresh public PX4 missions, 47.7 h, scored once) | 1/339 false spoofing accusations (0.3%), down from 7/159 (4.4%) before real-data fixes; one channel *removed* and one *rejected* because they failed real data |
 
 ## Honest limits
