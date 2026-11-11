@@ -319,6 +319,6 @@ thread-spin bug (companion threads now always stop; monitors exit when the link 
   gives 'inconclusive'. Simulation A3: spoofing 89/111 + 11 inconclusive, jamming 32/32, benign 80/80.
 - **Fresh set v5** (339 flights, 47.7 h, frozen a5f9657, scored once): **1/339 false spoofing (0.3%, UB 1.6%)**,
   10 inconclusive, 4 jamming-like (2 genuine airborne fix losses, 2 brief satellite dips) (`real-gate-v5.md`).
-- Real-flight corpus is now 838 usable public PX4 flights (~110 airborne h), all local in `runs/px4real*`.
+- Real-flight corpus is now 836 usable public PX4 flights (118.5 airborne h), all local in `runs/px4real*`.
 - Download tip: write curl output to `.part` and `mv` on success (an `rm` inside `sh -c` is blocked by the
   harness safety check).
