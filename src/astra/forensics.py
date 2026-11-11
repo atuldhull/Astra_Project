@@ -25,6 +25,7 @@ from astra.evaluate import ALERT_WORDS, CODE_NAMES
 # Receiver-reported horizontal accuracy above this (airborne) = receiver says it is degraded. Real benign
 # PX4 flights: median worst 1.0 m, 95th pct 3.6 m (304 flights); simulated spoofs never above 2.2 m.
 HACC_DEGRADED_M = 5.0
+LOW_SAT_MIN_S = 3.0
 
 
 def _load(path: Path) -> logs.FlightLog:
@@ -92,7 +93,9 @@ def diagnose(path: Path, cal_file: Path | None = None) -> dict:
     low_sats = (gps["NSats"] < 6) & air_g
     rep["receiver"] = {
         "fix_lost_intervals_s": _intervals(gps["t"], no_fix),
-        "low_satellite_intervals_s": _intervals(gps["t"], low_sats & ~no_fix),
+        # A dip to 5 satellites with the fix kept must last >= 3 s: 1-2 s dips are routine on real
+        # benign flights (2 of 339 in real-gate-v5.md were labelled jamming-like by them).
+        "low_satellite_intervals_s": _intervals(gps["t"], low_sats & ~no_fix, min_len_s=LOW_SAT_MIN_S),
         "min_sats_in_fix": int(np.nanmin(gps["NSats"][gps["Status"] >= 3])) if (gps["Status"] >= 3).any() else None,
         "degraded_accuracy_intervals_s": [],
     }
