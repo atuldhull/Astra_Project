@@ -156,8 +156,14 @@ def diagnose(path: Path, cal_file: Path | None = None) -> dict:
         rep["position_steps"] = {"threshold_m": step_thr, "n": int(len(hits)),
                                  "max_m": round(float(ss.max()), 1) if len(ss) else None,
                                  "first_t": round(float(hits[0]), 1) if len(hits) else None}
-        if len(hits):
-            spoof_ev.append((float(hits[0]), "position step"))
+        # Real receivers glitch by up to ~4 m with a healthy fix (499 public PX4 flights); spoofed jumps and
+        # meaconing in simulation are >= 18 m. Steps below the strong level are weak evidence only.
+        step_strong = (cal_all or {}).get("real_gate", {}).get("step_strong_m", 0.0)
+        strong = st[ss > max(step_thr, step_strong)]
+        if len(strong):
+            spoof_ev.append((float(strong[0]), "position step"))
+        elif len(hits):
+            weak_ev.append((float(hits[0]), "position step (small)"))
     for t, m in rep["stock_alerts"]:
         if "glitch" in m.lower():
             spoof_ev.append((t, "stock: " + m))

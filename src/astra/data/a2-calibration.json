@@ -154,7 +154,8 @@
  "note": "C1 (GPS dv vs IMU) removed 2026-11-11: 35/39 false alarms on real PX4 flights; real residual noise ~4x simulated; it never caught a held-out attack first.",
  "real_gate": {
   "c3_min_gps_interval_s": 0.3,
-  "c3_strong_h": 1060.0,
-  "note": "Designed 2026-11-11 on 159 public PX4 flights (runs/px4real, px4real2). C3 is skipped when the GPS log rate is below ~3 Hz (1-Hz logs gave 3 of 4 real C3 false alarms). C3 alarms below c3_strong_h (1.25 x worst real 5-Hz flight) are reported as weak/inconclusive, never as spoofing. Scored once on fresh flights: benchmarks/real-gate-v3.md"
+  "c3_strong_h": 1538.0,
+  "note": "C3 is skipped when GPS is logged below ~3 Hz. Verdict 'spoofing-like' needs strong evidence: C3 CUSUM > c3_strong_h or a position step > step_strong_m (each 1.25 x the worst of 499 public PX4 benign flights, runs/px4real..px4real4). Weaker alarms are reported as 'inconclusive'. History: real-far-v2.md, real-gate-v3/v4.md; fresh score: real-gate-v5.md",
+  "step_strong_m": 5.0
  }
 }
