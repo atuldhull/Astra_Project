@@ -103,6 +103,9 @@
 - **Approach:** known take-off point check (operator-entered or map-matched) and, longer term, a visual
   absolute-position fix. This is the crowded visual-navigation market; only pursue as a *check*, not
   a navigator.
+- **Status 2026-11-11: take-off point check shipped** (`diagnose --takeoff LAT,LON[,R]`,
+  `benchmarks/takeoff-v1.md`): 0/299 false alarms on simulated benign flights incl. harsh GNSS; boot spoofs
+  > ~25 m flagged. Not validated on real receivers (no truth in public logs). Map-matching not started.
 
 ### 10. Real false-accusation tail (GPS-only forensics) — new, high priority
 - **Why:** the final fresh gate gives 3/195 (1.5%) false 'spoofing-like' verdicts on real benign flights.

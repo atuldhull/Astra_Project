@@ -351,3 +351,12 @@ conclusion is possible (`benchmarks/realflow-v1.md`). Real flow validation needs
   and PX4 `tight-gates` (5/12, 0/20). Consistent drags ≤ 3/12 with every setting (`a6-v2.md`).
 - Bug fixed: the advise report claimed "zero observed benign cost" for settings with zero completed flights.
 - Ops note: the PX4 runs were ~3× slower while the laptop was on battery or asleep (2 docker timeouts).
+
+## 2026-11-11 (cont.) — jamming false label, power-on spoofing check, disk cleanup
+- `diagnose`: a satellite dip with the fix kept must last ≥ 3 s to be 'jamming-like' (2 of the 4 'jamming-like'
+  verdicts in real-gate-v5 were 1–2 s dips; the other 2 were real 17 s and 95 s airborne fix losses, correctly
+  reported). Sim A3 unchanged (`a3-final-v6.md`). Frozen at b653c34; fresh set v6 (350 flights) being scored.
+- New power-on spoofing check `diagnose --takeoff LAT,LON[,R]` (`takeoff-v1.md`): 0/299 false alarms on
+  simulated benign flights incl. harsh GNSS; boot spoofs > ~25 m flagged. Simulation only.
+- Disk: deleted 43 GB of raw simulated ULogs (each run keeps `flight.npz` + results) and 7.5 GB of finished
+  real-log sets (re-downloadable; `runs/DELETED-LOGS.md`). D: free 41 → 86 GB.

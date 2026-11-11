@@ -86,7 +86,9 @@ def _cmd_ledger(a):
 
 def _cmd_diagnose(a):
     from astra.forensics import diagnose
-    print(json.dumps(diagnose(Path(a.log), cal_file=Path(a.cal) if a.cal else None), indent=1, default=str))
+    tk = tuple(float(x) for x in a.takeoff.split(",")) if a.takeoff else None
+    print(json.dumps(diagnose(Path(a.log), cal_file=Path(a.cal) if a.cal else None, takeoff=tk),
+                     indent=1, default=str))
 
 
 def _cmd_calibrate(a):
@@ -194,6 +196,8 @@ def main(argv=None):
     d = sub.add_parser("diagnose")
     d.add_argument("log")
     d.add_argument("--cal", help="airframe calibration from `astra calibrate` (default: bundled generic)")
+    d.add_argument("--takeoff", help="real take-off point LAT,LON[,RADIUS_M] (power-on spoofing check; "
+                                     "radius = how well you know the pad, default 15 m)")
     d.set_defaults(fn=_cmd_diagnose)
     c = sub.add_parser("calibrate", help="per-airframe A2 calibration from benign logs")
     c.add_argument("logs", nargs="+")

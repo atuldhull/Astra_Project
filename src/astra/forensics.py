@@ -26,6 +26,7 @@ from astra.evaluate import ALERT_WORDS, CODE_NAMES
 # PX4 flights: median worst 1.0 m, 95th pct 3.6 m (304 flights); simulated spoofs never above 2.2 m.
 HACC_DEGRADED_M = 5.0
 LOW_SAT_MIN_S = 3.0
+TAKEOFF_RADIUS_M = 15.0
 
 
 def _load(path: Path) -> logs.FlightLog:
@@ -79,7 +80,35 @@ def _step_residual(fl: logs.FlightLog):
     return t[1:][good], np.hypot(rn, re)[good]
 
 
-def diagnose(path: Path, cal_file: Path | None = None) -> dict:
+def takeoff_check(fl: logs.FlightLog, lat: float, lon: float, radius_m: float = TAKEOFF_RADIUS_M) -> dict | None:
+    """Power-on spoofing check: GPS position just before take-off vs the operator-declared take-off point.
+
+    Consistency monitors cannot see a spoof that is present from boot (docs/v4/05-DETECTION-PHYSICS.md §1);
+    this compares against an absolute reference instead. radius_m = how well the operator knows the pad
+    (map pin / phone GPS). Alarm when the offset exceeds radius_m + max(10 m, 3 x reported accuracy).
+    """
+    from astra.geo import latlon_to_ne
+    g, pos = fl["GPS"], fl["POS"]
+    air = pos["t"][pos["RelHomeAlt"] > 3]
+    t_to = float(air[0]) if len(air) else float(g["t"][-1])
+    sel = (g["Status"] >= 3) & (g["t"] <= t_to) & (g["t"] >= t_to - 10.0)
+    if sel.sum() < 3:
+        return None
+    n, e = latlon_to_ne(lat, lon, np.median(g["Lat"][sel]), np.median(g["Lng"][sel]))
+    hacc = None
+    if fl.has("GPA"):
+        a = fl["GPA"]
+        av = a["HAcc"][(a["t"] <= t_to) & (a["t"] >= t_to - 10.0) & (a["HAcc"] > 0) & (a["HAcc"] < 1e4)]
+        hacc = float(np.median(av)) if len(av) else None
+    limit = radius_m + max(10.0, 3.0 * (hacc or 0.0))
+    off = float(np.hypot(n, e))
+    return {"declared": [lat, lon], "radius_m": radius_m, "takeoff_t": round(t_to, 1),
+            "offset_m": round(off, 1), "reported_hacc_m": None if hacc is None else round(hacc, 2),
+            "limit_m": round(limit, 1), "mismatch": off > limit}
+
+
+def diagnose(path: Path, cal_file: Path | None = None, takeoff: tuple | None = None) -> dict:
+    """takeoff: optional (lat, lon[, radius_m]) of the real take-off point, for the power-on spoofing check."""
     from astra.detect import features, monitor
 
     fl = _load(Path(path))
@@ -173,6 +202,11 @@ def diagnose(path: Path, cal_file: Path | None = None) -> dict:
     for t, m in rep["stock_alerts"]:
         if "glitch" in m.lower():
             spoof_ev.append((t, "stock: " + m))
+    if takeoff is not None:
+        tk = takeoff_check(fl, *takeoff)
+        rep["takeoff_check"] = tk or {"available": False, "reason": "no GPS fix in the 10 s before take-off"}
+        if tk and tk["mismatch"]:
+            spoof_ev.append((tk["takeoff_t"], f"take-off position {tk['offset_m']:.0f} m from the declared pad"))
 
     # Attribution: spoof-like evidence inside a jamming interval (or up to 30 s after it, while the
     # receiver re-acquires and the EKF resets) is a jamming artefact, not separate spoofing.

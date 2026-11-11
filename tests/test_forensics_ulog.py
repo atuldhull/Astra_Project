@@ -31,3 +31,17 @@ def test_step_residual_flags_a_jump_not_smooth_motion():
     st, ss = _step_residual(fl)
     assert ss.max() > 90 and abs(st[np.argmax(ss)] - 30.0) < 0.3
     assert np.sort(ss)[-2] < 0.01  # everything else is explained by the reported velocity
+
+
+def test_takeoff_check_flags_boot_offset_not_true_pad():
+    from astra.forensics import takeoff_check
+    from astra.logs import FlightLog
+    t = np.arange(0, 60, 0.2)
+    fl = FlightLog("synthetic")
+    lat0, lon0 = 27.0, 71.0
+    fl.series["GPS"] = {"t": t, "Status": np.full(len(t), 3.0), "Lat": np.full(len(t), lat0),
+                        "Lng": np.full(len(t), lon0)}
+    fl.series["POS"] = {"t": t, "RelHomeAlt": np.where(t > 20, 30.0, 0.0)}
+    assert not takeoff_check(fl, lat0, lon0)["mismatch"]
+    far = takeoff_check(fl, lat0 + 100 / 111319.49, lon0)  # GPS says 100 m south of the real pad
+    assert far["mismatch"] and abs(far["offset_m"] - 100) < 1
