@@ -51,7 +51,10 @@
   (displacement test) instead of 4 s blocks. Combine with the block CUSUM via a GLR over multiple window lengths.
 - **Needs:** existing corpora (attack-dev for design, a **fresh** attack-test3 + benign-v4 for scoring).
 - **Acceptance:** 0.25 m/s naive ≥ 8/12 with unchanged FA (0 in ≥ 7 h held-out) **and** passing the real-flight
-  gate (≤ 0/39 on the PX4 public set).
+  gate (no added false accusations on a fresh ≥ 150-flight real set).
+- **Status 2026-11-11:** the 60 s displacement version (C5) was built and **rejected** on real data
+  (real wander ~4× simulated; see `benchmarks/c5-displacement-v1.md`). Any further attempt must be designed
+  on real logs (`runs/px4real*`), not SITL.
 - **Kill:** the real-flight gate fails (as raw-fix C3 did, 1/39).
 
 ### 4. Flow-Shield robustness to degraded flow
@@ -91,10 +94,20 @@
   absolute-position fix. This is the crowded visual-navigation market; only pursue as a *check*, not
   a navigator.
 
+### 10. Real false-accusation tail (GPS-only forensics) — new, high priority
+- **Why:** the final fresh gate gives 3/195 (1.5%) false 'spoofing-like' verdicts on real benign flights.
+  The remaining cases are a 5-Hz C3 heavy tail (peak 1.25 × the design worst) and position steps up to 2.1 m
+  while the receiver reported a healthy fix.
+- **Approach:** per-receiver-family noise models (u-blox M8/M9/F9 from the ULog `sensor_gps` device id),
+  a fleet prior learned from the 497 real logs, and a second independent witness required before
+  'spoofing-like' (C3 alone gives 'inconclusive').
+- **Acceptance:** ≤ 0.5% on a fresh ≥ 300-flight set, simulated A3 spoofing ≥ 90/111.
+
 ## How to judge any new algorithm (copy this checklist)
 
 1. Design only on dev corpora (`attack-dev`, `benign-v1`, `mixed-dev`).
 2. Freeze the code and constants. Commit.
 3. Generate **fresh** corpora (new RNG tags) and score once. Publish all misses and errors.
-4. Pass the real-benign-flight gate (`benchmarks/real_far.py`, 39 public PX4 flights).
+4. Pass the real-benign-flight gate on a **fresh** set of ≥ 150 public PX4 flights (`benchmarks/real_gate_v3.py DIR OUT`;
+   select with a new seed from `runs/px4_dbinfo.json`, excluding `runs/px4_real*_sel.json`; write the list with LF line endings).
 5. Update `benchmarks/RESULTS.md`, `PROGRESS.md`, and the README only with the published numbers.

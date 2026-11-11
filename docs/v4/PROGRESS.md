@@ -282,3 +282,30 @@ class 4/4, with miss distance within about ±50% (ramp not yet estimated; start 
 benign flights, so it's **self-calibrated** on its own live residuals (39 flights, h = 66.6). Held-out live:
 **0 FA in 3.26 h** (UB 1.13/h). **Consistent drag-off 42/47** (stock 0), alarm at 20–48 m error. Fixed a
 thread-spin bug (companion threads now always stop; monitors exit when the link goes silent).
+
+## 2026-11-11: powered real-flight gate (497 public PX4 flights) — the 0/39 claim was wrong
+
+- **C5 long-window displacement test: rejected.** The real 60 s position wander is ~4× the simulated value.
+  The real-calibrated threshold (45.7 m) catches 0/24 naive drags ≤ 0.5 m/s, and the shipped checks already
+  catch 1–2 m/s (`c5-displacement-v1.md`).
+- **159 flights (39 old + 120 new) exposed false accusations** the 39-flight gate had missed: C3 4/159,
+  position step 3/159, `diagnose` **7/159 'spoofing-like'**, Shield (sim constants) 13/159 (`real-far-v2.md`).
+- A blunt fix (thresholds floored at 1.25 × worst real) would cut naive detection from 39/95 to 13/95
+  (`real-recal-v1.md`), so it was rejected. Root causes instead:
+  - 3 of 4 C3 alarms were on **1-Hz GPS logs**, where position-rate vs instantaneous velocity is invalid.
+    C3 is now skipped when GPS arrives slower than ~3 Hz. Fixing this also exposed a bug:
+    `monitor.run(channels=[])` silently ran *all* channels.
+  - Real position steps reach 1.35 m, so the step threshold moved from 1.01 to 1.4 m, with no simulated
+    detection cost.
+  - C3 between the simulation threshold and the real-flight level (h 1060) is now reported as
+    **'inconclusive'**, never 'spoofing'.
+- **Fresh set v3** (143 flights, frozen a7906f0): 2/143 false accusations, plus 4 'jamming-like' from fix
+  acquisition on the ground after boot. Fixes:
+  - receiver events count only when airborne;
+  - evidence during receiver-reported degradation (hAcc > 5 m; real p95 3.6 m, simulated spoofs ≤ 2.2 m)
+    is downgraded to inconclusive.
+- **Fresh set v4** (195 flights, 27 h, frozen 278110e, scored once): **3/195 false spoofing accusations
+  (1.5%, UB 4.5%)**, 4 inconclusive, 2 airborne fix-loss 'jamming' (`real-gate-v4.md`).
+- Simulation A3 after the changes: jamming 32/32 (was 29/32), spoofing 90/111 + 10 inconclusive (was
+  100/111), benign 80/80 (`a3-final-v4.md`).
+- Lesson: a 39-flight gate cannot show a 1–4% tail. Use ≥ 150 fresh flights per gate.

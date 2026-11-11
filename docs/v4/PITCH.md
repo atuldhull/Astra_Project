@@ -29,9 +29,9 @@ jamming at all, and hardware GNSS simulators cost lakhs to crores while testing 
 | Fixed-wing (ArduPlane) stock / with ASTRA (naive ≥ 0.5 m/s) | 1/18 → 16/18 |
 | Shield onboard, naive drag ≥ 0.5 m/s | **35/35**, alarm at 14–31 m off course; onboard = offline replay 6/6 |
 | Shield "drop GPS then land" | 6/6 diversions → safe aborts; true post-alarm movement 46 → 19 m |
-| Forensics verdict (`astra diagnose`) | 209/223 correct; benign never accused |
+| Forensics verdict (`astra diagnose`) | 202/223 correct in simulation; simulated benign never accused |
 | EKF tuning alone (A6) | naive drag 0/12 → 12/12 detected; velocity-matched ≤ 3/12 |
-| **Real flights** (39 public PX4 missions, 5.6 h) | shipped checks **0/39** false alarms; one channel was *removed* because it failed this test |
+| **Real flights** (195 fresh public PX4 missions, 27 h, scored once) | 3/195 false spoofing accusations (1.5%); found and fixed 7/159 first; one channel *removed* and one *rejected* because they failed real data |
 
 ## Honest limits
 - Simulation is pre-qualification, not a range trial. Real *attack* logs aren't tested yet.
