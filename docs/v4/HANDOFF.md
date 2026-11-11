@@ -1,6 +1,7 @@
 # ASTRA v4 — Handoff (for the next model/session)
 
 > Read in this order: this file → [PROGRESS.md](PROGRESS.md) (what happened, with numbers) →
+> [06-ALGORITHM-BACKLOG.md](06-ALGORITHM-BACKLOG.md) (what to build next, in order) →
 > [05-DETECTION-PHYSICS.md](05-DETECTION-PHYSICS.md) (ground rules) → [04-ALGORITHMS.md](04-ALGORITHMS.md).
 > The planning docs 00–03 were written before any code. Where they disagree with PROGRESS.md,
 > PROGRESS.md (measured) wins.
