@@ -135,6 +135,16 @@ def diagnose(path: Path, cal_file: Path | None = None, takeoff: tuple | None = N
         air_a = np.interp(g["t"], pos["t"], pos["RelHomeAlt"]) > 3
         rep["receiver"]["degraded_accuracy_intervals_s"] = _intervals(
             g["t"], air_a & (np.nan_to_num(hv) > HACC_DEGRADED_M), min_len_s=0.0)
+    # Receiver's own jamming/spoofing flags (u-blox via PX4 sensor_gps). On 137 real benign flights level 2
+    # ('mitigated'/'indicated') appeared on 31% / 2.9% of flights, level 3 never: only level 3 is evidence.
+    self_rep = {}
+    for key, name in (("JamState", "jamming"), ("SpoofState", "spoofing")):
+        if key in gps:
+            v = np.nan_to_num(gps[key])
+            self_rep[name] = {"max_level_airborne": int(v[air_g].max()) if air_g.any() else None,
+                              "level3_intervals_s": _intervals(gps["t"], (v >= 3) & air_g, min_len_s=0.0)}
+    if self_rep:
+        rep["receiver"]["self_report"] = self_rep
     rep["stock_alerts"] = [[round(t, 1), m] for t, m in fl.messages if any(w in m.lower() for w in ALERT_WORDS)]
 
     cal_all = json.loads(Path(cal_file).read_text()) if cal_file else _bundled_calibration()
@@ -170,7 +180,8 @@ def diagnose(path: Path, cal_file: Path | None = None, takeoff: tuple | None = N
     rep["a2_monitor"] = a2
 
     # ── evidence ────────────────────────────────────────────────────────────
-    jam_iv = rep["receiver"]["fix_lost_intervals_s"] + rep["receiver"]["low_satellite_intervals_s"]
+    jam_iv = rep["receiver"]["fix_lost_intervals_s"] + rep["receiver"]["low_satellite_intervals_s"] \
+        + self_rep.get("jamming", {}).get("level3_intervals_s", [])
     spoof_ev: list[tuple[float, str]] = []
     weak_ev: list[tuple[float, str]] = []
     strong_h = (cal_all or {}).get("real_gate", {}).get("c3_strong_h")
@@ -202,6 +213,8 @@ def diagnose(path: Path, cal_file: Path | None = None, takeoff: tuple | None = N
     for t, m in rep["stock_alerts"]:
         if "glitch" in m.lower():
             spoof_ev.append((t, "stock: " + m))
+    for a, _b in self_rep.get("spoofing", {}).get("level3_intervals_s", []):
+        spoof_ev.append((a, "receiver self-report: multiple spoofing indications"))
     if takeoff is not None:
         tk = takeoff_check(fl, *takeoff)
         rep["takeoff_check"] = tk or {"available": False, "reason": "no GPS fix in the 10 s before take-off"}

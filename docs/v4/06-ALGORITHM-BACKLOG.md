@@ -119,6 +119,10 @@
   **1/339 (0.3%)** on fresh flights (`real-gate-v5.md`); simulated spoofing 89/111 + 11 inconclusive (1 short
   of the 90 target). Open: 10/339 'inconclusive' (2.9%); 2 'jamming-like' from 1–2 s satellite-count dips
   (consider a ≥ 3 s minimum, then score on a fresh set); per-receiver noise models would let thresholds come down.
+- **Update 2026-11-11 (`inconclusive-v1.md`, `real-gate-v6.md`):** satellite-dip false 'jamming' fixed (≥ 3 s).
+  Fresh v6: 1/345 spoofing-like, inconclusive 6.1%. Inconclusive is irreducible GPS-only (real benign and
+  simulated slow drags overlap); per-receiver models infeasible on public logs. Open: 1–3 s fix blips
+  labelled 'jamming-like' (wording or minimum length).
 
 ## How to judge any new algorithm (copy this checklist)
 

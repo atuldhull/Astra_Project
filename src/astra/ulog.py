@@ -98,6 +98,10 @@ def load_ulog(path: str | Path) -> FlightLog:
     fl.series["GPS"] = {"t": t, "Status": gps["fix_type"].astype(float), "NSats": gps["satellites_used"].astype(float),
                         "HDop": gps.get("hdop", np.full(len(t), np.nan)), "Lat": la, "Lng": lo, "Alt": al,
                         "Spd": np.hypot(vn, ve), "GCrs": np.degrees(np.arctan2(ve, vn)) % 360, "VZ": vd}
+    # Receiver self-report (newer PX4 sensor_gps): 0 unknown, 1 ok/none, 2 mitigated/indicated, 3 detected/multiple
+    for src, dst in (("jamming_state", "JamState"), ("spoofing_state", "SpoofState")):
+        if src in gps:
+            fl.series["GPS"][dst] = gps[src].astype(float)
     fl.series["GPA"] = {"t": t, "HAcc": gps["eph"], "VAcc": gps["epv"],
                         "SAcc": gps.get("s_variance_m_s", np.full(len(t), np.nan))}
     gp, lp = by.get("vehicle_global_position"), by.get("vehicle_local_position")

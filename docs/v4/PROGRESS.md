@@ -362,3 +362,7 @@ conclusion is possible (`benchmarks/realflow-v1.md`). Real flow validation needs
   real-log sets (re-downloadable; `runs/DELETED-LOGS.md`). D: free 41 → 86 GB.
 - Fresh gate v6 (345 real flights, `real-gate-v6.md`): spoofing-like 1/345 (0.3%), jamming-like 6 (all real fix
   losses, 0 satellite dips), inconclusive 21 (6.1%, up from 2.9%). Logs deleted after scoring.
+- 'Inconclusive' analysis (`inconclusive-v1.md`): real benign and simulated slow drags give the same weak-C3
+  evidence (peaks overlap), so it stays; per-receiver models infeasible (87% of public logs lack the receiver id).
+- `diagnose` now reports the receiver's own jamming/spoofing flags; only level 3 counts as evidence (0/137 real
+  benign flights reach it; level 2 is common: jamming 31%, spoofing 2.9%).
