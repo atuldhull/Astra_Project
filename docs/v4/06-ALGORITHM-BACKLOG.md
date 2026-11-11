@@ -62,6 +62,9 @@
 - **Kill:** the real-flight gate fails (as raw-fix C3 did, 1/39).
 
 ### 4. Flow-Shield robustness to degraded flow
+- **Prerequisite found 2026-11-11:** real flow validation is impossible from public logs (6 usable flights,
+  mostly hover, 2 Hz logging; `benchmarks/realflow-v1.md`). Get vendor or own flights with flow at ≥ 10 Hz first;
+  otherwise any robustness work is tuned to the simulator.
 - **Why:** with a degraded flow sensor, consistent drags ≥ 1 m/s are caught only at 178–365 m.
 - **Approach:** (a) adaptive per-flight noise estimation (scale Σ by a running robust variance of the
   flow residual, frozen during alarms); (b) a quality-weighted median (use OPTICAL_FLOW.quality); (c) fuse

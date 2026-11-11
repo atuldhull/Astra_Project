@@ -330,3 +330,10 @@ a valid airspeed sensor. Real wind estimates shift by 1.3–2.3 m/s (median wors
 PX4's own EKF wind up to 9 m/s) within minutes, even in straight flight with a per-flight airspeed-scale fit.
 Consistent 1–2 m/s spoofs can't be separated from wind. Not shipped; negative result in
 `benchmarks/c4-airwind-v1.md`.
+
+## 2026-11-11: real optical-flow check: not possible with public data
+
+ULog adapter now maps PX4 flow + distance_sensor; the bundled flow calibration is limited to SITL logs (so real
+flow logs can't silently get simulator gains). Of 54 real flights with flow (11 found in 836 mission logs + 43 from
+a database text search), only 6 have ≥ 2 min of airborne flow + GNSS, mostly hovering, flow at 2 Hz. No
+conclusion is possible (`benchmarks/realflow-v1.md`). Real flow validation needs vendor flights.

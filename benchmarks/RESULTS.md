@@ -82,7 +82,7 @@ used while designing or tuning that component. Superseded results are kept in th
 - A zero false-accusation rate on real flights: 1/339 remains (one 6.5 m glitch with a healthy fix).
 - Long-window displacement (C5): rejected on real data (`c5-displacement-v1.md`).
 - Detection of **real** spoofing/jamming (no labelled real attack logs yet).
-- Optical-flow results on real sensors (simulated flow only; degraded-sensor result is a bound).
+- Optical-flow results on real sensors (simulated flow only; public logs can't test it: `realflow-v1.md`).
 - Spoofing from power-on (undetectable by consistency checks; not tested).
 - Fixed-wing: consistent-spoof detection. The airspeed/wind witness was measured on real fixed-wing logs and
   can't separate 1–2 m/s spoofs from real wind change (`c4-airwind-v1.md`).
