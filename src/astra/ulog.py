@@ -10,7 +10,8 @@ everywhere else, so features/monitor/forensics run unchanged:
   ATT  ← vehicle_attitude (quaternion → roll/pitch/yaw, deg)
   MSG  ← logged_messages
 
-Optical flow / rangefinder are not mapped yet (rare in public logs). Real logs have no SIM/ASTK,
+OF / RFND  ← vehicle_optical_flow | sensor_optical_flow | optical_flow, distance_sensor (rare: ~1% of public logs).
+Real logs have no SIM/ASTK,
 so ground-truth evaluation is unavailable: these are for false-alarm and forensics use only.
 """
 
@@ -24,7 +25,8 @@ from astra.logs import FlightLog
 
 TOPICS = ["sensor_gps", "vehicle_gps_position", "vehicle_global_position", "vehicle_local_position",
           "sensor_combined", "vehicle_attitude", "logged_messages", "vehicle_global_position_groundtruth",
-          "vehicle_status", "estimator_innovation_test_ratios"]
+          "vehicle_status", "estimator_innovation_test_ratios",
+          "vehicle_optical_flow", "sensor_optical_flow", "optical_flow", "distance_sensor"]
 
 # ASTRA PX4 attack model numbers (sim/px4 patch) -> astra.evaluate CODE_NAMES codes
 PX4_MODEL_TO_CODE = {1: 1, 2: 2, 3: 5, 4: 6, 5: 7, 6: 4, 7: 3}
@@ -35,6 +37,41 @@ def _quat_to_euler_deg(q0, q1, q2, q3):
     pitch = np.degrees(np.arcsin(np.clip(2 * (q0 * q2 - q3 * q1), -1, 1)))
     yaw = np.degrees(np.arctan2(2 * (q0 * q3 + q1 * q2), 1 - 2 * (q2 * q2 + q3 * q3))) % 360
     return roll, pitch, yaw
+
+
+def _map_flow(by: dict, fl: FlightLog) -> None:
+    """OF / RFND from PX4 flow topics (integrated radians -> rad/s, ArduPilot-style names).
+
+    Axis/sign conventions differ from ArduPilot; the C2 flow model is fitted per airframe
+    (features.fit_flow_model), which absorbs them.
+    """
+    of = by.get("vehicle_optical_flow") or by.get("sensor_optical_flow")
+    if of is not None and "pixel_flow[0]" in of:
+        dt = np.maximum(of["integration_timespan_us"] / 1e6, 1e-3)
+        fx, fy = of["pixel_flow[0]"] / dt, of["pixel_flow[1]"] / dt
+        bx = of["delta_angle[0]"] / dt if "delta_angle[0]" in of else np.zeros(len(dt))
+        by_ = of["delta_angle[1]"] / dt if "delta_angle[1]" in of else np.zeros(len(dt))
+        dist = of.get("distance_m")
+    elif "optical_flow" in by:
+        of = by["optical_flow"]
+        dt = np.maximum(of["integration_timespan"] / 1e6, 1e-3)
+        fx, fy = of["pixel_flow_x_integral"] / dt, of["pixel_flow_y_integral"] / dt
+        bx, by_ = of["gyro_x_rate_integral"] / dt, of["gyro_y_rate_integral"] / dt
+        dist = of.get("ground_distance_m")
+    else:
+        return
+    t = of["timestamp"] / 1e6
+    fl.series["OF"] = {"t": t, "flowX": fx, "flowY": fy, "bodyX": bx, "bodyY": by_,
+                       "Qual": of["quality"].astype(float)}
+    ds = by.get("distance_sensor")
+    if ds is not None:
+        d = ds["current_distance"]
+        ok = (d >= ds["min_distance"]) & (d <= ds["max_distance"])
+        if "signal_quality" in ds:
+            ok &= ds["signal_quality"] != 0
+        fl.series["RFND"] = {"t": ds["timestamp"] / 1e6, "Dist": d, "Stat": np.where(ok, 4.0, 1.0)}
+    elif dist is not None:
+        fl.series["RFND"] = {"t": t, "Dist": dist, "Stat": np.where(dist > 0, 4.0, 1.0)}
 
 
 def load_ulog(path: str | Path) -> FlightLog:
@@ -78,6 +115,7 @@ def load_ulog(path: str | Path) -> FlightLog:
     at = by["vehicle_attitude"]
     r, p, y = _quat_to_euler_deg(at["q[0]"], at["q[1]"], at["q[2]"], at["q[3]"])
     fl.series["ATT"] = {"t": at["timestamp"] / 1e6, "Roll": r, "Pitch": p, "Yaw": y}
+    _map_flow(by, fl)
     # ── ASTRA SITL extras: simulator truth and the attack window rebuilt from logged params ──
     gtp = by.get("vehicle_global_position_groundtruth")
     if gtp is not None:

@@ -108,7 +108,10 @@ def diagnose(path: Path, cal_file: Path | None = None) -> dict:
     cal_all = json.loads(Path(cal_file).read_text()) if cal_file else _bundled_calibration()
     a2 = {"available": False}
     if cal_all:
-        cfg = "gps+imu+flow" if fl.has("OF") and fl.has("RFND") else "gps+imu"
+        # The bundled flow model is fitted on simulated sensors; real flow sensors need their own
+        # calibration (`astra calibrate` on the airframe's benign logs, passed as cal_file).
+        use_flow = fl.has("OF") and fl.has("RFND") and (fl.is_sitl or cal_file is not None)
+        cfg = "gps+imu+flow" if use_flow else "gps+imu"
         cal = monitor.Calibration(**cal_all[cfg])
         try:
             ch = features.compute(fl)
