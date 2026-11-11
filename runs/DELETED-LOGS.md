@@ -6,3 +6,6 @@
   - `runs/realflow` (real optical flow, not testable) <- `runs/real_flow_logs.json`
   - `runs/px4veh`, `runs/px4veh2` (per-vehicle recalibration) <- `runs/px4_pervehicle_sel.json`, `runs/px4_pervehicle2_sel.json`
 - `runs/px4real6` (fresh gate v6, scored once) <- `runs/px4_real6_sel.json`
+- `runs/px4real` … `runs/px4real5` (836 real design flights; item 10 finished) <- `runs/px4_real_sel.json`,
+  `px4_real2_sel.json` … `px4_real5_sel.json`. Per-flight results kept in `runs/weak-ev-design.json`,
+  `runs/selfrep-design.json`, `runs/real-far-v2-rows.json`.
