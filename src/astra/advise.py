@@ -13,6 +13,7 @@ from __future__ import annotations
 import collections
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 from astra.batch import run_batch
 from astra.packs import PACKS
@@ -53,9 +54,12 @@ def _with_gps(scs, profile: str | None):
 
 
 def advise(vendor: Path | None, out: Path, nbenign: int = 20, parallel: int = 4,
-           autopilot: str = "ardupilot", gps_profile: str | None = None) -> list[dict]:
+           autopilot: str = "ardupilot", gps_profile: str | None = None,
+           attack_from: Path | None = None) -> list[dict]:
     """gps_profile: override the benign flights' GNSS noise model ("harsh" = noisier real receivers),
-    so the benign cost isn't measured on unrealistically clean GPS."""
+    so the benign cost isn't measured on unrealistically clean GPS.
+    attack_from: reuse the attack flights of an earlier advise run with the same candidates (attack
+    flights don't depend on the benign GNSS profile), so only benign flights are flown."""
     out.mkdir(parents=True, exist_ok=True)
     benign = _with_gps(PACKS["benign-v2"]()[:nbenign], gps_profile)
     atk = [s for s in PACKS["attack-test"]() if ("-g0-" in s.id or "-g1-" in s.id)
@@ -67,8 +71,14 @@ def advise(vendor: Path | None, out: Path, nbenign: int = 20, parallel: int = 4,
         pf = _merge(vendor, overlay, out / f"{name}.parm")
         rb = run_batch([(s, 0) for s in benign], out / name / "benign", parallel=parallel, speedup=speed,
                        vendor_param_file=pf, autopilot=autopilot)["results"]
-        ra = run_batch([(s, 0) for s in atk], out / name / "attack", parallel=parallel, speedup=speed,
-                       vendor_param_file=pf, autopilot=autopilot)["results"]
+        if attack_from is not None:
+            prev = next(p for p in (attack_from / name, attack_from / "default") if p.exists()) \
+                if name == "vendor-as-is" else attack_from / name
+            ra = [SimpleNamespace(**json.loads(ln))
+                  for ln in (prev / "attack" / "results.jsonl").read_text().splitlines()]
+        else:
+            ra = run_batch([(s, 0) for s in atk], out / name / "attack", parallel=parallel, speedup=speed,
+                           vendor_param_file=pf, autopilot=autopilot)["results"]
         ob = [r for r in rb if r.outcome != "error"]
         oa = [r for r in ra if r.outcome != "error"]
         det = collections.Counter()
