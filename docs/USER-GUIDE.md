@@ -133,7 +133,7 @@ PX4 has no Lua, so run the same check on the companion computer:
 
 ```bash
 astra shield calibrate <your benign .ulg/.BIN logs> --out shield-cal.json   # no special logging needed
-python -m astra.companion --connect udp:0.0.0.0:14540 --cal shield-cal.json --on-alarm alert
+python -m astra.companion --connect udp:0.0.0.0:14540 --mode gps --cal shield-cal.json --on-alarm alert
 ```
 
 Connect it to the autopilot's companion MAVLink link (PX4: the onboard link on UDP 14540 in SITL, or
@@ -142,16 +142,20 @@ your TELEM2 serial via `--connect /dev/ttyAMA0,921600`). On alarm it sends a CRI
 
 ## 9. Flow-Shield: catching velocity-matched spoofs (needs optical flow + rangefinder)
 
-Flow-Shield compares GNSS velocity with what your optical-flow sensor sees, on the companion computer:
+Flow-Shield compares GNSS velocity with what your optical-flow sensor sees, on the companion computer.
+It needs its **own** calibration from live telemetry (offline-log constants don't transfer):
 
-```python
-from astra.companion import flow_monitor          # see benchmarks/flowshield_eval.py for the full recipe
-st = flow_monitor("udp:0.0.0.0:14550", flow_cal)  # flow_cal: an A2 'gps+imu+flow' calibration
+```bash
+astra calibrate <benign logs> --out myframe-cal.json                      # base A2 calibration (flow model)
+# a) fly 30-60 min of normal missions with the collector running on the companion:
+python -m astra.companion --connect udp:0.0.0.0:14551 --mode flow --cal myframe-cal.json --collect fs-001.json
+# b) fit Flow-Shield on everything collected:
+astra flowshield-calibrate fs-*.json --base myframe-cal.json --out flowshield-cal.json
+# c) run armed:
+python -m astra.companion --connect udp:0.0.0.0:14551 --mode flow --cal flowshield-cal.json
 ```
 
-Calibrate it on **its own live residuals** from 30–60 min of your benign flights (collect with
-`h = inf`, then fit, as `benchmarks/flowshield_eval.py` does). Constants from offline logs aren't
-transferable: telemetry differs from logs.
+In simulation it caught 42/47 velocity-matched drag-offs with 0 false alarms in 3.3 h, with a *good* flow sensor.
 
 ## What ASTRA can't tell you
 - How your drone behaves on a real range. Simulation is pre-qualification.

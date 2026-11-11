@@ -130,14 +130,53 @@ def monitor(conn: str, cal: dict, *, on_alarm: str = "alert", stop: threading.Ev
     return st
 
 
+def calibrate_flow_from_collections(paths: list[str], base_cal: dict, margin: float = 1.25) -> dict:
+    """Fit Flow-Shield's own Σ and h from collected live block residuals (JSON files from --collect)."""
+    raws = []
+    for p in paths:
+        x = np.asarray(json.loads(open(p).read())["raw"], dtype=float)
+        if len(x) >= 5:
+            raws.append(x[:, 1:3])
+    if not raws:
+        raise ValueError("no usable collections")
+    sinv = np.linalg.inv(np.cov(np.concatenate(raws).T) + 1e-9 * np.eye(2))
+    k = float(base_cal["k"]["c2"])
+    peak = 0.0
+    for x in raws:
+        s_ = 0.0
+        for v in np.einsum("ni,ij,nj->n", x, sinv, x):
+            s_ = max(0.0, s_ + min(v, 100.0) - k)
+            peak = max(peak, s_)
+    cal = dict(base_cal)
+    cal["sigma_inv"] = {**base_cal["sigma_inv"], "c2": sinv.tolist()}
+    cal["h"] = {**base_cal["h"], "c2": max(margin * peak, 8.0)}
+    cal["flow_shield"] = {"collections": len(raws), "hours": round(sum(len(x) for x in raws) * 4 / 3600, 3)}
+    return cal
+
+
 def main():
-    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap = argparse.ArgumentParser(description="ASTRA companion monitors (Shield = GNSS-only, Flow-Shield = optical flow)")
     ap.add_argument("--connect", required=True, help="pymavlink connection string, e.g. udp:0.0.0.0:14551")
-    ap.add_argument("--cal", required=True, help="constants from `astra shield calibrate`")
+    ap.add_argument("--mode", choices=["gps", "flow"], default="gps")
+    ap.add_argument("--cal", required=True, help="gps: `astra shield calibrate` output; flow: A2 calibration "
+                                                 "(gps+imu+flow) or `--calibrate-flow` output")
     ap.add_argument("--on-alarm", choices=["alert", "land"], default="alert")
+    ap.add_argument("--collect", help="flow mode: collect live residuals to this JSON (no alarms)")
     a = ap.parse_args()
-    st = monitor(a.connect, json.loads(open(a.cal).read()), on_alarm=a.on_alarm)
-    print(json.dumps({"alarm_t": st.alarm_t, "blocks": len(st.blocks)}))
+    cal = json.loads(open(a.cal).read())
+    if a.mode == "gps":
+        st = monitor(a.connect, cal, on_alarm=a.on_alarm)
+        print(json.dumps({"alarm_boot_t": st.alarm_boot_t, "blocks": len(st.blocks)}))
+        return
+    fcal = cal.get("gps+imu+flow", cal)
+    if a.collect:
+        fcal = dict(fcal)
+        fcal["h"] = {**fcal["h"], "c2": float("inf")}
+    st = flow_monitor(a.connect, fcal)
+    if a.collect:
+        with open(a.collect, "w") as fh:
+            json.dump({"raw": st.raw}, fh)
+    print(json.dumps({"alarm_boot_t": st.alarm_t, "blocks": len(st.blocks)}))
 
 
 if __name__ == "__main__":

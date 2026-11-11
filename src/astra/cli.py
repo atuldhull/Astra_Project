@@ -151,6 +151,15 @@ def _cmd_invert(a):
           file=sys.stderr)
 
 
+def _cmd_flowshield_cal(a):
+    from astra.companion import calibrate_flow_from_collections
+    base = json.loads(Path(a.base).read_text())
+    base = base.get("gps+imu+flow", base)
+    cal = calibrate_flow_from_collections(a.collections, base)
+    Path(a.out).write_text(json.dumps(cal, indent=1))
+    print(json.dumps(cal["flow_shield"]))
+
+
 def _cmd_html(a):
     from astra.html_report import render
     print(render(Path(a.run_dir)))
@@ -201,6 +210,12 @@ def main(argv=None):
     iv.add_argument("--mission", help="your scenario YAML; the estimated attack is inserted into it")
     iv.add_argument("--out")
     iv.set_defaults(fn=_cmd_invert)
+    fs = sub.add_parser("flowshield-calibrate", help="fit Flow-Shield from live residuals collected with "
+                                                     "`python -m astra.companion --mode flow --collect ...`")
+    fs.add_argument("collections", nargs="+")
+    fs.add_argument("--base", required=True, help="A2 calibration with a gps+imu+flow entry (`astra calibrate`)")
+    fs.add_argument("--out", required=True)
+    fs.set_defaults(fn=_cmd_flowshield_cal)
     hp = sub.add_parser("html", help="self-contained HTML view of a run directory")
     hp.add_argument("run_dir")
     hp.set_defaults(fn=_cmd_html)
