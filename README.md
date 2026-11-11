@@ -57,8 +57,10 @@ change ([benchmarks/flowshield-v1.md](benchmarks/flowshield-v1.md); needs a good
 MAVLink autopilot**. On PX4 it caught naive drag-offs 40/48 vs stock 10/48 with 0 false alarms in 3.0
 held-out hours, and it was verified live in the loop ([benchmarks/companion-px4-v1.md](benchmarks/companion-px4-v1.md)).
 
-**EKF tuning alone** (A6, [benchmarks/a6-params-v1.md](benchmarks/a6-params-v1.md)) closes most of the
-*naive* gap (0/12 → 12/12) at a small alert cost, but not the *consistent* one (≤ 3/12).
+**EKF tuning alone** (A6, [benchmarks/a6-v2.md](benchmarks/a6-v2.md)) closes about half of the *naive* gap
+safely (ArduPilot 6/12 with 1/20 alerts; PX4 5/12 with 0/20, both on noisy GPS). The aggressive setting
+that catches 12/12 alerts on 14 of 16 benign flights with a noisy receiver. Tuning never fixes the
+*consistent* case (≤ 3/12).
 
 **PX4 too.** Stock PX4 v1.17 has the same blind spot (slow drag-offs ≤ 1 m/s noticed 0/16 times during
 the attack). ASTRA's GPS-only check catches naive drag-offs 36/48 vs stock 10/48 on PX4, with 0 false

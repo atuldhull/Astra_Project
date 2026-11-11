@@ -80,6 +80,9 @@
 - **Acceptance:** same or better F1 than single-fidelity A1 at ≤ 60% of the simulator time.
 
 ### 6. A6 v2: closed-loop parameter optimisation
+- **Status 2026-11-11:** PX4 support and a realistic `harsh` GNSS profile were added (`a6-v2.md`). With harsh
+  GNSS the v1 'best' ArduPilot setting alerts on 14/16 benign flights. Any optimiser must score benign cost
+  on `harsh`, not `typical`.
 - **Why:** v1 is a fixed sweep on a tiny benign sample.
 - **Approach:** Bayesian optimisation over EK3 gates/noises/glitch radius with constraint FA ≤ budget
   (measured on ≥ 80 benign flights), objective = A1 robustness margin. Report a Pareto table, never a single
@@ -92,7 +95,7 @@
 - **Acceptance:** re-fly reproduction within 20% on ≥ 8/10 fresh incidents of each type.
 
 ### 8. PX4 parity items
-- `astra advise` for EKF2 (`EKF2_GPS_P_NOISE`, `EKF2_GPS_V_NOISE`, `EKF2_GPS_P_GATE`, `EKF2_GPS_V_GATE`).
+- ~~`astra advise` for EKF2~~ done 2026-11-11 (`--autopilot px4`; `a6-v2.md`).
 - PX4 optical flow in SIH (if supported) so Flow-Shield can be validated on PX4.
 
 ### 9. Power-on spoofing (absolute reference)

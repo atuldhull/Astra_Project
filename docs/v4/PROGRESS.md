@@ -337,3 +337,17 @@ ULog adapter now maps PX4 flow + distance_sensor; the bundled flow calibration i
 flow logs can't silently get simulator gains). Of 54 real flights with flow (11 found in 836 mission logs + 43 from
 a database text search), only 6 have ≥ 2 min of airborne flow + GNSS, mostly hovering, flow at 2 Hz. No
 conclusion is possible (`benchmarks/realflow-v1.md`). Real flow validation needs vendor flights.
+
+## 2026-11-11: A6 v2: PX4 advise and realistic GNSS; v1 headline corrected
+
+- Real-vs-simulated GNSS (`gnss-realism-v1.md`): `typical` matches the median real flight (60 s wander 4.0 vs
+  3.9 m) but has no tail (sim max 7 m vs real p95 15.3 m). New `gps: harsh` profile targets the real p90–p95.
+  Its reported accuracy stays 1.5–3 m, as real receivers under-report wander; a first version reporting 1.5σ
+  failed ArduPilot pre-arm on every flight.
+- `astra advise --autopilot px4 --gps-profile harsh`. `--attack_from` reuses earlier attack flights, so benign-only
+  re-runs are cheap.
+- **Correction:** the A6 v1 ArduPilot `tight+low-noise` setting (12/12 naive) alerts on **14/16** benign flights
+  with harsh GNSS, and 3 more never took off. The best safe trade-offs are ArduPilot `low-noise` (6/12, 1/20)
+  and PX4 `tight-gates` (5/12, 0/20). Consistent drags ≤ 3/12 with every setting (`a6-v2.md`).
+- Bug fixed: the advise report claimed "zero observed benign cost" for settings with zero completed flights.
+- Ops note: the PX4 runs were ~3× slower while the laptop was on battery or asleep (2 docker timeouts).

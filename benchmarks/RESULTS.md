@@ -66,7 +66,8 @@ used while designing or tuning that component. Superseded results are kept in th
 | `invert` re-fly reproduction | outcome 4/4; miss distance within 8% for 3/4 | 4 incidents | `a5-inversion-v2.md` |
 | Failure-boundary search (A1), 4-D | **14.2 vs 2.2** stealthy failures found (≈6.5×), F1 0.90 vs 0.39, 5/5 seeds | 200 flown ground-truth points | `a1-sitl-4d.md` |
 | A1 on a simple 2-D slice | no gain over random | 42-point grid | `a1-sitl-v1.md` |
-| EKF tuning alone (A6) | naive 0/12 → 12/12; consistent ≤ 3/12; small benign sample | 20 benign | `a6-params-v1.md` |
+| EKF tuning alone (A6 v2), with noisy-receiver benign cost | ArduPilot: best safe setting naive 6/12 (1/20 alerts, harsh GNSS); the 12/12 setting alerts on 14/16 harsh flights. PX4: tight gates 5/12, 0/20 alerts. Consistent ≤ 3/12 always | 20 benign each, typical + harsh GNSS | `a6-v2.md` |
+| Simulated GNSS vs real receivers | typical = real median (60 s wander 4.0 vs 3.9 m); real tail p95 15.3 m → `harsh` profile | 836 real PX4 flights | `gnss-realism-v1.md` |
 
 ## Platform
 
