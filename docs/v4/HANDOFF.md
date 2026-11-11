@@ -48,6 +48,8 @@ Thermals: 4 parallel SITL at 20× is about 3 cores. 8 at 20× is about 5 cores (
 | `src/astra/integrity/`, `report.py` | Canonical JSON, Ed25519 envelopes with trust check, ledger, reports |
 | `src/astra/forensics.py`, `cli.py` | `astra diagnose`, the CLI |
 | `src/astra/onboard.py`, `data/astra_shield.lua` | ASTRA Shield: onboard C3 Lua monitor (+ calibration from its own logs) |
+| `src/astra/companion.py` | Shield-Companion (GNSS-only) and Flow-Shield (optical flow) for any MAVLink autopilot |
+| `src/astra/inversion.py` | A5: estimate the drag-off attack from a log (`astra invert`) |
 | `src/astra/calibrate.py`, `advise.py`, `html_report.py` | Per-airframe calibration, A6 advisor, HTML report |
 
 ## Known limitations (don't paper over them)
