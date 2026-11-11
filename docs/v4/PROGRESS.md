@@ -273,3 +273,5 @@ class 4/4, with miss distance within about ±50% (ramp not yet estimated; start 
   **both undetected** (EKF ratio 0.20/0.32; airspeed doesn't help). 60 s denial → mission completed,
   5 m error (airspeed + compass dead reckoning), but **no operator alert at all** (zero STATUSTEXT while
   the receiver reported no fix).
+
+**Plane A2 C3** (`benchmarks/plane-a2-v1.md`): stock 1/48 vs ASTRA 16/48 (naive ≥ 0.5 m/s 16/18; consistent 0/24, physics). 0 FA in 2.3 held-out h (small).

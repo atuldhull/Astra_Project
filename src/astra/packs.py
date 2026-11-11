@@ -212,3 +212,49 @@ def px4_benign_cal() -> list[Scenario]:
 
 
 PACKS["px4-benign-cal"] = px4_benign_cal
+
+
+# ── Fixed-wing corpora ──────────────────────────────────────────────────────────
+def _random_plane_mission(rng: _random.Random) -> dict:
+    n = rng.randint(1, 3)
+    wps, (pn, pe) = [], (0.0, 0.0)
+    for _ in range(n):
+        brg, d = rng.uniform(0, 2 * _math.pi), rng.uniform(1200, 3000)
+        pn, pe = pn + d * _math.cos(brg), pe + d * _math.sin(brg)
+        r = _math.hypot(pn, pe)
+        if r > 4500:
+            pn, pe = pn * 4500 / r, pe * 4500 / r
+        wps.append({"north_m": round(pn, 1), "east_m": round(pe, 1), "alt_m": rng.choice([80, 100, 120, 150])})
+    return {"takeoff_alt_m": 60, "speed_ms": rng.choice([18, 20, 22, 25]), "end": "loiter", "waypoints": wps}
+
+
+def _plane_scenario(sid: str, rng: _random.Random, attacks: list[dict]) -> Scenario:
+    return Scenario.model_validate({
+        "id": sid, "title": sid, "vehicle": "plane", "home": THAR, "mission": _random_plane_mission(rng),
+        "environment": {"wind_speed_ms": rng.uniform(0, 8), "wind_dir_deg": rng.uniform(0, 359.9),
+                        "wind_turbulence": rng.uniform(0, 2)},
+        "sensors": {"imu": "mems", "gps": "typical"}, "attacks": attacks,
+        "expect": {"goal_radius_m": 150, "geofence_radius_m": 8000}, "time_limit_s": 900,
+    })
+
+
+def plane_benign(n: int = 80) -> list[Scenario]:
+    rng = _random.Random("plane-benign")
+    return [_plane_scenario(f"plane-benign-{i:03d}", rng, []) for i in range(n)]
+
+
+def plane_attack() -> list[Scenario]:
+    rng = _random.Random("plane-attack")
+    out = []
+    for g in range(2):
+        for rate in (0.25, 0.5, 1.0, 2.0):
+            for ramp in (0, 15, 60):
+                for consistent in (True, False):
+                    att = {"model": "spoof_drag", "start": {"after_arm_s": rng.uniform(50, 90)}, "duration_s": 3600,
+                           "rate_ms": rate, "bearing_deg": round(rng.uniform(0, 359.9), 1),
+                           "consistent": consistent, "ramp_s": ramp}
+                    out.append(_plane_scenario(f"plane-attack-g{g}-r{rate:g}-ramp{ramp}-{'c' if consistent else 'n'}", rng, [att]))
+    return out
+
+
+PACKS.update({"plane-benign": plane_benign, "plane-attack": plane_attack})

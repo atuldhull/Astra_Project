@@ -28,6 +28,13 @@ used while designing or tuning that component. Superseded results are kept in th
 | GPS-only monitor, naive drag | **36/48** vs stock 10/48; 0 FA in 3.8 h (80-flight calibration) | PX4 SIH | `px4-a2-v2.md` |
 | Shield-Companion, naive drag | **40/48** vs stock 10/48; 0 FA in 3.0 h; live 0/20 benign, 4/4 attacks | PX4 SIH | `companion-px4-v1.md` |
 
+## ASTRA detection — fixed-wing (ArduPlane 4.7.2)
+
+| Claim | Number | Data | File |
+|---|---|---|---|
+| Stock plane misses drag-off; silent on 60 s GPS loss | drag 1 m/s → ~200 m off, undetected; 0 alerts on denial | smoke | PROGRESS |
+| GPS-only monitor, naive drag ≥ 0.5 m/s | **16/18** vs stock 1/18; consistent 0/24; 0 FA in 2.3 h (small) | plane corpora | `plane-a2-v1.md` |
+
 ## Protection (ASTRA Shield, onboard Lua / companion)
 
 | Claim | Number | Data | File |
@@ -70,4 +77,4 @@ used while designing or tuning that component. Superseded results are kept in th
 - Detection of **real** spoofing/jamming (no labelled real attack logs yet).
 - Optical-flow results on real sensors (simulated flow only; degraded-sensor result is a bound).
 - Spoofing from power-on (undetectable by consistency checks; not tested).
-- Fixed-wing anything.
+- Fixed-wing: consistent-spoof detection (no witness yet); larger FAR sample.
