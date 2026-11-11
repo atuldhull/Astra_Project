@@ -366,3 +366,6 @@ conclusion is possible (`benchmarks/realflow-v1.md`). Real flow validation needs
   evidence (peaks overlap), so it stays; per-receiver models infeasible (87% of public logs lack the receiver id).
 - `diagnose` now reports the receiver's own jamming/spoofing flags; only level 3 counts as evidence (0/137 real
   benign flights reach it; level 2 is common: jamming 31%, spoofing 2.9%).
+- 'jamming-like' verdict now states outage count, longest and total; isolated dropouts (< 3 s, < 3 times) are
+  tagged 'brief'. A minimum length was rejected: simulated intermittent jamming has 2.0–2.2 s outages. Sim: 32/32
+  jamming still 'jamming-like', none tagged brief.

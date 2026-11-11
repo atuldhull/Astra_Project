@@ -239,8 +239,13 @@ def diagnose(path: Path, cal_file: Path | None = None, takeoff: tuple | None = N
                        "spoofing_events_outside_jamming": [[round(t, 1), w] for t, w in spoof_outside],
                        "weak_events": [[round(t, 1), w] for t, w in weak_ev]}
     jam, spoof = bool(jam_iv), bool(spoof_outside)
+    longest = max((b - a for a, b in jam_iv), default=0.0)
+    jam_desc = (f"receiver lost fix or satellites {len(jam_iv)} time(s), longest {longest:.0f} s, "
+                f"total {sum(b - a for a, b in jam_iv):.0f} s")
+    if jam and longest < 3.0 and len(jam_iv) < 3:
+        jam_desc += " (brief: also seen as isolated dropouts on real benign flights)"
     if jam and not spoof:
-        verdict = "jamming-like: receiver lost fix or satellites"
+        verdict = "jamming-like: " + jam_desc
     elif spoof and not jam:
         verdict = f"spoofing-like: {spoof_outside[0][1]} while the receiver reported a healthy fix"
     elif jam and spoof:
