@@ -360,3 +360,5 @@ conclusion is possible (`benchmarks/realflow-v1.md`). Real flow validation needs
   simulated benign flights incl. harsh GNSS; boot spoofs > ~25 m flagged. Simulation only.
 - Disk: deleted 43 GB of raw simulated ULogs (each run keeps `flight.npz` + results) and 7.5 GB of finished
   real-log sets (re-downloadable; `runs/DELETED-LOGS.md`). D: free 41 → 86 GB.
+- Fresh gate v6 (345 real flights, `real-gate-v6.md`): spoofing-like 1/345 (0.3%), jamming-like 6 (all real fix
+  losses, 0 satellite dips), inconclusive 21 (6.1%, up from 2.9%). Logs deleted after scoring.

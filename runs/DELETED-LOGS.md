@@ -5,3 +5,4 @@
   - `runs/fwdesign` (C4 fixed-wing, rejected) <- `runs/fw_design_sel.json`
   - `runs/realflow` (real optical flow, not testable) <- `runs/real_flow_logs.json`
   - `runs/px4veh`, `runs/px4veh2` (per-vehicle recalibration) <- `runs/px4_pervehicle_sel.json`, `runs/px4_pervehicle2_sel.json`
+- `runs/px4real6` (fresh gate v6, scored once) <- `runs/px4_real6_sel.json`

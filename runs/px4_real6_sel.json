@@ -1,0 +1,2102 @@
+[
+{
+"log_id": "4027dbab-3cd2-422a-8c6a-62fb2dad63c9",
+"url": "https://cdn.logs.px4.io/4027dbab-3cd2-422a-8c6a-62fb2dad63c9.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.8.0 0"
+},
+{
+"log_id": "dac748f8-85a7-4950-827a-0925e134369e",
+"url": "https://cdn.logs.px4.io/dac748f8-85a7-4950-827a-0925e134369e.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "daa56942-3699-4d45-95b0-7189ac21009d",
+"url": "https://cdn.logs.px4.io/daa56942-3699-4d45-95b0-7189ac21009d.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "1019ba56-abca-4fb8-9cdf-a064dcecb0c3",
+"url": "https://cdn.logs.px4.io/1019ba56-abca-4fb8-9cdf-a064dcecb0c3.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "8d2042e2-1cb6-407c-bc2f-ae483ac209d7",
+"url": "https://cdn.logs.px4.io/8d2042e2-1cb6-407c-bc2f-ae483ac209d7.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "04303f01-9c84-49bc-97f1-265359e22844",
+"url": "https://cdn.logs.px4.io/04303f01-9c84-49bc-97f1-265359e22844.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.6.2 0"
+},
+{
+"log_id": "4fec0157-ffd3-4f9f-8b31-95cb2f78bbc8",
+"url": "https://cdn.logs.px4.io/4fec0157-ffd3-4f9f-8b31-95cb2f78bbc8.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "3898b579-b3af-4afd-a0d3-88cbb5b52a53",
+"url": "https://cdn.logs.px4.io/3898b579-b3af-4afd-a0d3-88cbb5b52a53.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.8.0 0"
+},
+{
+"log_id": "a7b45d78-f6cc-42e0-afa1-4e7105939579",
+"url": "https://cdn.logs.px4.io/a7b45d78-f6cc-42e0-afa1-4e7105939579.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.8.0 128"
+},
+{
+"log_id": "800dfe76-97ce-47fe-b237-d7234552b3bd",
+"url": "https://cdn.logs.px4.io/800dfe76-97ce-47fe-b237-d7234552b3bd.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "d4afc810-3248-4fd4-9930-44dc7d463618",
+"url": "https://cdn.logs.px4.io/d4afc810-3248-4fd4-9930-44dc7d463618.ulg",
+"hw": "PX4_FMU_V6C",
+"ver": "v1.17.0 255"
+},
+{
+"log_id": "973b337b-1cac-44a0-a384-3a1821694ccf",
+"url": "https://cdn.logs.px4.io/973b337b-1cac-44a0-a384-3a1821694ccf.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "ce9a9510-1aaa-46f5-a422-5c47243bb7ca",
+"url": "https://cdn.logs.px4.io/ce9a9510-1aaa-46f5-a422-5c47243bb7ca.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "8079db24-e902-48e2-9be9-0c14516808e5",
+"url": "https://cdn.logs.px4.io/8079db24-e902-48e2-9be9-0c14516808e5.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.0 0"
+},
+{
+"log_id": "e0a4ad76-3da4-43b5-be6b-17e70a85a89b",
+"url": "https://cdn.logs.px4.io/e0a4ad76-3da4-43b5-be6b-17e70a85a89b.ulg",
+"hw": "PX4_FMU_V6C",
+"ver": "v1.15.4 0"
+},
+{
+"log_id": "8911a122-8d10-42c1-95a6-23c62db7e3ab",
+"url": "https://cdn.logs.px4.io/8911a122-8d10-42c1-95a6-23c62db7e3ab.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "62d12bed-c488-4a28-b2f8-a36fab4b4ccc",
+"url": "https://cdn.logs.px4.io/62d12bed-c488-4a28-b2f8-a36fab4b4ccc.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.7.0 192"
+},
+{
+"log_id": "aec5bff7-3b7f-406a-bb7d-97f3aa5daf2d",
+"url": "https://cdn.logs.px4.io/aec5bff7-3b7f-406a-bb7d-97f3aa5daf2d.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.8.0 128"
+},
+{
+"log_id": "45782efe-020e-44c1-aada-44dcd258409f",
+"url": "https://cdn.logs.px4.io/45782efe-020e-44c1-aada-44dcd258409f.ulg",
+"hw": "PX4_FMU_V4",
+"ver": "v1.9.0 0"
+},
+{
+"log_id": "0d9cdb87-4240-4a1c-a005-2c815a9d00a6",
+"url": "https://cdn.logs.px4.io/0d9cdb87-4240-4a1c-a005-2c815a9d00a6.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.6.2 0"
+},
+{
+"log_id": "aaf26d2b-d480-45f7-886a-62effecc77f0",
+"url": "https://cdn.logs.px4.io/aaf26d2b-d480-45f7-886a-62effecc77f0.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "7b7a8cfa-45b6-4534-bdc0-f83297e24d57",
+"url": "https://cdn.logs.px4.io/7b7a8cfa-45b6-4534-bdc0-f83297e24d57.ulg",
+"hw": "HOLYBRO_DURANDAL_V1",
+"ver": "v1.15.4 0"
+},
+{
+"log_id": "2c47a69f-48a6-471f-830c-91d075053280",
+"url": "https://cdn.logs.px4.io/2c47a69f-48a6-471f-830c-91d075053280.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.6.0 0"
+},
+{
+"log_id": "61596c8a-5a9f-48cb-8049-20a3f9d57f5a",
+"url": "https://cdn.logs.px4.io/61596c8a-5a9f-48cb-8049-20a3f9d57f5a.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "71138bb3-e7ef-4b19-90ca-a9b8dcc1285e",
+"url": "https://cdn.logs.px4.io/71138bb3-e7ef-4b19-90ca-a9b8dcc1285e.ulg",
+"hw": "",
+"ver": "v1.13.2 0"
+},
+{
+"log_id": "fe949535-967f-4753-b0dd-9915b68a21ce",
+"url": "https://cdn.logs.px4.io/fe949535-967f-4753-b0dd-9915b68a21ce.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "8387b858-4617-430a-b0d5-805a0ae90ded",
+"url": "https://cdn.logs.px4.io/8387b858-4617-430a-b0d5-805a0ae90ded.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "86022596-a377-41ce-a201-21dc3f46bd7d",
+"url": "https://cdn.logs.px4.io/86022596-a377-41ce-a201-21dc3f46bd7d.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.6.0 0"
+},
+{
+"log_id": "9ecf65ac-bff6-4421-b2dc-af4c21126c7b",
+"url": "https://cdn.logs.px4.io/9ecf65ac-bff6-4421-b2dc-af4c21126c7b.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.8.0 0"
+},
+{
+"log_id": "6af8b52b-6e02-4c7b-a820-f9088ccb146f",
+"url": "https://cdn.logs.px4.io/6af8b52b-6e02-4c7b-a820-f9088ccb146f.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "8e6359e9-6b7f-4382-8403-22549129b002",
+"url": "https://cdn.logs.px4.io/8e6359e9-6b7f-4382-8403-22549129b002.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.8.0 0"
+},
+{
+"log_id": "ad68944f-6457-4cd9-aa5d-183ea5f22f3b",
+"url": "https://cdn.logs.px4.io/ad68944f-6457-4cd9-aa5d-183ea5f22f3b.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "87847ce2-de41-4b30-ad8e-3a9693032fcc",
+"url": "https://cdn.logs.px4.io/87847ce2-de41-4b30-ad8e-3a9693032fcc.ulg",
+"hw": "PX4_FMU_V6C",
+"ver": "v1.13.3 0"
+},
+{
+"log_id": "99e3a842-4313-4345-9034-c81d61d60398",
+"url": "https://cdn.logs.px4.io/99e3a842-4313-4345-9034-c81d61d60398.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.7.1 0"
+},
+{
+"log_id": "0a4d994b-0188-47b7-92b1-14cc507d6f23",
+"url": "https://cdn.logs.px4.io/0a4d994b-0188-47b7-92b1-14cc507d6f23.ulg",
+"hw": "PX4_FMU_V6X",
+"ver": "v1.15.2 255"
+},
+{
+"log_id": "4f6b8aa0-5439-4bcd-9e2f-745fcf9639e3",
+"url": "https://cdn.logs.px4.io/4f6b8aa0-5439-4bcd-9e2f-745fcf9639e3.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.0 0"
+},
+{
+"log_id": "a13fb173-38d7-4d81-983c-5ba1d6f7eabd",
+"url": "https://cdn.logs.px4.io/a13fb173-38d7-4d81-983c-5ba1d6f7eabd.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "cda43587-024d-476a-92de-5aa66fe361d4",
+"url": "https://cdn.logs.px4.io/cda43587-024d-476a-92de-5aa66fe361d4.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "2d8d5543-aa49-477e-8d77-8644d63d8f3e",
+"url": "https://cdn.logs.px4.io/2d8d5543-aa49-477e-8d77-8644d63d8f3e.ulg",
+"hw": "PX4_FMU_V6C",
+"ver": "v1.15.4 0"
+},
+{
+"log_id": "e7d42bd8-0b54-475a-b7d2-a970791a93ff",
+"url": "https://cdn.logs.px4.io/e7d42bd8-0b54-475a-b7d2-a970791a93ff.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.8.0 128"
+},
+{
+"log_id": "a26705e8-ab14-4153-95b7-d1f66203a972",
+"url": "https://cdn.logs.px4.io/a26705e8-ab14-4153-95b7-d1f66203a972.ulg",
+"hw": "PX4_FMU_V4",
+"ver": "v1.9.0 64"
+},
+{
+"log_id": "f4a0f96f-c004-4770-9c78-2ffc04a8e804",
+"url": "https://cdn.logs.px4.io/f4a0f96f-c004-4770-9c78-2ffc04a8e804.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "3cbca408-5aae-4825-a4a5-e66cb7de806b",
+"url": "https://cdn.logs.px4.io/3cbca408-5aae-4825-a4a5-e66cb7de806b.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "2e15eae8-68dc-48c6-94cc-74cb4f2cc2cb",
+"url": "https://cdn.logs.px4.io/2e15eae8-68dc-48c6-94cc-74cb4f2cc2cb.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.0 192"
+},
+{
+"log_id": "9e8f4eeb-d65a-43bc-a8ca-ee8f94855668",
+"url": "https://cdn.logs.px4.io/9e8f4eeb-d65a-43bc-a8ca-ee8f94855668.ulg",
+"hw": "PX4_FMU_V3",
+"ver": "v1.3.6 255"
+},
+{
+"log_id": "d8f6972c-a9c9-4354-82de-ddde55c92fe9",
+"url": "https://cdn.logs.px4.io/d8f6972c-a9c9-4354-82de-ddde55c92fe9.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.8.0 128"
+},
+{
+"log_id": "b0d208e0-70e6-4ad7-9d40-75e7827fe82e",
+"url": "https://cdn.logs.px4.io/b0d208e0-70e6-4ad7-9d40-75e7827fe82e.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "a9f3b52b-9f1c-4546-83a1-b982aaaafad1",
+"url": "https://cdn.logs.px4.io/a9f3b52b-9f1c-4546-83a1-b982aaaafad1.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "690cf72b-f386-457e-b044-71c1f6539f2a",
+"url": "https://cdn.logs.px4.io/690cf72b-f386-457e-b044-71c1f6539f2a.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.8.0 0"
+},
+{
+"log_id": "7be47368-0cbb-4521-a09e-23d0ae86b992",
+"url": "https://cdn.logs.px4.io/7be47368-0cbb-4521-a09e-23d0ae86b992.ulg",
+"hw": "MICOAIR_H743_V2",
+"ver": "v1.15.2 0"
+},
+{
+"log_id": "0d0e99fd-cd0d-4456-8cbd-56eff11a8790",
+"url": "https://cdn.logs.px4.io/0d0e99fd-cd0d-4456-8cbd-56eff11a8790.ulg",
+"hw": "CUAV_NORA",
+"ver": "v1.13.2 255"
+},
+{
+"log_id": "d582a5af-f4ac-4f09-95d9-ef5faf4c54a5",
+"url": "https://cdn.logs.px4.io/d582a5af-f4ac-4f09-95d9-ef5faf4c54a5.ulg",
+"hw": "PX4_FMU_V6C",
+"ver": "v1.15.4 0"
+},
+{
+"log_id": "9fc81747-9bc3-4e6c-9f66-3f1a1c7ecec1",
+"url": "https://cdn.logs.px4.io/9fc81747-9bc3-4e6c-9f66-3f1a1c7ecec1.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.7.0 192"
+},
+{
+"log_id": "94bb3a12-af4a-435a-aa7f-611381aeb5f3",
+"url": "https://cdn.logs.px4.io/94bb3a12-af4a-435a-aa7f-611381aeb5f3.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.0 0"
+},
+{
+"log_id": "a61a5282-3e93-41a5-a4f3-a9bd47a25c5f",
+"url": "https://cdn.logs.px4.io/a61a5282-3e93-41a5-a4f3-a9bd47a25c5f.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.2 0"
+},
+{
+"log_id": "008cd427-3bbc-4475-918d-ef5839495594",
+"url": "https://cdn.logs.px4.io/008cd427-3bbc-4475-918d-ef5839495594.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "368b4a5b-209b-48dd-bf42-012d5a47be99",
+"url": "https://cdn.logs.px4.io/368b4a5b-209b-48dd-bf42-012d5a47be99.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "338c6233-c3ec-4e76-a77e-d80b9aaa2044",
+"url": "https://cdn.logs.px4.io/338c6233-c3ec-4e76-a77e-d80b9aaa2044.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.0 0"
+},
+{
+"log_id": "90f55f06-e306-4cc5-9815-2dc45d8914e2",
+"url": "https://cdn.logs.px4.io/90f55f06-e306-4cc5-9815-2dc45d8914e2.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.8.0 0"
+},
+{
+"log_id": "488aef7b-1c3a-40fd-9d4c-3ef0eebe1425",
+"url": "https://cdn.logs.px4.io/488aef7b-1c3a-40fd-9d4c-3ef0eebe1425.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.7.0 192"
+},
+{
+"log_id": "084ed0f9-12ff-4990-bec5-cb7202b01a99",
+"url": "https://cdn.logs.px4.io/084ed0f9-12ff-4990-bec5-cb7202b01a99.ulg",
+"hw": "PX4_FMU_V5",
+"ver": "v1.11.3 0"
+},
+{
+"log_id": "ece93c60-5ec7-4e5a-8047-f119cb6efca0",
+"url": "https://cdn.logs.px4.io/ece93c60-5ec7-4e5a-8047-f119cb6efca0.ulg",
+"hw": "PX4FMU_V5",
+"ver": "v1.8.0 0"
+},
+{
+"log_id": "5b7d34af-c116-4c6a-87ab-d23d668dcc82",
+"url": "https://cdn.logs.px4.io/5b7d34af-c116-4c6a-87ab-d23d668dcc82.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.0 192"
+},
+{
+"log_id": "e1272cb9-7dfb-4e72-90b0-6ffa01b3cd29",
+"url": "https://cdn.logs.px4.io/e1272cb9-7dfb-4e72-90b0-6ffa01b3cd29.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "6311733a-a9ef-41d3-ad57-97a259ede179",
+"url": "https://cdn.logs.px4.io/6311733a-a9ef-41d3-ad57-97a259ede179.ulg",
+"hw": "MICOAIR_H743_V2",
+"ver": "v1.15.2 0"
+},
+{
+"log_id": "bab0e8ff-3b5f-44bc-a7ac-e38e70eaeada",
+"url": "https://cdn.logs.px4.io/bab0e8ff-3b5f-44bc-a7ac-e38e70eaeada.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "09c3aad4-3277-44fe-a46f-7ad6fbc02596",
+"url": "https://cdn.logs.px4.io/09c3aad4-3277-44fe-a46f-7ad6fbc02596.ulg",
+"hw": "PX4_FMU_V6X",
+"ver": "v1.15.2 255"
+},
+{
+"log_id": "e71d8198-7e5b-4817-b9e3-e09c44e20512",
+"url": "https://cdn.logs.px4.io/e71d8198-7e5b-4817-b9e3-e09c44e20512.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "7bdfca71-cd67-438f-b454-3addfb8985ba",
+"url": "https://cdn.logs.px4.io/7bdfca71-cd67-438f-b454-3addfb8985ba.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.7.2 0"
+},
+{
+"log_id": "a800a221-8b30-40a0-9b43-2d1d4d49a0d9",
+"url": "https://cdn.logs.px4.io/a800a221-8b30-40a0-9b43-2d1d4d49a0d9.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "1cff6192-682f-4ba9-acfe-acf79c3b4e44",
+"url": "https://cdn.logs.px4.io/1cff6192-682f-4ba9-acfe-acf79c3b4e44.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.8.0 0"
+},
+{
+"log_id": "5968a717-c4f2-4051-a390-918397eb300f",
+"url": "https://cdn.logs.px4.io/5968a717-c4f2-4051-a390-918397eb300f.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.8.0 0"
+},
+{
+"log_id": "0481d033-bc63-4814-84ae-ae58858ec36d",
+"url": "https://cdn.logs.px4.io/0481d033-bc63-4814-84ae-ae58858ec36d.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "01056d57-c579-4bf1-9d6c-ec835eb676d8",
+"url": "https://cdn.logs.px4.io/01056d57-c579-4bf1-9d6c-ec835eb676d8.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "23011f66-a321-45f4-905e-20344cfa615d",
+"url": "https://cdn.logs.px4.io/23011f66-a321-45f4-905e-20344cfa615d.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "a8c5221b-fe70-4095-be80-f3ddbf6a732f",
+"url": "https://cdn.logs.px4.io/a8c5221b-fe70-4095-be80-f3ddbf6a732f.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "4aadf9c3-fc23-4f90-bd71-8dde16e92b0f",
+"url": "https://cdn.logs.px4.io/4aadf9c3-fc23-4f90-bd71-8dde16e92b0f.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.0 0"
+},
+{
+"log_id": "724384d5-71ed-42d5-aca1-00845b7bb351",
+"url": "https://cdn.logs.px4.io/724384d5-71ed-42d5-aca1-00845b7bb351.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.8.0 128"
+},
+{
+"log_id": "f3a83a23-6cf7-47c5-bb95-73cfce802401",
+"url": "https://cdn.logs.px4.io/f3a83a23-6cf7-47c5-bb95-73cfce802401.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "dc14e9d6-78f5-4aac-91e0-9039d9b35082",
+"url": "https://cdn.logs.px4.io/dc14e9d6-78f5-4aac-91e0-9039d9b35082.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "d367d974-7e71-42d7-a4dd-be633da7d4fa",
+"url": "https://cdn.logs.px4.io/d367d974-7e71-42d7-a4dd-be633da7d4fa.ulg",
+"hw": "GDCX_H743VI",
+"ver": "v1.12.22 0"
+},
+{
+"log_id": "406113d2-d981-4794-958f-5fb6b295a2ec",
+"url": "https://cdn.logs.px4.io/406113d2-d981-4794-958f-5fb6b295a2ec.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.8.0 255"
+},
+{
+"log_id": "6c657500-40df-4c8f-a311-0f206b614ba5",
+"url": "https://cdn.logs.px4.io/6c657500-40df-4c8f-a311-0f206b614ba5.ulg",
+"hw": "CUAV_X7PRO",
+"ver": "v1.12.3 0"
+},
+{
+"log_id": "1d36c599-14f9-4373-b09f-ddb8597524e2",
+"url": "https://cdn.logs.px4.io/1d36c599-14f9-4373-b09f-ddb8597524e2.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.0 192"
+},
+{
+"log_id": "55786853-9770-4a68-b034-b9bccff2d1a8",
+"url": "https://cdn.logs.px4.io/55786853-9770-4a68-b034-b9bccff2d1a8.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "04c517ac-2ad1-400a-88b4-61b0dc58d59b",
+"url": "https://cdn.logs.px4.io/04c517ac-2ad1-400a-88b4-61b0dc58d59b.ulg",
+"hw": "PX4_FMU_V6C",
+"ver": "v1.15.2 255"
+},
+{
+"log_id": "1a9b7175-0c7e-419b-a615-9b4c02796c45",
+"url": "https://cdn.logs.px4.io/1a9b7175-0c7e-419b-a615-9b4c02796c45.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "35a843c6-c18d-4916-b2e0-563e6ca3cd3e",
+"url": "https://cdn.logs.px4.io/35a843c6-c18d-4916-b2e0-563e6ca3cd3e.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "670e3e6a-5364-4013-861f-63f3bff9b341",
+"url": "https://cdn.logs.px4.io/670e3e6a-5364-4013-861f-63f3bff9b341.ulg",
+"hw": "PX4_FMU_V6C",
+"ver": "v1.14.0 255"
+},
+{
+"log_id": "23e165c7-da0d-42fb-aaa6-3f94bc6477d1",
+"url": "https://cdn.logs.px4.io/23e165c7-da0d-42fb-aaa6-3f94bc6477d1.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "f36fa62d-7d21-4577-8256-8de78833e990",
+"url": "https://cdn.logs.px4.io/f36fa62d-7d21-4577-8256-8de78833e990.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.8.0 0"
+},
+{
+"log_id": "943ab6eb-ec51-479b-9508-124414cb93e7",
+"url": "https://cdn.logs.px4.io/943ab6eb-ec51-479b-9508-124414cb93e7.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "b7d02134-691e-439d-94b4-4d6d7f053da1",
+"url": "https://cdn.logs.px4.io/b7d02134-691e-439d-94b4-4d6d7f053da1.ulg",
+"hw": "PX4_FMU_V6C",
+"ver": "v1.15.4 0"
+},
+{
+"log_id": "7a441496-aa30-46d9-85bf-e7387fc57c09",
+"url": "https://cdn.logs.px4.io/7a441496-aa30-46d9-85bf-e7387fc57c09.ulg",
+"hw": "CUBEPILOT_CUBEORANGEPLUS",
+"ver": "v1.14.3 255"
+},
+{
+"log_id": "843ebcc6-dd24-40e5-b5d6-bb261961ac64",
+"url": "https://cdn.logs.px4.io/843ebcc6-dd24-40e5-b5d6-bb261961ac64.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "7268c263-3d77-4b55-bd80-7e23dd9d03be",
+"url": "https://cdn.logs.px4.io/7268c263-3d77-4b55-bd80-7e23dd9d03be.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.8.0 128"
+},
+{
+"log_id": "70c827b2-3bce-4d2e-af29-f25c9e7bd2f4",
+"url": "https://cdn.logs.px4.io/70c827b2-3bce-4d2e-af29-f25c9e7bd2f4.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "6e631432-d179-4c89-aa1c-6752e85b85c8",
+"url": "https://cdn.logs.px4.io/6e631432-d179-4c89-aa1c-6752e85b85c8.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "3fe13063-c0c1-4a27-91b8-0d7345976f78",
+"url": "https://cdn.logs.px4.io/3fe13063-c0c1-4a27-91b8-0d7345976f78.ulg",
+"hw": "PX4_FMU_V6C",
+"ver": "v1.15.4 0"
+},
+{
+"log_id": "61ca885b-4149-4ad6-9bc9-fcb7556c0ce1",
+"url": "https://cdn.logs.px4.io/61ca885b-4149-4ad6-9bc9-fcb7556c0ce1.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.8.0 0"
+},
+{
+"log_id": "9cf1a125-b61a-4314-8f97-e4ac7443118a",
+"url": "https://cdn.logs.px4.io/9cf1a125-b61a-4314-8f97-e4ac7443118a.ulg",
+"hw": "ARK_FMU_V6X",
+"ver": "v1.16.0 0"
+},
+{
+"log_id": "3c3e249b-d169-444a-ae2c-f8fecd8a55f9",
+"url": "https://cdn.logs.px4.io/3c3e249b-d169-444a-ae2c-f8fecd8a55f9.ulg",
+"hw": "PX4FMU_V5",
+"ver": "v1.8.0 0"
+},
+{
+"log_id": "ff9ca8fc-6702-4a4a-b23b-8b3cae08dabd",
+"url": "https://cdn.logs.px4.io/ff9ca8fc-6702-4a4a-b23b-8b3cae08dabd.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "c9723307-015d-46dc-a85b-d99d48ba825a",
+"url": "https://cdn.logs.px4.io/c9723307-015d-46dc-a85b-d99d48ba825a.ulg",
+"hw": "PX4_FMU_V5",
+"ver": "v1.11.3 0"
+},
+{
+"log_id": "c2a360ca-00a6-44a1-9e47-bbba04f29632",
+"url": "https://cdn.logs.px4.io/c2a360ca-00a6-44a1-9e47-bbba04f29632.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "f5175856-5576-43b7-b3e6-a9240ba83686",
+"url": "https://cdn.logs.px4.io/f5175856-5576-43b7-b3e6-a9240ba83686.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "bf89e957-7a91-4843-abf8-00096359a2cb",
+"url": "https://cdn.logs.px4.io/bf89e957-7a91-4843-abf8-00096359a2cb.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "a8dc2ff7-f44b-42d5-99ee-4ef8a3c6436d",
+"url": "https://cdn.logs.px4.io/a8dc2ff7-f44b-42d5-99ee-4ef8a3c6436d.ulg",
+"hw": "PX4_FMU_V6C",
+"ver": "v1.15.4 0"
+},
+{
+"log_id": "25a63863-0f34-4a45-bafb-dc9da97bdf46",
+"url": "https://cdn.logs.px4.io/25a63863-0f34-4a45-bafb-dc9da97bdf46.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "897fcca6-e616-4b5b-b9a3-4f01bb0d54cc",
+"url": "https://cdn.logs.px4.io/897fcca6-e616-4b5b-b9a3-4f01bb0d54cc.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "9276e1ef-0ca1-4aeb-a24b-04ed3c134872",
+"url": "https://cdn.logs.px4.io/9276e1ef-0ca1-4aeb-a24b-04ed3c134872.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "a69e8dcd-1dd3-4277-8206-179e60ee9694",
+"url": "https://cdn.logs.px4.io/a69e8dcd-1dd3-4277-8206-179e60ee9694.ulg",
+"hw": "PX4_FMU_V4",
+"ver": "v1.11.0 128"
+},
+{
+"log_id": "64af300c-6dec-4849-acc4-fdcf9becb314",
+"url": "https://cdn.logs.px4.io/64af300c-6dec-4849-acc4-fdcf9becb314.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.8.0 128"
+},
+{
+"log_id": "34c9e218-9d9b-4eb5-8a49-d5b3a61f89d3",
+"url": "https://cdn.logs.px4.io/34c9e218-9d9b-4eb5-8a49-d5b3a61f89d3.ulg",
+"hw": "PX4_FMU_V3",
+"ver": "v1.4.1 255"
+},
+{
+"log_id": "9e9efb65-6dfd-4fd7-9b54-17ea7674afc4",
+"url": "https://cdn.logs.px4.io/9e9efb65-6dfd-4fd7-9b54-17ea7674afc4.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "0c73e5da-cd7b-41fb-a467-fa88b9d9984d",
+"url": "https://cdn.logs.px4.io/0c73e5da-cd7b-41fb-a467-fa88b9d9984d.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "d347f0bb-ddf1-47e9-8a75-ae1581fdff75",
+"url": "https://cdn.logs.px4.io/d347f0bb-ddf1-47e9-8a75-ae1581fdff75.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "b78f9804-f1f3-4a6e-ab88-0df3e06f0734",
+"url": "https://cdn.logs.px4.io/b78f9804-f1f3-4a6e-ab88-0df3e06f0734.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "2f259142-a9e0-45a5-bf1e-4098834cb8f3",
+"url": "https://cdn.logs.px4.io/2f259142-a9e0-45a5-bf1e-4098834cb8f3.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "1559d438-e06b-4922-bb5d-3a216ccc6a66",
+"url": "https://cdn.logs.px4.io/1559d438-e06b-4922-bb5d-3a216ccc6a66.ulg",
+"hw": "PX4_FMU_V6C",
+"ver": "v1.15.4 0"
+},
+{
+"log_id": "105d8c73-184f-469a-b147-a14ad0695984",
+"url": "https://cdn.logs.px4.io/105d8c73-184f-469a-b147-a14ad0695984.ulg",
+"hw": "PX4_FMU_V6X",
+"ver": "v1.16.0 255"
+},
+{
+"log_id": "9edac1c6-b89f-4659-be76-6b48990f646b",
+"url": "https://cdn.logs.px4.io/9edac1c6-b89f-4659-be76-6b48990f646b.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "cb2316f5-de72-4d2f-97f8-48e7c24e6654",
+"url": "https://cdn.logs.px4.io/cb2316f5-de72-4d2f-97f8-48e7c24e6654.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.8.0 0"
+},
+{
+"log_id": "cb87cf3f-3b46-4fd8-aa8b-cfb9eb127de4",
+"url": "https://cdn.logs.px4.io/cb87cf3f-3b46-4fd8-aa8b-cfb9eb127de4.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "4412993c-4d65-4d4d-af7c-bb12dca81cca",
+"url": "https://cdn.logs.px4.io/4412993c-4d65-4d4d-af7c-bb12dca81cca.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "c2b2e20f-b0ef-4d5f-9a34-1c3331eeaa1c",
+"url": "https://cdn.logs.px4.io/c2b2e20f-b0ef-4d5f-9a34-1c3331eeaa1c.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "faf6d248-4b65-4767-8d28-07c4045d9f2e",
+"url": "https://cdn.logs.px4.io/faf6d248-4b65-4767-8d28-07c4045d9f2e.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "033f2df2-bd91-405f-9a1e-bd6a41c9c1e0",
+"url": "https://cdn.logs.px4.io/033f2df2-bd91-405f-9a1e-bd6a41c9c1e0.ulg",
+"hw": "PX4_FMU_V3",
+"ver": "v1.3.2 0"
+},
+{
+"log_id": "a4fae014-48bb-4606-837f-b6edf3c69b0f",
+"url": "https://cdn.logs.px4.io/a4fae014-48bb-4606-837f-b6edf3c69b0f.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.7.4 0"
+},
+{
+"log_id": "54b18fd9-3766-4966-ae2b-4f9a37990358",
+"url": "https://cdn.logs.px4.io/54b18fd9-3766-4966-ae2b-4f9a37990358.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "6ceceb95-6436-46fb-b839-c4e6f5a79cd5",
+"url": "https://cdn.logs.px4.io/6ceceb95-6436-46fb-b839-c4e6f5a79cd5.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "95bc13ab-7bad-46b6-bf14-4da775d2a350",
+"url": "https://cdn.logs.px4.io/95bc13ab-7bad-46b6-bf14-4da775d2a350.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "2da7cba4-841f-48bd-a389-4d9b02c73ffe",
+"url": "https://cdn.logs.px4.io/2da7cba4-841f-48bd-a389-4d9b02c73ffe.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "13f3ceec-db9c-4490-86d5-96cc5bf3d4d9",
+"url": "https://cdn.logs.px4.io/13f3ceec-db9c-4490-86d5-96cc5bf3d4d9.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "e27c920d-55a0-4cc4-86d7-dccb949e58e2",
+"url": "https://cdn.logs.px4.io/e27c920d-55a0-4cc4-86d7-dccb949e58e2.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "4ce61a19-b315-4104-853b-4058e0029aa2",
+"url": "https://cdn.logs.px4.io/4ce61a19-b315-4104-853b-4058e0029aa2.ulg",
+"hw": "PX4_FMU_V4",
+"ver": "v1.9.0 64"
+},
+{
+"log_id": "ac9303a5-9f66-42e1-885e-dfaa6526763f",
+"url": "https://cdn.logs.px4.io/ac9303a5-9f66-42e1-885e-dfaa6526763f.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "8b294842-425e-4f0c-bdd1-58c54fe70483",
+"url": "https://cdn.logs.px4.io/8b294842-425e-4f0c-bdd1-58c54fe70483.ulg",
+"hw": "PX4_FMU_V4",
+"ver": "v1.9.0 64"
+},
+{
+"log_id": "06390a2e-eeae-41ea-8ca8-0775b78c7f16",
+"url": "https://cdn.logs.px4.io/06390a2e-eeae-41ea-8ca8-0775b78c7f16.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "8f6f070e-47f4-4ee9-8233-fa01f49c0add",
+"url": "https://cdn.logs.px4.io/8f6f070e-47f4-4ee9-8233-fa01f49c0add.ulg",
+"hw": "GDCX_H743VI",
+"ver": "v1.24.2 0"
+},
+{
+"log_id": "702e994a-a521-4738-80e7-b85a03a5a1c3",
+"url": "https://cdn.logs.px4.io/702e994a-a521-4738-80e7-b85a03a5a1c3.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.3 255"
+},
+{
+"log_id": "073ff284-f89e-4e82-a432-1201dea53f6e",
+"url": "https://cdn.logs.px4.io/073ff284-f89e-4e82-a432-1201dea53f6e.ulg",
+"hw": "PX4_FMU_V6X",
+"ver": "v1.14.0 0"
+},
+{
+"log_id": "475d97fc-0c66-4bc8-82f2-9fadc3301a46",
+"url": "https://cdn.logs.px4.io/475d97fc-0c66-4bc8-82f2-9fadc3301a46.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "f7aa5be9-842f-4225-8067-bffd7e2fd4c3",
+"url": "https://cdn.logs.px4.io/f7aa5be9-842f-4225-8067-bffd7e2fd4c3.ulg",
+"hw": "CUAV_X7PRO",
+"ver": "v1.15.2 0"
+},
+{
+"log_id": "c68f2b0c-7aa3-4a32-b896-a1c1ceca7d89",
+"url": "https://cdn.logs.px4.io/c68f2b0c-7aa3-4a32-b896-a1c1ceca7d89.ulg",
+"hw": "YUNEEC_TAP_H850",
+"ver": "v1.9.0 255"
+},
+{
+"log_id": "037e9df4-23d0-4c6d-8638-55b3cb045411",
+"url": "https://cdn.logs.px4.io/037e9df4-23d0-4c6d-8638-55b3cb045411.ulg",
+"hw": "CUAV_X7PRO",
+"ver": "v1.16.1 192"
+},
+{
+"log_id": "94d3ea44-9d4f-48d3-bbf0-3a9bf1ab76b1",
+"url": "https://cdn.logs.px4.io/94d3ea44-9d4f-48d3-bbf0-3a9bf1ab76b1.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "02e580af-07b7-4121-82d7-f2dfcacc557d",
+"url": "https://cdn.logs.px4.io/02e580af-07b7-4121-82d7-f2dfcacc557d.ulg",
+"hw": "NXP_IMX95",
+"ver": "v1.17.0 64"
+},
+{
+"log_id": "2a511c4c-c5a0-4e00-ba35-7790054b2299",
+"url": "https://cdn.logs.px4.io/2a511c4c-c5a0-4e00-ba35-7790054b2299.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.8.0 0"
+},
+{
+"log_id": "270f660d-c297-439e-bb19-5cce3be1215e",
+"url": "https://cdn.logs.px4.io/270f660d-c297-439e-bb19-5cce3be1215e.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "a7a6bd49-5184-445d-972b-28d09df685eb",
+"url": "https://cdn.logs.px4.io/a7a6bd49-5184-445d-972b-28d09df685eb.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "eb70dcd5-dd76-4657-8dc2-29203f257aa5",
+"url": "https://cdn.logs.px4.io/eb70dcd5-dd76-4657-8dc2-29203f257aa5.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "3a3ec430-965b-4421-ba1d-8204dd654dc5",
+"url": "https://cdn.logs.px4.io/3a3ec430-965b-4421-ba1d-8204dd654dc5.ulg",
+"hw": "PX4_FMU_V5",
+"ver": "v1.9.0 128"
+},
+{
+"log_id": "a7b6a44e-c174-40b5-bd90-d7138a6a9604",
+"url": "https://cdn.logs.px4.io/a7b6a44e-c174-40b5-bd90-d7138a6a9604.ulg",
+"hw": "",
+"ver": "v1.13.2 0"
+},
+{
+"log_id": "b9656a3e-c62d-4e10-b2b9-c7e4207fd686",
+"url": "https://cdn.logs.px4.io/b9656a3e-c62d-4e10-b2b9-c7e4207fd686.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "f22112d6-6084-42bb-bb43-cb689ef0fce2",
+"url": "https://cdn.logs.px4.io/f22112d6-6084-42bb-bb43-cb689ef0fce2.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.8.0 0"
+},
+{
+"log_id": "4ffa288f-c856-4f33-8d1e-7d9e2fabaea5",
+"url": "https://cdn.logs.px4.io/4ffa288f-c856-4f33-8d1e-7d9e2fabaea5.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "0f02fa8e-e462-42ec-9514-d9d26a7be966",
+"url": "https://cdn.logs.px4.io/0f02fa8e-e462-42ec-9514-d9d26a7be966.ulg",
+"hw": "PX4_FMU_V4",
+"ver": "v1.9.0 128"
+},
+{
+"log_id": "44fc9fc9-4c5a-4299-bcd6-5917d504b831",
+"url": "https://cdn.logs.px4.io/44fc9fc9-4c5a-4299-bcd6-5917d504b831.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "88d03b6b-bd32-4c69-b01e-31163d2e61c7",
+"url": "https://cdn.logs.px4.io/88d03b6b-bd32-4c69-b01e-31163d2e61c7.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "29dca5ed-dcfe-430c-9396-0acd35ab50f7",
+"url": "https://cdn.logs.px4.io/29dca5ed-dcfe-430c-9396-0acd35ab50f7.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "4e3b974b-36bb-4031-84c0-a53035355d77",
+"url": "https://cdn.logs.px4.io/4e3b974b-36bb-4031-84c0-a53035355d77.ulg",
+"hw": "PX4_FMU_V4",
+"ver": "v1.9.0 64"
+},
+{
+"log_id": "3ab187e9-785a-4910-83e9-61595f52acd9",
+"url": "https://cdn.logs.px4.io/3ab187e9-785a-4910-83e9-61595f52acd9.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "5141d232-dadd-47f1-abea-e4cc10d5c59c",
+"url": "https://cdn.logs.px4.io/5141d232-dadd-47f1-abea-e4cc10d5c59c.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.8.0 0"
+},
+{
+"log_id": "7fc90152-d655-4388-a6be-2840702ca689",
+"url": "https://cdn.logs.px4.io/7fc90152-d655-4388-a6be-2840702ca689.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "f23564b8-b548-430b-94a3-ef4d3479a31f",
+"url": "https://cdn.logs.px4.io/f23564b8-b548-430b-94a3-ef4d3479a31f.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.8.0 255"
+},
+{
+"log_id": "9219298a-6333-4cdf-afec-a40023b8581f",
+"url": "https://cdn.logs.px4.io/9219298a-6333-4cdf-afec-a40023b8581f.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "ec696b0f-396d-4733-bd23-a965c8c82783",
+"url": "https://cdn.logs.px4.io/ec696b0f-396d-4733-bd23-a965c8c82783.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.8.0 0"
+},
+{
+"log_id": "bce09a6f-e05f-47f3-8625-91ab2c9035f6",
+"url": "https://cdn.logs.px4.io/bce09a6f-e05f-47f3-8625-91ab2c9035f6.ulg",
+"hw": "PX4_FMU_V6C",
+"ver": "v1.15.4 0"
+},
+{
+"log_id": "0ff2b2c8-9a29-42a8-be8b-19dcd0051ca5",
+"url": "https://cdn.logs.px4.io/0ff2b2c8-9a29-42a8-be8b-19dcd0051ca5.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.4 0"
+},
+{
+"log_id": "0c91ff69-9251-4f8a-96f8-5e5de3f49f50",
+"url": "https://cdn.logs.px4.io/0c91ff69-9251-4f8a-96f8-5e5de3f49f50.ulg",
+"hw": "PX4_FMU_V6C",
+"ver": "v1.15.4 0"
+},
+{
+"log_id": "c8bdbd92-0d01-4861-9c9a-bdc6a6d00af5",
+"url": "https://cdn.logs.px4.io/c8bdbd92-0d01-4861-9c9a-bdc6a6d00af5.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "9f616761-c0c0-442b-b815-78d97645d3c1",
+"url": "https://cdn.logs.px4.io/9f616761-c0c0-442b-b815-78d97645d3c1.ulg",
+"hw": "CUAV_X7PRO",
+"ver": "v1.12.3 0"
+},
+{
+"log_id": "cb0107b9-1270-4fa7-9496-3b1ef718f35d",
+"url": "https://cdn.logs.px4.io/cb0107b9-1270-4fa7-9496-3b1ef718f35d.ulg",
+"hw": "PX4_FMU_V5",
+"ver": "v1.11.0 128"
+},
+{
+"log_id": "02aa34ee-1e06-473d-9582-cff9dfadb0b0",
+"url": "https://cdn.logs.px4.io/02aa34ee-1e06-473d-9582-cff9dfadb0b0.ulg",
+"hw": "PX4_FMU_V6X",
+"ver": "v1.15.3 255"
+},
+{
+"log_id": "d1eb26fa-6a37-4f1b-8e9a-1d875c08f503",
+"url": "https://cdn.logs.px4.io/d1eb26fa-6a37-4f1b-8e9a-1d875c08f503.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "7d322b62-34e2-4c16-af9d-105df00148a6",
+"url": "https://cdn.logs.px4.io/7d322b62-34e2-4c16-af9d-105df00148a6.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "093c6096-75bb-4330-a793-8cb19281b99b",
+"url": "https://cdn.logs.px4.io/093c6096-75bb-4330-a793-8cb19281b99b.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.0 192"
+},
+{
+"log_id": "a2302fa1-3c30-41f3-a599-1045fbd69809",
+"url": "https://cdn.logs.px4.io/a2302fa1-3c30-41f3-a599-1045fbd69809.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.8.0 0"
+},
+{
+"log_id": "d3bdf312-c8c2-4c7e-b5d9-651347181969",
+"url": "https://cdn.logs.px4.io/d3bdf312-c8c2-4c7e-b5d9-651347181969.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.7.0 192"
+},
+{
+"log_id": "c33c3ad3-5317-41ed-81b3-0097a54a8fa4",
+"url": "https://cdn.logs.px4.io/c33c3ad3-5317-41ed-81b3-0097a54a8fa4.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.8.0 128"
+},
+{
+"log_id": "f581b231-c0a2-4fbd-8244-72c4abb211eb",
+"url": "https://cdn.logs.px4.io/f581b231-c0a2-4fbd-8244-72c4abb211eb.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "1371d9f3-d435-4780-b4db-f6324e1dd1dd",
+"url": "https://cdn.logs.px4.io/1371d9f3-d435-4780-b4db-f6324e1dd1dd.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "c5a61eec-3133-4c21-ab1d-850af63252c3",
+"url": "https://cdn.logs.px4.io/c5a61eec-3133-4c21-ab1d-850af63252c3.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.8.0 0"
+},
+{
+"log_id": "8ee78e92-9d0b-4570-8740-573ec1d5320c",
+"url": "https://cdn.logs.px4.io/8ee78e92-9d0b-4570-8740-573ec1d5320c.ulg",
+"hw": "PX4FMU_V5",
+"ver": "v1.8.0 0"
+},
+{
+"log_id": "4367e74d-ff6f-48f2-a816-6411140f2990",
+"url": "https://cdn.logs.px4.io/4367e74d-ff6f-48f2-a816-6411140f2990.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.7.2 0"
+},
+{
+"log_id": "868cf34f-3884-45b4-9828-d09cd50936ad",
+"url": "https://cdn.logs.px4.io/868cf34f-3884-45b4-9828-d09cd50936ad.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "f6154317-a226-48b6-a54c-61e8ae07e7d9",
+"url": "https://cdn.logs.px4.io/f6154317-a226-48b6-a54c-61e8ae07e7d9.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "12d30737-48d5-41ab-b15a-5ec107b98dcc",
+"url": "https://cdn.logs.px4.io/12d30737-48d5-41ab-b15a-5ec107b98dcc.ulg",
+"hw": "PX4_FMU_V5",
+"ver": "v1.9.0 128"
+},
+{
+"log_id": "ea668c19-d8f0-4473-94ed-d3a96bfd8f6f",
+"url": "https://cdn.logs.px4.io/ea668c19-d8f0-4473-94ed-d3a96bfd8f6f.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "5a5d07ec-be35-4ece-a6f3-b6a838a4c5d5",
+"url": "https://cdn.logs.px4.io/5a5d07ec-be35-4ece-a6f3-b6a838a4c5d5.ulg",
+"hw": "CUBEPILOT_CUBEORANGE",
+"ver": "v1.16.0 255"
+},
+{
+"log_id": "ca3257b8-7ccb-4b52-9b81-bf1952b65e36",
+"url": "https://cdn.logs.px4.io/ca3257b8-7ccb-4b52-9b81-bf1952b65e36.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.8.0 128"
+},
+{
+"log_id": "222822e0-e55f-4ece-bf3b-25b16eeeb806",
+"url": "https://cdn.logs.px4.io/222822e0-e55f-4ece-bf3b-25b16eeeb806.ulg",
+"hw": "PX4_FMU_V5",
+"ver": "v1.11.3 0"
+},
+{
+"log_id": "5197a4ca-0528-4a6c-be05-6d15fe513d67",
+"url": "https://cdn.logs.px4.io/5197a4ca-0528-4a6c-be05-6d15fe513d67.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "a4e7c842-a5af-4469-8357-bb14b6aeec06",
+"url": "https://cdn.logs.px4.io/a4e7c842-a5af-4469-8357-bb14b6aeec06.ulg",
+"hw": "PX4_FMU_V5",
+"ver": "v1.15.4 0"
+},
+{
+"log_id": "ff3397ad-dbe2-45ba-bc23-e3613aa30115",
+"url": "https://cdn.logs.px4.io/ff3397ad-dbe2-45ba-bc23-e3613aa30115.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "d0377e2e-36d9-4ee7-a495-bcda110614cf",
+"url": "https://cdn.logs.px4.io/d0377e2e-36d9-4ee7-a495-bcda110614cf.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.0 192"
+},
+{
+"log_id": "d2cea231-a14c-4aaf-8fe6-573292631322",
+"url": "https://cdn.logs.px4.io/d2cea231-a14c-4aaf-8fe6-573292631322.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.4 0"
+},
+{
+"log_id": "87df08c0-9f30-452f-8ae5-81d39d6d62cf",
+"url": "https://cdn.logs.px4.io/87df08c0-9f30-452f-8ae5-81d39d6d62cf.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.0 0"
+},
+{
+"log_id": "41dbd060-07de-4776-bd80-8d4eeec161e9",
+"url": "https://cdn.logs.px4.io/41dbd060-07de-4776-bd80-8d4eeec161e9.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "0d2c7626-ee29-41f1-ba20-30fae2a2b77b",
+"url": "https://cdn.logs.px4.io/0d2c7626-ee29-41f1-ba20-30fae2a2b77b.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "b9e05cc8-ee70-4603-b59b-ec5af79b53e0",
+"url": "https://cdn.logs.px4.io/b9e05cc8-ee70-4603-b59b-ec5af79b53e0.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.0 0"
+},
+{
+"log_id": "faf83b9e-5209-42f8-8491-c02e0b1f3711",
+"url": "https://cdn.logs.px4.io/faf83b9e-5209-42f8-8491-c02e0b1f3711.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "2f6b0819-d7f2-4b46-95ad-df0876230f0e",
+"url": "https://cdn.logs.px4.io/2f6b0819-d7f2-4b46-95ad-df0876230f0e.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "9ed2edd4-c1af-48cd-a79b-6d7283bf29a3",
+"url": "https://cdn.logs.px4.io/9ed2edd4-c1af-48cd-a79b-6d7283bf29a3.ulg",
+"hw": "CUBEPILOT_CUBEORANGEPLUS",
+"ver": "v1.16.0 255"
+},
+{
+"log_id": "09a01f58-abb2-451e-b166-11b7c57659dd",
+"url": "https://cdn.logs.px4.io/09a01f58-abb2-451e-b166-11b7c57659dd.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "3867a802-5db2-450d-9bd9-9c323c903d5b",
+"url": "https://cdn.logs.px4.io/3867a802-5db2-450d-9bd9-9c323c903d5b.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.0 0"
+},
+{
+"log_id": "3892d9f7-d02b-4c96-bc3c-ef405b6ded8f",
+"url": "https://cdn.logs.px4.io/3892d9f7-d02b-4c96-bc3c-ef405b6ded8f.ulg",
+"hw": "PX4_FMU_V6C",
+"ver": "v1.15.4 0"
+},
+{
+"log_id": "83b79e60-d89b-4917-95b2-af4cdd72166b",
+"url": "https://cdn.logs.px4.io/83b79e60-d89b-4917-95b2-af4cdd72166b.ulg",
+"hw": "PX4_FMU_V3",
+"ver": "v1.11.3 255"
+},
+{
+"log_id": "512b08cd-76d3-4e41-805a-ea6fa0e3a663",
+"url": "https://cdn.logs.px4.io/512b08cd-76d3-4e41-805a-ea6fa0e3a663.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.0 0"
+},
+{
+"log_id": "80682886-c4ec-45d7-9752-7be2c6760f08",
+"url": "https://cdn.logs.px4.io/80682886-c4ec-45d7-9752-7be2c6760f08.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "2603062d-fb7c-46b5-b274-40070f00a671",
+"url": "https://cdn.logs.px4.io/2603062d-fb7c-46b5-b274-40070f00a671.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.0 0"
+},
+{
+"log_id": "17dbdee6-b832-4b5a-ba68-07e2252f595b",
+"url": "https://cdn.logs.px4.io/17dbdee6-b832-4b5a-ba68-07e2252f595b.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.8.0 0"
+},
+{
+"log_id": "41d1f25c-fecf-43fc-9cd5-b29351174ec3",
+"url": "https://cdn.logs.px4.io/41d1f25c-fecf-43fc-9cd5-b29351174ec3.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "7b3d3c6b-fb5e-45b1-b508-8c61f58ceed1",
+"url": "https://cdn.logs.px4.io/7b3d3c6b-fb5e-45b1-b508-8c61f58ceed1.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.8.0 0"
+},
+{
+"log_id": "5af021e0-704b-4635-8537-0625d4b756a0",
+"url": "https://cdn.logs.px4.io/5af021e0-704b-4635-8537-0625d4b756a0.ulg",
+"hw": "PX4_FMU_V3",
+"ver": "v1.4.0 255"
+},
+{
+"log_id": "ef238f93-3a56-4570-ac47-7e7555409f8a",
+"url": "https://cdn.logs.px4.io/ef238f93-3a56-4570-ac47-7e7555409f8a.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.8.0 0"
+},
+{
+"log_id": "7c6b67be-db19-4720-83b3-a16f503daae8",
+"url": "https://cdn.logs.px4.io/7c6b67be-db19-4720-83b3-a16f503daae8.ulg",
+"hw": "PX4_FMU_V6X",
+"ver": "v1.15.4 0"
+},
+{
+"log_id": "eae7302f-e4fb-4663-b82a-cda078c3a01f",
+"url": "https://cdn.logs.px4.io/eae7302f-e4fb-4663-b82a-cda078c3a01f.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "5ffe57d7-7037-4a53-8dd1-7b21b847730e",
+"url": "https://cdn.logs.px4.io/5ffe57d7-7037-4a53-8dd1-7b21b847730e.ulg",
+"hw": "PX4_FMU_V6C",
+"ver": "v1.15.4 0"
+},
+{
+"log_id": "6c1640db-92d2-43c3-b978-4e66763a9f94",
+"url": "https://cdn.logs.px4.io/6c1640db-92d2-43c3-b978-4e66763a9f94.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "fdf67111-698a-472f-a1ee-54c571c795b5",
+"url": "https://cdn.logs.px4.io/fdf67111-698a-472f-a1ee-54c571c795b5.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "52687bb4-79e3-4c77-8e9f-1624482921c0",
+"url": "https://cdn.logs.px4.io/52687bb4-79e3-4c77-8e9f-1624482921c0.ulg",
+"hw": "HOLYBRO_DURANDAL_V1",
+"ver": "v1.15.4 0"
+},
+{
+"log_id": "66a36fcd-7dc1-47bd-938a-8172f1a42c72",
+"url": "https://cdn.logs.px4.io/66a36fcd-7dc1-47bd-938a-8172f1a42c72.ulg",
+"hw": "PX4_FMU_V5",
+"ver": "v4.5.9 255"
+},
+{
+"log_id": "30211181-cf73-4385-bc72-73c9fa5919e5",
+"url": "https://cdn.logs.px4.io/30211181-cf73-4385-bc72-73c9fa5919e5.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "ebfb59f8-2b65-4717-b265-1df829d4f5ee",
+"url": "https://cdn.logs.px4.io/ebfb59f8-2b65-4717-b265-1df829d4f5ee.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.8.0 0"
+},
+{
+"log_id": "e087f8d4-6695-4acd-a15b-a293fc9b3036",
+"url": "https://cdn.logs.px4.io/e087f8d4-6695-4acd-a15b-a293fc9b3036.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "822cdcee-b7c7-430a-b239-c672cdff6fb8",
+"url": "https://cdn.logs.px4.io/822cdcee-b7c7-430a-b239-c672cdff6fb8.ulg",
+"hw": "PX4_FMU_V6C",
+"ver": "v1.15.0 0"
+},
+{
+"log_id": "c620d312-62df-40e7-97ba-90154f30854b",
+"url": "https://cdn.logs.px4.io/c620d312-62df-40e7-97ba-90154f30854b.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.8.0 0"
+},
+{
+"log_id": "12f8b5bc-2fda-41bf-a3e5-12700b661e18",
+"url": "https://cdn.logs.px4.io/12f8b5bc-2fda-41bf-a3e5-12700b661e18.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "bb0bdd13-93cb-4a69-b76d-e39f59fa24b2",
+"url": "https://cdn.logs.px4.io/bb0bdd13-93cb-4a69-b76d-e39f59fa24b2.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "b1429fa5-7045-4bcb-a0a1-48e415e1b9db",
+"url": "https://cdn.logs.px4.io/b1429fa5-7045-4bcb-a0a1-48e415e1b9db.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.8.0 0"
+},
+{
+"log_id": "9b8bc98d-76e8-48aa-adbb-8e458f5ff955",
+"url": "https://cdn.logs.px4.io/9b8bc98d-76e8-48aa-adbb-8e458f5ff955.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.0 0"
+},
+{
+"log_id": "6b6b1ec5-9551-44f6-8e8a-7f2ba7b82bc0",
+"url": "https://cdn.logs.px4.io/6b6b1ec5-9551-44f6-8e8a-7f2ba7b82bc0.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.8.0 0"
+},
+{
+"log_id": "f8bb14df-fb67-466d-a888-d929bc2a6ac5",
+"url": "https://cdn.logs.px4.io/f8bb14df-fb67-466d-a888-d929bc2a6ac5.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.8.0 0"
+},
+{
+"log_id": "767d81d2-21ba-4fbf-a495-48d743df227f",
+"url": "https://cdn.logs.px4.io/767d81d2-21ba-4fbf-a495-48d743df227f.ulg",
+"hw": "PX4_FMU_V6X",
+"ver": "v1.16.1 192"
+},
+{
+"log_id": "895a9c20-6867-4668-8e0f-3e63a71a4d94",
+"url": "https://cdn.logs.px4.io/895a9c20-6867-4668-8e0f-3e63a71a4d94.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "016e8910-ac29-4ac8-baae-ddb32e7b3d0b",
+"url": "https://cdn.logs.px4.io/016e8910-ac29-4ac8-baae-ddb32e7b3d0b.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.6.2 0"
+},
+{
+"log_id": "75622038-72ff-4707-8672-c2fd75d184ff",
+"url": "https://cdn.logs.px4.io/75622038-72ff-4707-8672-c2fd75d184ff.ulg",
+"hw": "ARK_FMU_V6X",
+"ver": "v1.16.0 0"
+},
+{
+"log_id": "641838bc-50ff-4654-997f-24cba2347631",
+"url": "https://cdn.logs.px4.io/641838bc-50ff-4654-997f-24cba2347631.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.8.0 0"
+},
+{
+"log_id": "ae64dea4-7f32-4085-a5c6-76dd85d4d22c",
+"url": "https://cdn.logs.px4.io/ae64dea4-7f32-4085-a5c6-76dd85d4d22c.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "d40f3902-a7dc-422f-841b-54d26bda80f4",
+"url": "https://cdn.logs.px4.io/d40f3902-a7dc-422f-841b-54d26bda80f4.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "4b7516dd-81d9-4731-a232-df36e13b5528",
+"url": "https://cdn.logs.px4.io/4b7516dd-81d9-4731-a232-df36e13b5528.ulg",
+"hw": "PX4_FMU_V6X",
+"ver": "v1.13.2 255"
+},
+{
+"log_id": "ba7b2aba-3894-4ab3-af5a-bb1e383bee88",
+"url": "https://cdn.logs.px4.io/ba7b2aba-3894-4ab3-af5a-bb1e383bee88.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "6e87d76d-9b28-4e3c-aaf2-b8c7811b7323",
+"url": "https://cdn.logs.px4.io/6e87d76d-9b28-4e3c-aaf2-b8c7811b7323.ulg",
+"hw": "PX4_FMU_V6C",
+"ver": "v1.15.4 0"
+},
+{
+"log_id": "489f276c-359c-40b2-8f45-22c5ec4a7af9",
+"url": "https://cdn.logs.px4.io/489f276c-359c-40b2-8f45-22c5ec4a7af9.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "e07458eb-f13e-4a7c-aa42-3d08bbaef562",
+"url": "https://cdn.logs.px4.io/e07458eb-f13e-4a7c-aa42-3d08bbaef562.ulg",
+"hw": "PX4_FMU_V6C",
+"ver": "v1.12.3 0"
+},
+{
+"log_id": "f7bc1731-84e8-46ef-8027-ea8cb3ea4848",
+"url": "https://cdn.logs.px4.io/f7bc1731-84e8-46ef-8027-ea8cb3ea4848.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "13410054-f9f9-49b9-a411-8881df01e96f",
+"url": "https://cdn.logs.px4.io/13410054-f9f9-49b9-a411-8881df01e96f.ulg",
+"hw": "CUAV_X7PRO",
+"ver": "v1.14.0 255"
+},
+{
+"log_id": "c2f39f2f-dcb0-4d0f-b422-16355aea1194",
+"url": "https://cdn.logs.px4.io/c2f39f2f-dcb0-4d0f-b422-16355aea1194.ulg",
+"hw": "PX4_FMU_V5",
+"ver": "v1.9.0 128"
+},
+{
+"log_id": "61532c48-937c-4b75-8614-277dd8e0d4b5",
+"url": "https://cdn.logs.px4.io/61532c48-937c-4b75-8614-277dd8e0d4b5.ulg",
+"hw": "YUNEEC_TAP_H850",
+"ver": "v1.9.0 255"
+},
+{
+"log_id": "41ba519b-e784-499a-96cd-38f6523c52d7",
+"url": "https://cdn.logs.px4.io/41ba519b-e784-499a-96cd-38f6523c52d7.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.1 0"
+},
+{
+"log_id": "f1dc7056-764b-4ad8-b945-5e40458a436f",
+"url": "https://cdn.logs.px4.io/f1dc7056-764b-4ad8-b945-5e40458a436f.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "a4f71a22-43b3-4992-a218-27ec5ce760f5",
+"url": "https://cdn.logs.px4.io/a4f71a22-43b3-4992-a218-27ec5ce760f5.ulg",
+"hw": "PX4_FMU_V5",
+"ver": "v1.15.4 255"
+},
+{
+"log_id": "7ced9948-d943-462f-b2dc-a5b2e0ecf86a",
+"url": "https://cdn.logs.px4.io/7ced9948-d943-462f-b2dc-a5b2e0ecf86a.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.0 0"
+},
+{
+"log_id": "5100b911-ab18-40e8-bc95-f36cce9ba96b",
+"url": "https://cdn.logs.px4.io/5100b911-ab18-40e8-bc95-f36cce9ba96b.ulg",
+"hw": "PX4_FMU_V4",
+"ver": "v1.9.0 64"
+},
+{
+"log_id": "6fd7eb72-3414-46c6-bb8a-791c023b51f0",
+"url": "https://cdn.logs.px4.io/6fd7eb72-3414-46c6-bb8a-791c023b51f0.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "b914ecf0-5d4e-4a86-afd3-59d883dacdfd",
+"url": "https://cdn.logs.px4.io/b914ecf0-5d4e-4a86-afd3-59d883dacdfd.ulg",
+"hw": "PX4_FMU_V6X",
+"ver": "v1.17.0 64"
+},
+{
+"log_id": "bab19d87-bc71-47e8-aea3-34270d1a4a1e",
+"url": "https://cdn.logs.px4.io/bab19d87-bc71-47e8-aea3-34270d1a4a1e.ulg",
+"hw": "PX4_FMU_V5",
+"ver": "v1.10.1 255"
+},
+{
+"log_id": "fbff01ad-a0c5-480b-a167-881b5a7d6892",
+"url": "https://cdn.logs.px4.io/fbff01ad-a0c5-480b-a167-881b5a7d6892.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "773c59b3-b68c-4183-a27d-b30242f0b1a5",
+"url": "https://cdn.logs.px4.io/773c59b3-b68c-4183-a27d-b30242f0b1a5.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.6.2 0"
+},
+{
+"log_id": "a5faf641-1845-4c67-9da1-292cbca17677",
+"url": "https://cdn.logs.px4.io/a5faf641-1845-4c67-9da1-292cbca17677.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "b1eab687-a6cf-4cf4-b98b-9a64bc586b50",
+"url": "https://cdn.logs.px4.io/b1eab687-a6cf-4cf4-b98b-9a64bc586b50.ulg",
+"hw": "MICOAIR_H743",
+"ver": "v0.0.0 255"
+},
+{
+"log_id": "1d5139ae-9b0c-4b1b-9df5-8f3b94755aa1",
+"url": "https://cdn.logs.px4.io/1d5139ae-9b0c-4b1b-9df5-8f3b94755aa1.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "35d0acc2-8547-434b-9ef9-11eb4c438569",
+"url": "https://cdn.logs.px4.io/35d0acc2-8547-434b-9ef9-11eb4c438569.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.0 192"
+},
+{
+"log_id": "219a3897-6b91-46d8-a8dc-8c8ab32fcf68",
+"url": "https://cdn.logs.px4.io/219a3897-6b91-46d8-a8dc-8c8ab32fcf68.ulg",
+"hw": "PX4_FMU_V6X",
+"ver": "v1.13.2 0"
+},
+{
+"log_id": "b532164e-a877-47c0-866b-f651677a0670",
+"url": "https://cdn.logs.px4.io/b532164e-a877-47c0-866b-f651677a0670.ulg",
+"hw": "PX4_FMU_V6X",
+"ver": "v1.16.0 255"
+},
+{
+"log_id": "1a70c668-b708-4d58-9308-ba576d4beab5",
+"url": "https://cdn.logs.px4.io/1a70c668-b708-4d58-9308-ba576d4beab5.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.8.0 128"
+},
+{
+"log_id": "e58fd977-8cd6-4b6d-990a-e85bbd67d4e9",
+"url": "https://cdn.logs.px4.io/e58fd977-8cd6-4b6d-990a-e85bbd67d4e9.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.8.0 0"
+},
+{
+"log_id": "c16d6175-ea05-4123-b804-a1eee37d07c0",
+"url": "https://cdn.logs.px4.io/c16d6175-ea05-4123-b804-a1eee37d07c0.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "b49de04f-e887-4c25-8ac6-a17057503e25",
+"url": "https://cdn.logs.px4.io/b49de04f-e887-4c25-8ac6-a17057503e25.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.6.0 0"
+},
+{
+"log_id": "156061c7-6822-4193-942e-74cff993262d",
+"url": "https://cdn.logs.px4.io/156061c7-6822-4193-942e-74cff993262d.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "fe14b010-2712-46fc-86b6-33a245957bdb",
+"url": "https://cdn.logs.px4.io/fe14b010-2712-46fc-86b6-33a245957bdb.ulg",
+"hw": "PX4_FMU_V6XRT",
+"ver": "v1.15.0 128"
+},
+{
+"log_id": "cd98915f-c3b8-4a7c-a98e-3987e5c22cb4",
+"url": "https://cdn.logs.px4.io/cd98915f-c3b8-4a7c-a98e-3987e5c22cb4.ulg",
+"hw": "PX4_FMU_V4PRO",
+"ver": "v1.9.0 128"
+},
+{
+"log_id": "c61e661f-67e8-419c-be90-50b1de8231c2",
+"url": "https://cdn.logs.px4.io/c61e661f-67e8-419c-be90-50b1de8231c2.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "a52ced2e-0431-44f3-81b8-697b28fa08c8",
+"url": "https://cdn.logs.px4.io/a52ced2e-0431-44f3-81b8-697b28fa08c8.ulg",
+"hw": "PX4_FMU_V4",
+"ver": "v1.9.0 128"
+},
+{
+"log_id": "f76e8b74-2b17-42a5-83c2-f583c024c0e9",
+"url": "https://cdn.logs.px4.io/f76e8b74-2b17-42a5-83c2-f583c024c0e9.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.0 0"
+},
+{
+"log_id": "aba9abe5-9197-4312-b37a-762a89a33a77",
+"url": "https://cdn.logs.px4.io/aba9abe5-9197-4312-b37a-762a89a33a77.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.1 0"
+},
+{
+"log_id": "f9aec012-b43a-4b35-a5a7-32388c6519b9",
+"url": "https://cdn.logs.px4.io/f9aec012-b43a-4b35-a5a7-32388c6519b9.ulg",
+"hw": "CUAV_X7PRO",
+"ver": "v1.15.4 0"
+},
+{
+"log_id": "67349ff5-b0ef-4e8b-872f-c14431957453",
+"url": "https://cdn.logs.px4.io/67349ff5-b0ef-4e8b-872f-c14431957453.ulg",
+"hw": "PX4_FMU_V5",
+"ver": "v1.16.1 192"
+},
+{
+"log_id": "d6b64a97-057e-4064-a185-97de8c0a5852",
+"url": "https://cdn.logs.px4.io/d6b64a97-057e-4064-a185-97de8c0a5852.ulg",
+"hw": "PX4_FMU_V5",
+"ver": "v1.9.0 0"
+},
+{
+"log_id": "e3a561ac-e7f4-4c77-b297-5202b774f12c",
+"url": "https://cdn.logs.px4.io/e3a561ac-e7f4-4c77-b297-5202b774f12c.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.8.0 192"
+},
+{
+"log_id": "66219200-f772-49d1-872e-42e95661a029",
+"url": "https://cdn.logs.px4.io/66219200-f772-49d1-872e-42e95661a029.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.0 0"
+},
+{
+"log_id": "e476ce3f-6146-4838-9f30-13fa44e6ef17",
+"url": "https://cdn.logs.px4.io/e476ce3f-6146-4838-9f30-13fa44e6ef17.ulg",
+"hw": "CUAV_X7PRO",
+"ver": "v1.16.1 192"
+},
+{
+"log_id": "4980873e-bfc1-462f-a421-cf5b5902aa0d",
+"url": "https://cdn.logs.px4.io/4980873e-bfc1-462f-a421-cf5b5902aa0d.ulg",
+"hw": "CUAV_X7PRO",
+"ver": "v1.16.0 255"
+},
+{
+"log_id": "8a0edc33-acd3-4716-8de2-08a8d804a4d0",
+"url": "https://cdn.logs.px4.io/8a0edc33-acd3-4716-8de2-08a8d804a4d0.ulg",
+"hw": "EAGLE",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "b002c13d-f4d2-4871-bc84-0ccb9016981c",
+"url": "https://cdn.logs.px4.io/b002c13d-f4d2-4871-bc84-0ccb9016981c.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "007e3177-6f16-4b55-be9b-b5f7f3e376bf",
+"url": "https://cdn.logs.px4.io/007e3177-6f16-4b55-be9b-b5f7f3e376bf.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.0 0"
+},
+{
+"log_id": "d2211ab9-54a2-4961-acf7-27092b0d90dd",
+"url": "https://cdn.logs.px4.io/d2211ab9-54a2-4961-acf7-27092b0d90dd.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "c6e8aaed-bbc5-4ddb-aba4-63c03386a4d8",
+"url": "https://cdn.logs.px4.io/c6e8aaed-bbc5-4ddb-aba4-63c03386a4d8.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.0 0"
+},
+{
+"log_id": "a140a8c3-ae2d-45fa-8b50-e42643deac87",
+"url": "https://cdn.logs.px4.io/a140a8c3-ae2d-45fa-8b50-e42643deac87.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "b7ba35be-e5c7-4d61-8611-368c44d78d92",
+"url": "https://cdn.logs.px4.io/b7ba35be-e5c7-4d61-8611-368c44d78d92.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "e501ecbc-394f-42bf-87ae-da5702c4d480",
+"url": "https://cdn.logs.px4.io/e501ecbc-394f-42bf-87ae-da5702c4d480.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "028b8639-f5d9-4b06-a464-f52c0b5921eb",
+"url": "https://cdn.logs.px4.io/028b8639-f5d9-4b06-a464-f52c0b5921eb.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.8.0 0"
+},
+{
+"log_id": "ca5dee27-3f35-435a-8e80-d171d0b08132",
+"url": "https://cdn.logs.px4.io/ca5dee27-3f35-435a-8e80-d171d0b08132.ulg",
+"hw": "PX4_FMU_V6X",
+"ver": "v1.14.3 0"
+},
+{
+"log_id": "e5a8265c-e7c8-4a74-9bdf-85d0d0cf29dc",
+"url": "https://cdn.logs.px4.io/e5a8265c-e7c8-4a74-9bdf-85d0d0cf29dc.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "be830113-847c-42f4-a6df-9fd291af2e72",
+"url": "https://cdn.logs.px4.io/be830113-847c-42f4-a6df-9fd291af2e72.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "400209a2-aea0-47bf-88ea-26031db9b2a8",
+"url": "https://cdn.logs.px4.io/400209a2-aea0-47bf-88ea-26031db9b2a8.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.6.2 0"
+},
+{
+"log_id": "73732c56-b8d7-468d-b13c-db733ca39b6d",
+"url": "https://cdn.logs.px4.io/73732c56-b8d7-468d-b13c-db733ca39b6d.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.8.0 128"
+},
+{
+"log_id": "2871482e-980f-4ead-86a9-ad74d47f897b",
+"url": "https://cdn.logs.px4.io/2871482e-980f-4ead-86a9-ad74d47f897b.ulg",
+"hw": "PX4_FMU_V4",
+"ver": "v1.9.0 64"
+},
+{
+"log_id": "8eb7e3d1-9900-431c-bf82-67edc5202da1",
+"url": "https://cdn.logs.px4.io/8eb7e3d1-9900-431c-bf82-67edc5202da1.ulg",
+"hw": "PX4_FMU_V6X",
+"ver": "v1.16.1 192"
+},
+{
+"log_id": "ee5a9513-15ac-4402-a72b-754d65043d3e",
+"url": "https://cdn.logs.px4.io/ee5a9513-15ac-4402-a72b-754d65043d3e.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.0 0"
+},
+{
+"log_id": "737b1694-2b38-4b9e-94ff-5c3bacb7e7ee",
+"url": "https://cdn.logs.px4.io/737b1694-2b38-4b9e-94ff-5c3bacb7e7ee.ulg",
+"hw": "PX4_FMU_V4PRO",
+"ver": "v1.9.0 64"
+},
+{
+"log_id": "3d1199bc-237b-4f7a-99c6-f700e2dfcac4",
+"url": "https://cdn.logs.px4.io/3d1199bc-237b-4f7a-99c6-f700e2dfcac4.ulg",
+"hw": "PX4_FMU_V5",
+"ver": "v1.9.0 128"
+},
+{
+"log_id": "23415f4e-4bbf-4f06-a076-e9314ce33aee",
+"url": "https://cdn.logs.px4.io/23415f4e-4bbf-4f06-a076-e9314ce33aee.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.8.0 128"
+},
+{
+"log_id": "71d5c669-7553-46a2-8920-ce95f33928dc",
+"url": "https://cdn.logs.px4.io/71d5c669-7553-46a2-8920-ce95f33928dc.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.0 0"
+},
+{
+"log_id": "8b4c397a-b72a-4f3a-856e-cc1caeaae1ed",
+"url": "https://cdn.logs.px4.io/8b4c397a-b72a-4f3a-856e-cc1caeaae1ed.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "8e66654b-c376-4d0b-adec-c0a3784ec732",
+"url": "https://cdn.logs.px4.io/8e66654b-c376-4d0b-adec-c0a3784ec732.ulg",
+"hw": "PX4_FMU_V6C",
+"ver": "v1.15.2 255"
+},
+{
+"log_id": "f4c4c357-8991-4c0b-a769-dbbd23bd9972",
+"url": "https://cdn.logs.px4.io/f4c4c357-8991-4c0b-a769-dbbd23bd9972.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "10eb5895-a918-4ba2-9668-34770e5f2cbc",
+"url": "https://cdn.logs.px4.io/10eb5895-a918-4ba2-9668-34770e5f2cbc.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "9a50080f-0f56-400e-88cb-0df59ab2b2ef",
+"url": "https://cdn.logs.px4.io/9a50080f-0f56-400e-88cb-0df59ab2b2ef.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.7.0 192"
+},
+{
+"log_id": "010f2065-4eb7-4b02-a4a3-63c726bccb0a",
+"url": "https://cdn.logs.px4.io/010f2065-4eb7-4b02-a4a3-63c726bccb0a.ulg",
+"hw": "PX4_FMU_V6X",
+"ver": "v1.15.2 255"
+},
+{
+"log_id": "f7224066-dafa-435c-9d28-6a517fe9f8d6",
+"url": "https://cdn.logs.px4.io/f7224066-dafa-435c-9d28-6a517fe9f8d6.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "7e813fbb-f40f-4e1c-8abf-1b11dd211533",
+"url": "https://cdn.logs.px4.io/7e813fbb-f40f-4e1c-8abf-1b11dd211533.ulg",
+"hw": "PX4_FMU_V6C",
+"ver": "v1.17.0 255"
+},
+{
+"log_id": "cf941845-5aa3-43ca-9041-681ea9821dd3",
+"url": "https://cdn.logs.px4.io/cf941845-5aa3-43ca-9041-681ea9821dd3.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "8d2383e8-f896-456a-b0e4-b6142f994cc0",
+"url": "https://cdn.logs.px4.io/8d2383e8-f896-456a-b0e4-b6142f994cc0.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "e7cb78a9-5305-44ea-817b-03469d06ff85",
+"url": "https://cdn.logs.px4.io/e7cb78a9-5305-44ea-817b-03469d06ff85.ulg",
+"hw": "PX4_FMU_V6X",
+"ver": "v1.16.0 255"
+},
+{
+"log_id": "4627856f-7588-45ce-bdc8-74a9dded8dcc",
+"url": "https://cdn.logs.px4.io/4627856f-7588-45ce-bdc8-74a9dded8dcc.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.0 0"
+},
+{
+"log_id": "80f02e4a-86e7-4455-ae41-677c183ac2a7",
+"url": "https://cdn.logs.px4.io/80f02e4a-86e7-4455-ae41-677c183ac2a7.ulg",
+"hw": "PX4_FMU_V6XRT",
+"ver": "v1.16.1 192"
+},
+{
+"log_id": "5f17d124-d5fa-42f7-aa42-3f272a14a19d",
+"url": "https://cdn.logs.px4.io/5f17d124-d5fa-42f7-aa42-3f272a14a19d.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "2c9b2f68-9f3c-4c0b-8500-90de54ad57e6",
+"url": "https://cdn.logs.px4.io/2c9b2f68-9f3c-4c0b-8500-90de54ad57e6.ulg",
+"hw": "CUAV_X7PRO",
+"ver": "v1.17.0 64"
+},
+{
+"log_id": "e723f8c6-007f-4e77-be2c-2284c76d65f4",
+"url": "https://cdn.logs.px4.io/e723f8c6-007f-4e77-be2c-2284c76d65f4.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.8.0 128"
+},
+{
+"log_id": "68755d5e-2964-4b77-8cc5-3aecbedda79a",
+"url": "https://cdn.logs.px4.io/68755d5e-2964-4b77-8cc5-3aecbedda79a.ulg",
+"hw": "PX4_FMU_V5",
+"ver": "v1.11.3 0"
+},
+{
+"log_id": "8d22dcce-f292-4a51-a69c-fb2bd5bb5bb9",
+"url": "https://cdn.logs.px4.io/8d22dcce-f292-4a51-a69c-fb2bd5bb5bb9.ulg",
+"hw": "PX4_FMU_V3",
+"ver": "v1.9.0 0"
+},
+{
+"log_id": "5a0fef75-d6cb-4633-8bcc-bde4b60442be",
+"url": "https://cdn.logs.px4.io/5a0fef75-d6cb-4633-8bcc-bde4b60442be.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "03728f35-99e6-46c6-a041-058516fb177c",
+"url": "https://cdn.logs.px4.io/03728f35-99e6-46c6-a041-058516fb177c.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.1 0"
+},
+{
+"log_id": "bb48183c-33d6-43cd-b2d1-6b87fb1095b3",
+"url": "https://cdn.logs.px4.io/bb48183c-33d6-43cd-b2d1-6b87fb1095b3.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.8.0 0"
+},
+{
+"log_id": "bdac794f-3eab-4c91-b3df-f1ca666f0fb6",
+"url": "https://cdn.logs.px4.io/bdac794f-3eab-4c91-b3df-f1ca666f0fb6.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "470d1993-e513-4780-ae69-c3cf867b4ea7",
+"url": "https://cdn.logs.px4.io/470d1993-e513-4780-ae69-c3cf867b4ea7.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "071ced70-bcb0-43ad-b811-e31a649b19b4",
+"url": "https://cdn.logs.px4.io/071ced70-bcb0-43ad-b811-e31a649b19b4.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "7d7883f0-d10d-4370-854e-e60452837cf5",
+"url": "https://cdn.logs.px4.io/7d7883f0-d10d-4370-854e-e60452837cf5.ulg",
+"hw": "PX4_FMU_V6C",
+"ver": "v1.15.4 0"
+},
+{
+"log_id": "71a782cc-7979-4ff1-a6e8-f3d8f4757f55",
+"url": "https://cdn.logs.px4.io/71a782cc-7979-4ff1-a6e8-f3d8f4757f55.ulg",
+"hw": "PX4_FMU_V3",
+"ver": "v1.9.2 255"
+},
+{
+"log_id": "65670b5f-50b9-44d7-ab60-0854c1bc5533",
+"url": "https://cdn.logs.px4.io/65670b5f-50b9-44d7-ab60-0854c1bc5533.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "52ecbcc1-1d6e-4a43-99cf-9d3636348cbc",
+"url": "https://cdn.logs.px4.io/52ecbcc1-1d6e-4a43-99cf-9d3636348cbc.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "ca3588ab-3503-461a-b2e9-8d71e73893a6",
+"url": "https://cdn.logs.px4.io/ca3588ab-3503-461a-b2e9-8d71e73893a6.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.7.3 0"
+},
+{
+"log_id": "3b8854f7-8795-466e-9482-f3910e52ce8a",
+"url": "https://cdn.logs.px4.io/3b8854f7-8795-466e-9482-f3910e52ce8a.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "56396749-5673-4f37-a8d8-bc511b4a07cf",
+"url": "https://cdn.logs.px4.io/56396749-5673-4f37-a8d8-bc511b4a07cf.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "c0661af4-c274-4dc1-9a34-3d59a9acd257",
+"url": "https://cdn.logs.px4.io/c0661af4-c274-4dc1-9a34-3d59a9acd257.ulg",
+"hw": "PX4_FMU_V5",
+"ver": "v1.12.3 0"
+},
+{
+"log_id": "82a1a652-5bfb-4fbe-97f2-7c570b65ef92",
+"url": "https://cdn.logs.px4.io/82a1a652-5bfb-4fbe-97f2-7c570b65ef92.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "ed861062-c7bb-49b6-b476-cd8c37fbb486",
+"url": "https://cdn.logs.px4.io/ed861062-c7bb-49b6-b476-cd8c37fbb486.ulg",
+"hw": "PX4_FMU_V6C",
+"ver": "v1.15.4 0"
+},
+{
+"log_id": "3c60b822-2061-446f-937d-e41ff50e40a3",
+"url": "https://cdn.logs.px4.io/3c60b822-2061-446f-937d-e41ff50e40a3.ulg",
+"hw": "PX4_FMU_V3",
+"ver": "v1.9.0 128"
+},
+{
+"log_id": "ad94cf38-387f-4c4c-b9d1-557f699946d7",
+"url": "https://cdn.logs.px4.io/ad94cf38-387f-4c4c-b9d1-557f699946d7.ulg",
+"hw": "PX4FMU_V4PRO",
+"ver": "v1.6.5 0"
+},
+{
+"log_id": "b442e159-740c-42b8-8392-1ba1c2f1edb2",
+"url": "https://cdn.logs.px4.io/b442e159-740c-42b8-8392-1ba1c2f1edb2.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.8.0 0"
+},
+{
+"log_id": "77c83fb0-94dc-4012-8463-8ee2bc4c6f92",
+"url": "https://cdn.logs.px4.io/77c83fb0-94dc-4012-8463-8ee2bc4c6f92.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.0 192"
+},
+{
+"log_id": "5eca9a84-113c-4750-9560-3ebc287b9eea",
+"url": "https://cdn.logs.px4.io/5eca9a84-113c-4750-9560-3ebc287b9eea.ulg",
+"hw": "PX4_FMU_V6X",
+"ver": "v1.13.2 255"
+},
+{
+"log_id": "d07d507b-274f-4cbd-b3b6-aef3a84848a2",
+"url": "https://cdn.logs.px4.io/d07d507b-274f-4cbd-b3b6-aef3a84848a2.ulg",
+"hw": "MICOAIR_H743_V2",
+"ver": "v1.15.4 255"
+},
+{
+"log_id": "551d70ce-81c1-4636-b395-ce34d93e0624",
+"url": "https://cdn.logs.px4.io/551d70ce-81c1-4636-b395-ce34d93e0624.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.4 128"
+},
+{
+"log_id": "6c1875b0-d206-4b58-b835-00057136e0ff",
+"url": "https://cdn.logs.px4.io/6c1875b0-d206-4b58-b835-00057136e0ff.ulg",
+"hw": "PX4FMU_V4",
+"ver": "v1.8.0 0"
+},
+{
+"log_id": "1593a530-1a27-46d0-a4f6-0c83b86b2440",
+"url": "https://cdn.logs.px4.io/1593a530-1a27-46d0-a4f6-0c83b86b2440.ulg",
+"hw": "CUAV_7_NANO",
+"ver": "v1.16.0 192"
+},
+{
+"log_id": "b0adfe23-3bc3-4969-8b05-23513bd48ac4",
+"url": "https://cdn.logs.px4.io/b0adfe23-3bc3-4969-8b05-23513bd48ac4.ulg",
+"hw": "PX4FMU_V2",
+"ver": "v1.7.4 128"
+}
+]
