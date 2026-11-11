@@ -28,9 +28,9 @@ for p in sorted(Path(SRC).glob("*.ulg")):
     H += h; cnt[v] += 1; names[v].append(p.name[:8])
 n = sum(cnt.values())
 acc = cnt["spoofing-like"] + cnt["mixed"]
-lines = ["# Real-flight gate v3 (fresh public PX4 flights, frozen `astra diagnose`)\n",
-         f"{n} usable flights, {H:.1f} airborne h; {len(skipped)} unusable. Design set: 159 other flights "
-         "(see header). Scored once.\n",
+DESIGN = sys.argv[3] if len(sys.argv) > 3 else "159 other flights (real-far-v2.md)"
+lines = [f"# Real-flight gate ({SRC}: fresh public PX4 flights, frozen `astra diagnose`)\n",
+         f"{n} usable flights, {H:.1f} airborne h; {len(skipped)} unusable. Design set: {DESIGN}. Scored once.\n",
          "| verdict on real benign flight | flights |", "|---|---|"]
 for k in ("no", "inconclusive", "jamming-like", "spoofing-like", "mixed"):
     lines.append(f"| {k if k != 'no' else 'no anomaly'} | {cnt[k]} |")
