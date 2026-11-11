@@ -108,7 +108,9 @@ def seed_perturbation(sc: Scenario, seed: int) -> dict:
         p.update({"SIM_GPS1_PNSE": pos, "SIM_GPS1_PTAU": round(rng.uniform(30, 90), 1),
                   "SIM_GPS1_VNSE": round(rng.uniform(0.10, 0.20), 3),
                   "SIM_GPS1_NSEED": rng.randint(1, 2**31 - 1),
-                  "SIM_GPS1_ACC": round(1.5 * pos, 2)})
+                  # Real receivers under-report wander: reported hAcc stays ~1-3.6 m (real p50 1.0, p95 3.6)
+                  # while the true error wanders 10-15 m. Reporting 1.5x sigma would also fail pre-arm.
+                  "SIM_GPS1_ACC": round(rng.uniform(1.5, 3.0), 2)})
     return p
 
 

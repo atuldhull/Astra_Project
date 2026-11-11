@@ -104,7 +104,10 @@ def render(rows: list[dict], nbenign: int) -> str:
     for r in rows:
         lines.append(f"| {r['setting']} | `{r['overlay'] or 'none'}` | {r['benign_failed']}/{r['benign_runs']} | "
                      f"{r['benign_nav_alert']} | {r['naive']} | {r['consistent']} | {r['errors']} |")
-    zero_cost = [r["setting"] for r in rows if r["benign_failed"] == 0 and r["benign_nav_alert"] == 0]
+    zero_cost = [r["setting"] for r in rows if r["benign_runs"] > 0 and r["benign_failed"] == 0
+                 and r["benign_nav_alert"] == 0]
+    if any(r["benign_runs"] == 0 for r in rows):
+        lines.append("\n**Warning:** some settings have no completed benign flights (all errors); their cost is unknown.")
     lines.append(f"\nZero observed benign cost: {', '.join(zero_cost) or 'none'}.")
     if nbenign < 80:
         lines.append(f"Benign sample is {nbenign} flights: costs are indicative only. Re-run with --nbenign 80 "
