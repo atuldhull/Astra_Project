@@ -26,26 +26,49 @@ CANDIDATES: dict[str, dict] = {
                         "EK3_VELNE_M_NSE": 0.1, "EK3_GLITCH_RAD": 10},
 }
 
+# PX4 EKF2 equivalents (defaults: P_NOISE 0.5 m, V_NOISE 0.3 m/s, gates 5 sigma)
+CANDIDATES_PX4: dict[str, dict] = {
+    "vendor-as-is": {},
+    "tight-gates": {"EKF2_GPS_P_GATE": 3.0, "EKF2_GPS_V_GATE": 3.0},
+    "low-noise": {"EKF2_GPS_P_NOISE": 0.3, "EKF2_GPS_V_NOISE": 0.15},
+    "tight+low-noise": {"EKF2_GPS_P_GATE": 3.0, "EKF2_GPS_V_GATE": 3.0, "EKF2_GPS_P_NOISE": 0.3,
+                        "EKF2_GPS_V_NOISE": 0.15},
+}
+
 
 def _merge(vendor: Path | None, overlay: dict, out: Path) -> Path:
-    lines = vendor.read_text().splitlines() if vendor else []
-    keep = [ln for ln in lines if ln.strip() and ln.split()[0] not in overlay]
-    out.write_text("\n".join(keep + [f"{k} {v}" for k, v in overlay.items()]) + "\n")
+    from astra.sitl import read_params  # reads ArduPilot, Mission Planner and QGC formats
+
+    params = read_params(vendor) if vendor else {}
+    params.update(overlay)
+    fmt = lambda v: str(int(v)) if float(v).is_integer() else str(v)  # noqa: E731
+    out.write_text("".join(f"{k} {fmt(v)}\n" for k, v in params.items()))
     return out
 
 
-def advise(vendor: Path | None, out: Path, nbenign: int = 20, parallel: int = 4) -> list[dict]:
+def _with_gps(scs, profile: str | None):
+    if not profile:
+        return scs
+    return [s.model_copy(update={"sensors": s.sensors.model_copy(update={"gps": profile})}) for s in scs]
+
+
+def advise(vendor: Path | None, out: Path, nbenign: int = 20, parallel: int = 4,
+           autopilot: str = "ardupilot", gps_profile: str | None = None) -> list[dict]:
+    """gps_profile: override the benign flights' GNSS noise model ("harsh" = noisier real receivers),
+    so the benign cost isn't measured on unrealistically clean GPS."""
     out.mkdir(parents=True, exist_ok=True)
-    benign = PACKS["benign-v2"]()[:nbenign]
+    benign = _with_gps(PACKS["benign-v2"]()[:nbenign], gps_profile)
     atk = [s for s in PACKS["attack-test"]() if ("-g0-" in s.id or "-g1-" in s.id)
            and s.id.split("-")[-3] in ("r0.5", "r1")]
+    cands = CANDIDATES_PX4 if autopilot == "px4" else CANDIDATES
+    speed = 10 if autopilot == "px4" else 20
     rows = []
-    for name, overlay in CANDIDATES.items():
+    for name, overlay in cands.items():
         pf = _merge(vendor, overlay, out / f"{name}.parm")
-        rb = run_batch([(s, 0) for s in benign], out / name / "benign", parallel=parallel, speedup=20,
-                       vendor_param_file=pf)["results"]
-        ra = run_batch([(s, 0) for s in atk], out / name / "attack", parallel=parallel, speedup=20,
-                       vendor_param_file=pf)["results"]
+        rb = run_batch([(s, 0) for s in benign], out / name / "benign", parallel=parallel, speedup=speed,
+                       vendor_param_file=pf, autopilot=autopilot)["results"]
+        ra = run_batch([(s, 0) for s in atk], out / name / "attack", parallel=parallel, speedup=speed,
+                       vendor_param_file=pf, autopilot=autopilot)["results"]
         ob = [r for r in rb if r.outcome != "error"]
         oa = [r for r in ra if r.outcome != "error"]
         det = collections.Counter()

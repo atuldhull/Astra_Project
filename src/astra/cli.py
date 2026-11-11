@@ -112,7 +112,8 @@ def _cmd_shield(a):
 
 def _cmd_advise(a):
     from astra.advise import advise, render
-    rows = advise(Path(a.params) if a.params else None, Path(a.out), a.nbenign, a.parallel)
+    rows = advise(Path(a.params) if a.params else None, Path(a.out), a.nbenign, a.parallel,
+                  a.autopilot, a.gps_profile)
     print(render(rows, a.nbenign))
 
 
@@ -203,6 +204,9 @@ def main(argv=None):
     ad.add_argument("--out", required=True)
     ad.add_argument("--nbenign", type=int, default=20)
     ad.add_argument("--parallel", type=int, default=4)
+    ad.add_argument("--autopilot", choices=["ardupilot", "px4"], default="ardupilot")
+    ad.add_argument("--gps-profile", choices=["typical", "harsh"], default=None,
+                    help="GNSS noise for the benign flights (harsh = noisier real receivers)")
     ad.set_defaults(fn=_cmd_advise)
     iv = sub.add_parser("invert", help="estimate the drag-off attack in a log and emit a reproducible scenario")
     iv.add_argument("log")

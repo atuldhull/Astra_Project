@@ -143,9 +143,11 @@ class Sensors(_Strict):
         "ideal", description="ideal = SITL flow (good texture everywhere). degraded = 2-5x noise, +-5% scale "
                              "error, 100-300 ms latency (poor texture / cheap sensor / imperfect calibration)"
     )
-    gps: Literal["ideal", "typical"] = Field(
+    gps: Literal["ideal", "typical", "harsh"] = Field(
         "typical", description="ideal = SITL default (perfect position). typical = single-frequency "
-                               "receiver: ~1 m Gauss-Markov position error, ~0.08 m/s velocity noise"
+                               "receiver: ~1 m Gauss-Markov position error, ~0.08 m/s velocity noise "
+                               "(matches the MEDIAN real PX4 flight). harsh = 3.5-5 m, 0.1-0.2 m/s: the "
+                               "90th-95th percentile of 836 real flights (benchmarks/gnss-realism-v1.md)"
     )
 
 

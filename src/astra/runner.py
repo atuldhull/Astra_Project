@@ -101,6 +101,14 @@ def seed_perturbation(sc: Scenario, seed: int) -> dict:
                   "SIM_GPS1_VNSE": round(rng.uniform(0.05, 0.12), 3),
                   "SIM_GPS1_NSEED": rng.randint(1, 2**31 - 1),
                   "SIM_GPS1_ACC": round(1.5 * pos, 2)})
+    elif sc.sensors.gps == "harsh":
+        # Noisier real receivers (multipath, cheap antennas): calibrated so the 60 s position wander
+        # matches the 90th-95th percentile of 836 real PX4 flights (typical matches the median).
+        pos = round(rng.uniform(3.5, 5.0), 3)
+        p.update({"SIM_GPS1_PNSE": pos, "SIM_GPS1_PTAU": round(rng.uniform(30, 90), 1),
+                  "SIM_GPS1_VNSE": round(rng.uniform(0.10, 0.20), 3),
+                  "SIM_GPS1_NSEED": rng.randint(1, 2**31 - 1),
+                  "SIM_GPS1_ACC": round(1.5 * pos, 2)})
     return p
 
 
