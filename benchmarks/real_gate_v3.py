@@ -14,7 +14,9 @@ from astra.detect import features
 
 warnings.filterwarnings("ignore")
 cnt, names, H, skipped = collections.Counter(), collections.defaultdict(list), 0.0, []
-for p in sorted(Path("runs/px4real3").glob("*.ulg")):
+import sys
+SRC, OUT = (sys.argv[1], sys.argv[2]) if len(sys.argv) > 2 else ("runs/px4real3", "benchmarks/real-gate-v3.md")
+for p in sorted(Path(SRC).glob("*.ulg")):
     try:
         fl = load_ulog(p)
         h = float(features.compute(fl).airborne.sum()) * features.DT / 3600
@@ -28,7 +30,7 @@ n = sum(cnt.values())
 acc = cnt["spoofing-like"] + cnt["mixed"]
 lines = ["# Real-flight gate v3 (fresh public PX4 flights, frozen `astra diagnose`)\n",
          f"{n} usable flights, {H:.1f} airborne h; {len(skipped)} unusable. Design set: 159 other flights "
-         "(real-far-v2.md). Scored once.\n",
+         "(see header). Scored once.\n",
          "| verdict on real benign flight | flights |", "|---|---|"]
 for k in ("no", "inconclusive", "jamming-like", "spoofing-like", "mixed"):
     lines.append(f"| {k if k != 'no' else 'no anomaly'} | {cnt[k]} |")
@@ -40,5 +42,5 @@ for k in ("spoofing-like", "mixed", "inconclusive", "jamming-like"):
 if skipped:
     lines += ["\nUnusable logs:"] + [f"- {a}: {b}" for a, b in skipped]
 text = "\n".join(lines)
-Path("benchmarks/real-gate-v3.md").write_text(text + "\n", encoding="utf-8")
+Path(OUT).write_text(text + "\n", encoding="utf-8")
 print(text.encode("ascii", "replace").decode())

@@ -22,6 +22,10 @@ import numpy as np
 from astra import logs
 from astra.evaluate import ALERT_WORDS, CODE_NAMES
 
+# Receiver-reported horizontal accuracy above this (airborne) = receiver says it is degraded. Real benign
+# PX4 flights: median worst 1.0 m, 95th pct 3.6 m (304 flights); simulated spoofs never above 2.2 m.
+HACC_DEGRADED_M = 5.0
+
 
 def _load(path: Path) -> logs.FlightLog:
     if path.suffix == ".npz":
@@ -80,16 +84,25 @@ def diagnose(path: Path, cal_file: Path | None = None) -> dict:
     fl = _load(Path(path))
     gps = fl["GPS"]
     rep: dict = {"log": str(path), "is_sitl": fl.is_sitl}
-    no_fix = gps["Status"] < 3
-    low_sats = gps["NSats"] < 6
+    # Only airborne receiver events count: fix acquisition on the ground after boot is normal
+    # (it produced 3 'jamming-like' verdicts on fresh real benign flights, real-gate-v3.md).
+    pos = fl["POS"]
+    air_g = np.interp(gps["t"], pos["t"], pos["RelHomeAlt"]) > 3
+    no_fix = (gps["Status"] < 3) & air_g
+    low_sats = (gps["NSats"] < 6) & air_g
     rep["receiver"] = {
         "fix_lost_intervals_s": _intervals(gps["t"], no_fix),
         "low_satellite_intervals_s": _intervals(gps["t"], low_sats & ~no_fix),
-        "min_sats_in_fix": int(np.nanmin(gps["NSats"][~no_fix])) if (~no_fix).any() else None,
+        "min_sats_in_fix": int(np.nanmin(gps["NSats"][gps["Status"] >= 3])) if (gps["Status"] >= 3).any() else None,
+        "degraded_accuracy_intervals_s": [],
     }
     if fl.has("GPA"):
         g = fl["GPA"]
-        rep["receiver"]["max_reported_hacc_m"] = round(float(np.nanmax(g["HAcc"])), 2)
+        hv = np.where((g["HAcc"] > 0) & (g["HAcc"] < 1e4), g["HAcc"], np.nan)
+        rep["receiver"]["max_reported_hacc_m"] = round(float(np.nanmax(hv)), 2) if np.isfinite(hv).any() else None
+        air_a = np.interp(g["t"], pos["t"], pos["RelHomeAlt"]) > 3
+        rep["receiver"]["degraded_accuracy_intervals_s"] = _intervals(
+            g["t"], air_a & (np.nan_to_num(hv) > HACC_DEGRADED_M), min_len_s=0.0)
     rep["stock_alerts"] = [[round(t, 1), m] for t, m in fl.messages if any(w in m.lower() for w in ALERT_WORDS)]
 
     cal_all = json.loads(Path(cal_file).read_text()) if cal_file else _bundled_calibration()
@@ -154,7 +167,13 @@ def diagnose(path: Path, cal_file: Path | None = None) -> dict:
     def _in_jam(t):
         return any(a - 5.0 <= t <= b + 30.0 for a, b in jam_iv)
 
+    # Evidence while the receiver itself reports degraded accuracy is not called spoofing: it is
+    # weak/inconclusive (real receivers do this in multipath; a spoofer usually reports a healthy fix).
+    deg_iv = rep["receiver"]["degraded_accuracy_intervals_s"]
     spoof_ev.sort()
+    for t, why in [e for e in spoof_ev if any(a - 5.0 <= e[0] <= b + 30.0 for a, b in deg_iv)]:
+        spoof_ev.remove((t, why))
+        weak_ev.append((t, why + " (receiver reported degraded accuracy)"))
     spoof_outside = [(t, why) for t, why in spoof_ev if not _in_jam(t)]
     rep["evidence"] = {"jamming_intervals_s": jam_iv,
                        "spoofing_events": [[round(t, 1), w] for t, w in spoof_ev],
