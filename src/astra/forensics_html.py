@@ -31,7 +31,7 @@ WHAT_NEXT = {
              "record (video, ground observers, ATC/radar, a second receiver).",
     "rf": "The receiver's noise level rose sharply while it lost satellites or its fix: the signature of a nearby "
           "transmitter on the GPS band (jammer or spoofer). Seen in both live HackRF attacks we have and in none of "
-          "231 real benign flights. Treat GPS after this time as untrusted and look for the source.",
+          "927 real benign flights. Treat GPS after this time as untrusted and look for the source.",
     "mixed": "The receiver degraded, and separately the navigation became inconsistent. Review both timelines.",
     "inconclusive": "Weak evidence only: the same level is seen on a few percent of normal flights and in slow "
                     "simulated spoofs. Not an accusation. If this airframe often shows it, calibrate it "
@@ -146,8 +146,9 @@ def render(rep: dict, out: Path) -> Path:
     o.append("</div><h2>Limits</h2><ul class=muted>"
              "<li>Checks use GPS, IMU and (if calibrated) optical flow from this log only. A slow spoof that also fakes a "
              "matching velocity cannot be seen without an independent sensor.</li>"
-             "<li>Measured rates: false 'spoofing-like' on 1/345 fresh real benign PX4 flights; 'inconclusive' on 6%. "
-             "Attack detection rates are from simulation; no real attack has been tested yet.</li>"
+             "<li>Measured rates: false 'spoofing-like' on 4/1,041 fresh real benign PX4 flights (0.4%); 'RF-attack-like' on "
+             "0/927; 'inconclusive' on about 3%. Attack detection rates are from simulation; only 3 real attacks have "
+             "been tested so far.</li>"
              "<li>A spoof present from power-on is only checked if the real take-off point is given (<code>--takeoff</code>).</li></ul>"
              "<details><summary>Full JSON</summary><pre>" + esc(json.dumps(rep, indent=1, default=str)) + "</pre></details>"
              "</main></body></html>")

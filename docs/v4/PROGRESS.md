@@ -395,3 +395,6 @@ conclusion is possible (`benchmarks/realflow-v1.md`). Real flow validation needs
 - In-the-wild scan (`wildscan-v1.md`): 1,000 recent public PX4 flights, frozen f8099fa, streamed and deleted.
   732 analysed: 1 RF-attack-like (54° N 28° E), 2 spoofing-like, 17 jamming-like; rates equal the benign gate, so
   candidates only. Gap noted: receiver level-3 spoof flags inside fix-loss intervals read as jamming-like.
+- Fix 673b37d: receiver level-3 spoof flags inside fix-loss intervals now named in the jamming-like verdict.
+  Fresh gate v8 (`real-gate-v8.md`, 347 flights): spoofing-like 1/347, RF 0/347; three fresh gates: 4/1,041.
+  Data verdict: benign false-alarm rate is well measured; real-attack detection (3 attacks) is not.

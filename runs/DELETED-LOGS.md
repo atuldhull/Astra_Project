@@ -12,3 +12,4 @@
 - `runs/px4real5` again (re-downloaded as RF design data, 233 flights) and `runs/px4real7` (fresh gate v7, scored once) <- `runs/px4_real5_sel.json`, `runs/px4_real7_sel.json`
 - `runs/px4wild` (8 in-the-wild candidates, scored once) <- `runs/px4_wild_sel.json`
 - `runs/wildscan_*` (1,000 in-the-wild logs, streamed: each deleted after diagnosis) <- `runs/px4_wildscan_sel.json`; rows in `runs/wildscan-v1.jsonl`
+- `runs/wildscan_*` for gate v8 (350 logs, streamed, deleted after diagnosis) <- `runs/px4_real8_sel.json`; rows in `runs/gate-v8.jsonl`
