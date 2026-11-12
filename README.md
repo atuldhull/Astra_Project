@@ -142,6 +142,10 @@ gives **90× real time** (16 flight-hours in about 11 minutes).
 ## Limits (read before relying on results)
 
 - Simulation is pre-qualification, not a replacement for range trials.
+- **First real attacks: 0/2.** On the only public live attacks found (IEEE DataPort, HackRF spoofing and jamming
+  on a PX4 quad hovering ~1 m indoors, GPS logged at 1 Hz), `astra diagnose` found no anomaly in either
+  ([benchmarks/ieee-real-attacks-v1.md](benchmarks/ieee-real-attacks-v1.md)). Attack-detection numbers elsewhere in
+  this README are simulation-only.
 - The optical-flow numbers assume a **good** flow sensor. With a degraded one (2–5× noise, ±5% scale,
   latency) consistent spoofs ≥ 1 m/s are still caught (20/22) but only at 180–365 m off course, and
   ≤ 0.5 m/s mostly not (2/24) ([benchmarks/a2-flowdeg-v7.md](benchmarks/a2-flowdeg-v7.md)).

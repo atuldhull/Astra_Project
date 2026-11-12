@@ -7,6 +7,7 @@ used while designing or tuning that component. Superseded results are kept in th
 
 | Claim | Number | Data | File |
 |---|---|---|---|
+| **Real attacks (live HackRF), blind** | **0/2 detected** (benign 1/1 correct); stock PX4 0/2 too | IEEE DataPort, 3 real flights | `ieee-real-attacks-v1.md` |
 | ArduCopter 4.7.2 misses slow drag-off during the attack | 0/30 (≤ 2 m/s), only at release | baseline-v1, 2–3 seeds | `baseline-v1.md` |
 | ArduCopter persistent drag-off diverts undetected | 0/9 detected; landed 143 m off or chased for 1.8 km | baseline-v1 | `baseline-v1.md` |
 | PX4 v1.17 has the same blind spot | 0/16 (≤ 1 m/s) during attack; persistent 0.5–1 m/s → 134–270 m off | px4 baseline, 2 seeds | `px4-baseline-v1.md` |

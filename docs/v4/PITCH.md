@@ -31,10 +31,13 @@ jamming at all, and hardware GNSS simulators cost lakhs to crores while testing 
 | Shield "drop GPS then land" | 6/6 diversions → safe aborts; true post-alarm movement 46 → 19 m |
 | Forensics verdict (`astra diagnose`) | 201/223 correct in simulation; simulated benign never accused |
 | EKF tuning alone (A6) | PX4: catches 5/12 naive drags with 0/78 extra alerts (80-flight check). ArduPilot: no setting safe on noisy receivers (best 6/12 costs 7/79 alerts); velocity-matched ≤ 3/12 |
+| **Real attacks** (2 live HackRF flights, blind) | **0/2 detected**; stock PX4 also 0/2 |
 | **Real flights** (339 fresh public PX4 missions, 47.7 h, scored once) | 1/339 false spoofing accusations (0.3%), down from 7/159 (4.4%) before real-data fixes; one channel *removed* and one *rejected* because they failed real data |
 
 ## Honest limits
-- Simulation is pre-qualification, not a range trial. Real *attack* logs aren't tested yet.
+- Simulation is pre-qualification, not a range trial. On the only public **real** attacks found (2 live HackRF
+  flights, IEEE DataPort) forensics detected **0/2**: hover at ~1 m indoors and 1 Hz GPS logging switched our
+  checks off (`benchmarks/ieee-real-attacks-v1.md`). Real-attack validation with a partner is the top need.
 - Optical-flow results need a good flow sensor: with a degraded one, spoofs ≥ 1 m/s are caught only at
   180–365 m off course and ≤ 0.5 m/s mostly not. We test with your sensor's noise.
 - Calibrations shipped are simulation-derived. Calibrate on your own benign flights before arming.
