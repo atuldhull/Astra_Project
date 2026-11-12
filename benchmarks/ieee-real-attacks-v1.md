@@ -35,3 +35,14 @@ Frozen `astra diagnose` (commit 8e5b590), run once before looking at the logs:
 All attack-detection numbers so far are simulation-only, and the first real test is 0/2. Any fix designed after
 reading these two logs cannot be validated on them (they become design data). A real validation needs new attack
 logs (another dataset, a partner's range test).
+
+## Same dataset, simulated part (independent team, Gazebo SITL), blind, same frozen code
+
+| flights | verdict |
+|---|---|
+| GPS spoofing: PX4 plane, PX4 VTOL | **2/2 spoofing-like** |
+| Normal (tailsitter, VTOL) and Ping DoS (H480, quad, tailsitter, VTOL) — no GNSS attack | 0/6 accused; 4/6 'inconclusive' (all tailsitter/VTOL) |
+
+The method works on another team's simulator; the real-flight misses come from how those flights were flown and
+logged (1 m indoor hover, 1 Hz GPS), not from the spoof physics. Tailsitter/VTOL flights give weak C3 evidence
+(likely transitions); those airframes need their own calibration.
