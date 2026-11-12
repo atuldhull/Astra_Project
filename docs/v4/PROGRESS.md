@@ -392,3 +392,6 @@ conclusion is possible (`benchmarks/realflow-v1.md`). Real flow validation needs
 - Searched 488k public PX4 log descriptions for jamming/spoofing: 1 real airborne attack with receiver evidence
   ("YAF 3_SPOOF", 150 s satellite loss) → detected blind; 4 other labelled logs show no GNSS evidence
   (`wild-attacks-v1.md`). Never-flown logs now say 'not analysed'.
+- In-the-wild scan (`wildscan-v1.md`): 1,000 recent public PX4 flights, frozen f8099fa, streamed and deleted.
+  732 analysed: 1 RF-attack-like (54° N 28° E), 2 spoofing-like, 17 jamming-like; rates equal the benign gate, so
+  candidates only. Gap noted: receiver level-3 spoof flags inside fix-loss intervals read as jamming-like.
