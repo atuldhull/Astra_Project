@@ -9,3 +9,4 @@
 - `runs/px4real` … `runs/px4real5` (836 real design flights; item 10 finished) <- `runs/px4_real_sel.json`,
   `px4_real2_sel.json` … `px4_real5_sel.json`. Per-flight results kept in `runs/weak-ev-design.json`,
   `runs/selfrep-design.json`, `runs/real-far-v2-rows.json`.
+- `runs/px4real5` again (re-downloaded as RF design data, 233 flights) and `runs/px4real7` (fresh gate v7, scored once) <- `runs/px4_real5_sel.json`, `runs/px4_real7_sel.json`

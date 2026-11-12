@@ -381,3 +381,11 @@ conclusion is possible (`benchmarks/realflow-v1.md`). Real flow validation needs
 - Harness bug found and fixed: PX4 SIH sensor stalls (baro/compass stop, vehicle never takes off, EKF dead-reckons
   km away) were classified as mission timeouts/aborts. Now `error` (`runner_px4.sim_stalled`). 6 flights in this
   run; no other saved PX4 run affected.
+
+## 2026-11-12 — first real attacks and fixes
+- IEEE DataPort live HackRF attacks (`ieee-real-attacks-v1.md`): blind **0/2** (1 m indoor hover, 1 Hz GPS). Same
+  dataset's independent Gazebo spoofing: 2/2.
+- Fixes (`rf-design-v1.md`): airborne from the land detector; new `RF-attack-like` (receiver noise rise >= x1.30 for
+  10 s + satellite/fix loss): 0/231 design benign, both IEEE attacks flagged (design data). 1-Hz step check rejected.
+- Fresh gate v7 (`real-gate-v7.md`): RF-attack-like 0/349; spoofing-like 2/349 (one low-altitude step from the new
+  airborne mask; one receiver level-3 spoof flag near the Strait of Hormuz, possibly real).
