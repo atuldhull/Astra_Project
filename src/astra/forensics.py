@@ -27,6 +27,10 @@ from astra.evaluate import ALERT_WORDS, CODE_NAMES
 HACC_DEGRADED_M = 5.0
 LOW_SAT_MIN_S = 3.0
 TAKEOFF_RADIUS_M = 15.0
+# RF interference (receiver noise_per_ms rise + satellite loss); set on 231 real benign flights, rf-design-v1.md
+RF_NOISE_RATIO = 1.30
+RF_NOISE_HOLD_S = 10.0
+RF_SAT_FRAC = 0.6
 
 
 def _load(path: Path) -> logs.FlightLog:
@@ -74,10 +78,54 @@ def _step_residual(fl: logs.FlightLog):
     dt = np.diff(t)
     rn = np.diff(n) - 0.5 * (vn[1:] + vn[:-1]) * dt
     re = np.diff(e) - 0.5 * (ve[1:] + ve[:-1]) * dt
-    pos = fl["POS"]
-    air = np.interp(t[1:], pos["t"], pos["RelHomeAlt"]) > 3
+    air = fl.airborne(t[1:])
     good = (dt > 0.05) & (dt < 0.5) & air
     return t[1:][good], np.hypot(rn, re)[good]
+
+
+def rf_events(fl: logs.FlightLog, ratio: float = RF_NOISE_RATIO, hold_s: float = RF_NOISE_HOLD_S,
+              sat_frac: float = RF_SAT_FRAC, window_s: float = 15.0) -> list[dict]:
+    """RF-interference events: receiver noise level rises >= ratio x its own trailing baseline for hold_s, AND
+    within window_s the receiver loses its fix or drops below sat_frac of its usual satellite count.
+
+    Both live HackRF attacks in ieee-real-attacks-v1.md show this (noise x1.36-1.58 with sats 11 -> 5 / fix loss).
+    Noise rise alone happens on ~1% of real benign flights (rf-design-v1.md), so it needs the satellite loss.
+    """
+    g = fl["GPS"]
+    if "Noise" not in g:
+        return []
+    t, x = g["t"], np.asarray(g["Noise"], float)
+    sats, fix = np.asarray(g["NSats"], float), g["Status"]
+    air, ok = fl.airborne(t), np.isfinite(x) & (x > 0)
+    out: list[dict] = []
+    for i in np.nonzero(air & ok)[0]:
+        if out and t[i] < out[-1]["end_s"]:
+            continue
+        b = (t >= t[i] - 120) & (t <= t[i] - 30) & ok
+        if b.sum() < 20:
+            continue
+        w = (t >= t[i]) & (t <= t[i] + hold_s) & ok
+        if w.sum() < 2 or t[w][-1] - t[i] < 0.8 * hold_s or not air[w].all():
+            continue
+        base = float(np.median(x[b]))
+        rise = float(np.min(x[w]) / base)
+        if rise < ratio:
+            continue
+        s_base = float(np.median(sats[b]))
+        near = (t >= t[i] - window_s) & (t <= t[i] + window_s) & air
+        lost = near & ((fix < 3) | (sats < sat_frac * s_base))
+        if not lost.any():
+            continue
+        if out and t[i] <= out[-1]["end_s"] + 2.0:  # contiguous: extend the previous event
+            out[-1]["end_s"] = round(float(t[w][-1]), 1)
+            out[-1]["noise_rise"] = max(out[-1]["noise_rise"], round(rise, 2))
+            out[-1]["min_sats"] = min(out[-1]["min_sats"], int(np.min(sats[near])))
+            out[-1]["fix_lost"] = out[-1]["fix_lost"] or bool((fix[near] < 3).any())
+            continue
+        out.append({"start_s": round(float(t[i]), 1), "end_s": round(float(t[w][-1]), 1),
+                    "noise_rise": round(rise, 2), "min_sats": int(np.min(sats[near])), "usual_sats": int(s_base),
+                    "fix_lost": bool((fix[near] < 3).any())})
+    return out
 
 
 def takeoff_check(fl: logs.FlightLog, lat: float, lon: float, radius_m: float = TAKEOFF_RADIUS_M) -> dict | None:
@@ -88,8 +136,8 @@ def takeoff_check(fl: logs.FlightLog, lat: float, lon: float, radius_m: float = 
     (map pin / phone GPS). Alarm when the offset exceeds radius_m + max(10 m, 3 x reported accuracy).
     """
     from astra.geo import latlon_to_ne
-    g, pos = fl["GPS"], fl["POS"]
-    air = pos["t"][pos["RelHomeAlt"] > 3]
+    g = fl["GPS"]
+    air = g["t"][fl.airborne(g["t"])]
     t_to = float(air[0]) if len(air) else float(g["t"][-1])
     sel = (g["Status"] >= 3) & (g["t"] <= t_to) & (g["t"] >= t_to - 10.0)
     if sel.sum() < 3:
@@ -116,8 +164,7 @@ def diagnose(path: Path, cal_file: Path | None = None, takeoff: tuple | None = N
     rep: dict = {"log": str(path), "is_sitl": fl.is_sitl}
     # Only airborne receiver events count: fix acquisition on the ground after boot is normal
     # (it produced 3 'jamming-like' verdicts on fresh real benign flights, real-gate-v3.md).
-    pos = fl["POS"]
-    air_g = np.interp(gps["t"], pos["t"], pos["RelHomeAlt"]) > 3
+    air_g = fl.airborne(gps["t"])
     no_fix = (gps["Status"] < 3) & air_g
     low_sats = (gps["NSats"] < 6) & air_g
     rep["receiver"] = {
@@ -132,7 +179,7 @@ def diagnose(path: Path, cal_file: Path | None = None, takeoff: tuple | None = N
         g = fl["GPA"]
         hv = np.where((g["HAcc"] > 0) & (g["HAcc"] < 1e4), g["HAcc"], np.nan)
         rep["receiver"]["max_reported_hacc_m"] = round(float(np.nanmax(hv)), 2) if np.isfinite(hv).any() else None
-        air_a = np.interp(g["t"], pos["t"], pos["RelHomeAlt"]) > 3
+        air_a = fl.airborne(g["t"])
         rep["receiver"]["degraded_accuracy_intervals_s"] = _intervals(
             g["t"], air_a & (np.nan_to_num(hv) > HACC_DEGRADED_M), min_len_s=0.0)
     # Receiver's own jamming/spoofing flags (u-blox via PX4 sensor_gps). On 137 real benign flights level 2
@@ -145,6 +192,7 @@ def diagnose(path: Path, cal_file: Path | None = None, takeoff: tuple | None = N
                               "level3_intervals_s": _intervals(gps["t"], (v >= 3) & air_g, min_len_s=0.0)}
     if self_rep:
         rep["receiver"]["self_report"] = self_rep
+    rep["receiver"]["rf_interference"] = rf_events(fl)
     rep["stock_alerts"] = [[round(t, 1), m] for t, m in fl.messages if any(w in m.lower() for w in ALERT_WORDS)]
 
     cal_all = json.loads(Path(cal_file).read_text()) if cal_file else _bundled_calibration()
@@ -244,7 +292,18 @@ def diagnose(path: Path, cal_file: Path | None = None, takeoff: tuple | None = N
                 f"total {sum(b - a for a, b in jam_iv):.0f} s")
     if jam and longest < 3.0 and len(jam_iv) < 3:
         jam_desc += " (brief: also seen as isolated dropouts on real benign flights)"
-    if jam and not spoof:
+    rf = rep["receiver"]["rf_interference"]
+    if rf:
+        e0 = rf[0]
+        rf_desc = (f"receiver noise rose x{e0['noise_rise']} at {e0['start_s']} s with "
+                   + ("fix loss" if e0["fix_lost"] else f"satellites {e0['usual_sats']} -> {e0['min_sats']}")
+                   + (f" ({len(rf)} events)" if len(rf) > 1 else ""))
+    if rf and spoof:
+        verdict = f"spoofing-like: {spoof_outside[0][1]}, with RF interference ({rf_desc})"
+    elif rf:
+        verdict = (f"RF-attack-like: {rf_desc}. A jamming or spoofing transmitter is the likely cause; the log alone "
+                   "cannot always tell which")
+    elif jam and not spoof:
         verdict = "jamming-like: " + jam_desc
     elif spoof and not jam:
         verdict = f"spoofing-like: {spoof_outside[0][1]} while the receiver reported a healthy fix"

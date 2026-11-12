@@ -109,10 +109,9 @@ def compute(fl: FlightLog, w1_s: float = 3.0, pos_vel_s: float = 2.0,
     # (Tried: normalising c3 by reported hAcc. It raised held-out false alarms 0 -> 3 in 7.5 h,
     # because c3 noise is dominated by receiver *velocity* noise, which hAcc doesn't track. Reverted.)
 
-    # airborne mask from the autopilot's own relative altitude
+    # airborne mask: autopilot land detector if logged, else height above take-off (FlightLog.airborne)
     pos = fl["POS"]
-    rel = _interp(t, pos["t"], pos["RelHomeAlt"])
-    airborne = np.nan_to_num(rel, nan=0.0) > 3.0
+    airborne = fl.airborne(t)
 
     c2 = c2_valid = None
     if fl.has("OF") and fl.has("RFND"):

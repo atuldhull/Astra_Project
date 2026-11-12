@@ -26,7 +26,8 @@ from astra.logs import FlightLog
 TOPICS = ["sensor_gps", "vehicle_gps_position", "vehicle_global_position", "vehicle_local_position",
           "sensor_combined", "vehicle_attitude", "logged_messages", "vehicle_global_position_groundtruth",
           "vehicle_status", "estimator_innovation_test_ratios",
-          "vehicle_optical_flow", "sensor_optical_flow", "optical_flow", "distance_sensor"]
+          "vehicle_optical_flow", "sensor_optical_flow", "optical_flow", "distance_sensor",
+          "vehicle_land_detected"]
 
 # ASTRA PX4 attack model numbers (sim/px4 patch) -> astra.evaluate CODE_NAMES codes
 PX4_MODEL_TO_CODE = {1: 1, 2: 2, 3: 5, 4: 6, 5: 7, 6: 4, 7: 3}
@@ -99,7 +100,8 @@ def load_ulog(path: str | Path) -> FlightLog:
                         "HDop": gps.get("hdop", np.full(len(t), np.nan)), "Lat": la, "Lng": lo, "Alt": al,
                         "Spd": np.hypot(vn, ve), "GCrs": np.degrees(np.arctan2(ve, vn)) % 360, "VZ": vd}
     # Receiver self-report (newer PX4 sensor_gps): 0 unknown, 1 ok/none, 2 mitigated/indicated, 3 detected/multiple
-    for src, dst in (("jamming_state", "JamState"), ("spoofing_state", "SpoofState")):
+    for src, dst in (("jamming_state", "JamState"), ("spoofing_state", "SpoofState"),
+                     ("noise_per_ms", "Noise"), ("jamming_indicator", "JamInd")):
         if src in gps:
             fl.series["GPS"][dst] = gps[src].astype(float)
     fl.series["GPA"] = {"t": t, "HAcc": gps["eph"], "VAcc": gps["epv"],
@@ -120,6 +122,9 @@ def load_ulog(path: str | Path) -> FlightLog:
     r, p, y = _quat_to_euler_deg(at["q[0]"], at["q[1]"], at["q[2]"], at["q[3]"])
     fl.series["ATT"] = {"t": at["timestamp"] / 1e6, "Roll": r, "Pitch": p, "Yaw": y}
     _map_flow(by, fl)
+    ld = by.get("vehicle_land_detected")
+    if ld is not None and "landed" in ld:
+        fl.series["LAND"] = {"t": ld["timestamp"] / 1e6, "Landed": ld["landed"].astype(float)}
     # ── ASTRA SITL extras: simulator truth and the attack window rebuilt from logged params ──
     gtp = by.get("vehicle_global_position_groundtruth")
     if gtp is not None:

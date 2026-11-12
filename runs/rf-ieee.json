@@ -1,0 +1,41 @@
+[
+{
+"f": "runs/ieee-uav-attack/x/Live GPS Spoofing and Jamming\\Benign Flight\\ace-benign-log_0_2033-8-19-16-27-30.ulg",
+"gps_dt": 0.9999940000000151,
+"air_s": 232.99860200000353,
+"has_land": true,
+"noise_med": 100.0,
+"rise3": 1.118811881188119,
+"rise5": 1.118811881188119,
+"rise10": 1.107843137254902,
+"step1hz_n": 233,
+"step1hz_max": 1.0200046371703053,
+"step1hz_p999": 0.8908564122465459
+},
+{
+"f": "runs/ieee-uav-attack/x/Live GPS Spoofing and Jamming\\GPS Jamming\\ace-jamming-log_1_2033-8-19-16-46-46.ulg",
+"gps_dt": 0.9999899999999684,
+"air_s": 216.99782999999314,
+"has_land": true,
+"noise_med": 102.0,
+"rise3": 1.5841584158415842,
+"rise5": 1.5841584158415842,
+"rise10": 1.5742574257425743,
+"step1hz_n": 215,
+"step1hz_max": 2.497244461589031,
+"step1hz_p999": 2.3286204985045185
+},
+{
+"f": "runs/ieee-uav-attack/x/Live GPS Spoofing and Jamming\\GPS Spoofing\\ace-spoofing-hackrf-log_5_2033-8-19-17-14-18.ulg",
+"gps_dt": 1.0,
+"air_s": 134.0,
+"has_land": true,
+"noise_med": 102.0,
+"rise3": 1.3694581280788178,
+"rise5": 1.3627450980392157,
+"rise10": 1.3627450980392157,
+"step1hz_n": 134,
+"step1hz_max": 4.382643467082487,
+"step1hz_p999": 4.031486744227662
+}
+]

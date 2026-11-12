@@ -18,7 +18,7 @@ from astra.html_report import CSS
 
 EXTRA_CSS = """
 .verdict{border:1px solid var(--line);border-left:6px solid var(--muted);border-radius:10px;background:var(--card);padding:14px 16px;margin:16px 0}
-.verdict.jam{border-left-color:#b7791f}.verdict.spoof,.verdict.mixed{border-left-color:var(--bad)}.verdict.none{border-left-color:var(--ok)}
+.verdict.jam{border-left-color:#b7791f}.verdict.spoof,.verdict.mixed,.verdict.rf{border-left-color:var(--bad)}.verdict.none{border-left-color:var(--ok)}
 .verdict b{font-size:18px;display:block;margin-bottom:4px}.kv{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;font-size:13.5px}
 .kv div:nth-child(odd){color:var(--muted)}.chart text{font-size:10px;fill:var(--muted)}details{margin-top:24px}pre{font-size:11.5px;overflow:auto;max-height:420px}
 """
@@ -29,6 +29,9 @@ WHAT_NEXT = {
     "spoof": "The GPS position moved in a way the drone's own motion does not explain while the receiver reported a "
              "healthy fix. Treat the GPS track after the first event as untrusted; compare with any independent "
              "record (video, ground observers, ATC/radar, a second receiver).",
+    "rf": "The receiver's noise level rose sharply while it lost satellites or its fix: the signature of a nearby "
+          "transmitter on the GPS band (jammer or spoofer). Seen in both live HackRF attacks we have and in none of "
+          "231 real benign flights. Treat GPS after this time as untrusted and look for the source.",
     "mixed": "The receiver degraded, and separately the navigation became inconsistent. Review both timelines.",
     "inconclusive": "Weak evidence only: the same level is seen on a few percent of normal flights and in slow "
                     "simulated spoofs. Not an accusation. If this airframe often shows it, calibrate it "
@@ -40,7 +43,8 @@ WHAT_NEXT = {
 
 def _kind(verdict: str) -> str:
     v = verdict.split(":")[0]
-    return {"jamming-like": "jam", "spoofing-like": "spoof", "mixed": "mixed", "inconclusive": "inconclusive"}.get(v, "none")
+    return {"jamming-like": "jam", "spoofing-like": "spoof", "mixed": "mixed", "inconclusive": "inconclusive",
+            "RF-attack-like": "rf"}.get(v, "none")
 
 
 def _lane(t, y, t0, t1, x0, w, top, h, color, label, ymax=None):

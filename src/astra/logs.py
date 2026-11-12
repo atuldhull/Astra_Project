@@ -56,6 +56,21 @@ class FlightLog:
     def is_sitl(self) -> bool:
         return self.has("SIM")
 
+    def airborne(self, t: np.ndarray, min_height_m: float = 3.0) -> np.ndarray:
+        """Bool mask: vehicle in the air at times t.
+
+        Uses the autopilot's own land detector when logged (PX4 vehicle_land_detected -> LAND), so low hovers
+        count (the live IEEE attacks hovered at ~1 m; ieee-real-attacks-v1.md). Otherwise height above take-off
+        > min_height_m.
+        """
+        t = np.asarray(t, dtype=float)
+        if self.has("LAND"):
+            ld = self["LAND"]
+            k = np.clip(np.searchsorted(ld["t"], t, side="right") - 1, 0, len(ld["t"]) - 1)
+            return (ld["Landed"][k] < 0.5) & (t >= ld["t"][0])
+        pos = self["POS"]
+        return np.nan_to_num(np.interp(t, pos["t"], pos["RelHomeAlt"]), nan=0.0) > min_height_m
+
     def attack_windows(self) -> list[tuple[float, float, int]]:
         """Ground-truth (start, end, code) intervals from ASTK. Empty for real logs."""
         if not self.has("ASTK"):
