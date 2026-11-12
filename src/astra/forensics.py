@@ -292,6 +292,10 @@ def diagnose(path: Path, cal_file: Path | None = None, takeoff: tuple | None = N
                 f"total {sum(b - a for a, b in jam_iv):.0f} s")
     if jam and longest < 3.0 and len(jam_iv) < 3:
         jam_desc += " (brief: also seen as isolated dropouts on real benign flights)"
+    self_spoof_in_jam = sum(1 for t, why in spoof_ev if why.startswith("receiver self-report") and _in_jam(t))
+    if self_spoof_in_jam:  # wildscan-v1.md: receiver spoof flags during outages were silently dropped
+        jam_desc += (f"; the receiver itself flagged spoofing (level 3) {self_spoof_in_jam} time(s) during the outages, "
+                     "which a spoofer taking over the receiver can also cause")
     rf = rep["receiver"]["rf_interference"]
     if rf:
         e0 = rf[0]
