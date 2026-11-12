@@ -32,7 +32,7 @@ DESIGN = sys.argv[3] if len(sys.argv) > 3 else "159 other flights (real-far-v2.m
 lines = [f"# Real-flight gate ({SRC}: fresh public PX4 flights, frozen `astra diagnose`)\n",
          f"{n} usable flights, {H:.1f} airborne h; {len(skipped)} unusable. Design set: {DESIGN}. Scored once.\n",
          "| verdict on real benign flight | flights |", "|---|---|"]
-for k in ("no", "inconclusive", "jamming-like", "RF-attack-like", "spoofing-like", "mixed"):
+for k in ("no", "not", "inconclusive", "jamming-like", "RF-attack-like", "spoofing-like", "mixed"):
     lines.append(f"| {k if k != 'no' else 'no anomaly'} | {cnt[k]} |")
 lines.append(f"\n**False spoofing accusations: {acc}/{n}** (95% upper bound "
              f"{chi2.ppf(0.975, 2 * (acc + 1)) / 2 / n * 100:.1f}% of flights).")

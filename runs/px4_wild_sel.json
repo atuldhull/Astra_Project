@@ -1,0 +1,74 @@
+[
+ {
+  "log_id": "bc381b71-7007-4a26-a3ef-3c7d9e8b23b6",
+  "url": "https://cdn.logs.px4.io/bc381b71-7007-4a26-a3ef-3c7d9e8b23b6.ulg",
+  "hw": "PX4_FMU_V6X",
+  "desc": "",
+  "feedback": "U313B\r\nSyay GPS SPOOF?\r\nCrash minor damage",
+  "ver": "v1.15.4 255",
+  "role": "candidate"
+ },
+ {
+  "log_id": "5d07d813-8bff-4a92-9ee6-f9e8469b347b",
+  "url": "https://cdn.logs.px4.io/5d07d813-8bff-4a92-9ee6-f9e8469b347b.ulg",
+  "hw": "CUBEPILOT_CUBEORANGE",
+  "desc": "YAF 3_SPOOF",
+  "feedback": "",
+  "ver": "v1.16.0 255",
+  "role": "candidate"
+ },
+ {
+  "log_id": "43d6dc27-42b2-4a21-af4a-34f9bd21a720",
+  "url": "https://cdn.logs.px4.io/43d6dc27-42b2-4a21-af4a-34f9bd21a720.ulg",
+  "hw": "HOLYBRO_DURANDAL_V1",
+  "desc": "NEO_F9P_Jamming_UART",
+  "feedback": "",
+  "ver": "v1.15.1 255",
+  "role": "candidate"
+ },
+ {
+  "log_id": "55d17831-6384-4b18-85c5-0c640d818f13",
+  "url": "https://cdn.logs.px4.io/55d17831-6384-4b18-85c5-0c640d818f13.ulg",
+  "hw": "HOLYBRO_DURANDAL_V1",
+  "desc": "NEO_F9P_Jamming",
+  "feedback": "",
+  "ver": "v1.15.1 255",
+  "role": "candidate"
+ },
+ {
+  "log_id": "c9a5b99c-c30f-40c2-871b-f2732b0811c3",
+  "url": "https://cdn.logs.px4.io/c9a5b99c-c30f-40c2-871b-f2732b0811c3.ulg",
+  "hw": "PX4_FMU_V3",
+  "desc": "gps jamming ?",
+  "feedback": "",
+  "ver": "v1.14.0 255",
+  "role": "candidate"
+ },
+ {
+  "log_id": "68020e0c-5234-4ff9-b875-b76bfccde358",
+  "url": "https://cdn.logs.px4.io/68020e0c-5234-4ff9-b875-b76bfccde358.ulg",
+  "hw": "CUBEPILOT_CUBEORANGE",
+  "desc": "YAF 4.0A",
+  "feedback": "",
+  "ver": "v1.16.0 255",
+  "role": "same-vehicle benign reference"
+ },
+ {
+  "log_id": "7394fae7-4a23-457f-b3e1-6ec324828078",
+  "url": "https://cdn.logs.px4.io/7394fae7-4a23-457f-b3e1-6ec324828078.ulg",
+  "hw": "CUBEPILOT_CUBEORANGE",
+  "desc": "YAF 4.0B",
+  "feedback": "",
+  "ver": "v1.16.0 255",
+  "role": "same-vehicle benign reference"
+ },
+ {
+  "log_id": "edd4693c-9608-4cb9-b593-4a9d0ce0c706",
+  "url": "https://cdn.logs.px4.io/edd4693c-9608-4cb9-b593-4a9d0ce0c706.ulg",
+  "hw": "CUBEPILOT_CUBEORANGE",
+  "desc": "YAF 4.15",
+  "feedback": "",
+  "ver": "v1.16.0 255",
+  "role": "same-vehicle benign reference"
+ }
+]

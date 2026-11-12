@@ -44,7 +44,7 @@ WHAT_NEXT = {
 def _kind(verdict: str) -> str:
     v = verdict.split(":")[0]
     return {"jamming-like": "jam", "spoofing-like": "spoof", "mixed": "mixed", "inconclusive": "inconclusive",
-            "RF-attack-like": "rf"}.get(v, "none")
+            "RF-attack-like": "rf", "not analysed": "inconclusive"}.get(v, "none")
 
 
 def _lane(t, y, t0, t1, x0, w, top, h, color, label, ymax=None):

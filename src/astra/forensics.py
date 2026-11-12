@@ -312,6 +312,9 @@ def diagnose(path: Path, cal_file: Path | None = None, takeoff: tuple | None = N
     elif weak_ev and not jam:
         verdict = ("inconclusive: weak GPS position/velocity inconsistency, below the level seen as "
                    "spoofing (also seen in a few real benign flights)")
+    elif not air_g.any():
+        verdict = ("not analysed: the vehicle never flew in this log (no airborne time), so the in-flight checks do "
+                   "not apply; see the receiver section for its health on the ground")
     else:
         verdict = ("no GNSS anomaly found by the available checks. Note: a slow, consistent spoof is not "
                    "observable without an independent witness sensor (docs/v4/05-DETECTION-PHYSICS.md)")

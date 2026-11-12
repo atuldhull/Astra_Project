@@ -9,6 +9,7 @@ used while designing or tuning that component. Superseded results are kept in th
 |---|---|---|---|
 | **Real attacks (live HackRF), blind** | **0/2 detected** (benign 1/1 correct); stock PX4 0/2 too | IEEE DataPort, 3 real flights | `ieee-real-attacks-v1.md` |
 | Real attacks after fixes (RF-attack-like + land detector) | both IEEE attacks flagged, **design data, not validation**; benign RF-attack-like **0/580** (231 design + 349 fresh); fresh spoofing-like 2/349 (one possibly a real encounter) | IEEE + public PX4 | `rf-design-v1.md`, `real-gate-v7.md` |
+| Real-world attacks found in public PX4 logs, blind | **1/1** with visible receiver evidence detected (150 s satellite loss in a pilot-labelled spoof test); 4 other pilot-labelled logs show no GNSS evidence | 8 public logs | `wild-attacks-v1.md` |
 | ArduCopter 4.7.2 misses slow drag-off during the attack | 0/30 (≤ 2 m/s), only at release | baseline-v1, 2–3 seeds | `baseline-v1.md` |
 | ArduCopter persistent drag-off diverts undetected | 0/9 detected; landed 143 m off or chased for 1.8 km | baseline-v1 | `baseline-v1.md` |
 | PX4 v1.17 has the same blind spot | 0/16 (≤ 1 m/s) during attack; persistent 0.5–1 m/s → 134–270 m off | px4 baseline, 2 seeds | `px4-baseline-v1.md` |

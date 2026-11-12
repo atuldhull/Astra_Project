@@ -389,3 +389,6 @@ conclusion is possible (`benchmarks/realflow-v1.md`). Real flow validation needs
   10 s + satellite/fix loss): 0/231 design benign, both IEEE attacks flagged (design data). 1-Hz step check rejected.
 - Fresh gate v7 (`real-gate-v7.md`): RF-attack-like 0/349; spoofing-like 2/349 (one low-altitude step from the new
   airborne mask; one receiver level-3 spoof flag near the Strait of Hormuz, possibly real).
+- Searched 488k public PX4 log descriptions for jamming/spoofing: 1 real airborne attack with receiver evidence
+  ("YAF 3_SPOOF", 150 s satellite loss) → detected blind; 4 other labelled logs show no GNSS evidence
+  (`wild-attacks-v1.md`). Never-flown logs now say 'not analysed'.

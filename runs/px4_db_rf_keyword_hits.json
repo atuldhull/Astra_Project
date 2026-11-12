@@ -1,0 +1,484 @@
+[
+{
+"log_id": "bc381b71-7007-4a26-a3ef-3c7d9e8b23b6",
+"log_date": "2026-06-23",
+"description": "",
+"feedback": "U313B\r\nSyay GPS SPOOF?\r\nCrash minor damage",
+"type": "flightreport",
+"wind_speed": -1,
+"rating": "",
+"video_url": "",
+"error_labels": [],
+"source": "webui",
+"duration_s": 25,
+"mav_type": "Quadrotor",
+"estimator": "EKF2",
+"sys_autostart_id": 4001,
+"sys_hw": "PX4_FMU_V6X",
+"ver_sw": "99c40407ffd7ac184e2d7b4b293f36f10fe561ef",
+"ver_sw_release": "v1.15.4 255",
+"num_logged_errors": 0,
+"num_logged_warnings": 2,
+"flight_modes": [
+2
+],
+"vehicle_uuid": "000600000000383832353233510c00370018",
+"flight_mode_durations": [
+[
+2,
+25
+]
+],
+"vehicle_name": "",
+"airframe_name": "Generic Quadcopter",
+"airframe_type": "Quadrotor x",
+"download_url": "https://cdn.logs.px4.io/bc381b71-7007-4a26-a3ef-3c7d9e8b23b6.ulg"
+},
+{
+"log_id": "5d07d813-8bff-4a92-9ee6-f9e8469b347b",
+"log_date": "2026-06-08",
+"description": "YAF 3_SPOOF",
+"feedback": "",
+"type": "flightreport",
+"wind_speed": -1,
+"rating": "",
+"video_url": "",
+"error_labels": [],
+"source": "webui",
+"duration_s": 617,
+"mav_type": "Quadrotor",
+"estimator": "EKF2",
+"sys_autostart_id": 4001,
+"sys_hw": "CUBEPILOT_CUBEORANGE",
+"ver_sw": "6ea3539157ca358c70a515878b77077af7d4611d",
+"ver_sw_release": "v1.16.0 255",
+"num_logged_errors": 0,
+"num_logged_warnings": 6,
+"flight_modes": [
+1,
+2,
+3,
+12,
+15
+],
+"vehicle_uuid": "0006000000003132343233325116003a0049",
+"flight_mode_durations": [
+[
+3,
+171
+],
+[
+12,
+2
+],
+[
+1,
+62
+],
+[
+15,
+0
+],
+[
+1,
+2
+],
+[
+15,
+0
+],
+[
+1,
+0
+],
+[
+15,
+62
+],
+[
+1,
+116
+],
+[
+2,
+6
+],
+[
+1,
+29
+],
+[
+2,
+163
+]
+],
+"vehicle_name": "",
+"airframe_name": "Generic Quadcopter",
+"airframe_type": "Quadrotor x",
+"download_url": "https://cdn.logs.px4.io/5d07d813-8bff-4a92-9ee6-f9e8469b347b.ulg"
+},
+{
+"log_id": "8a1a3e70-7481-4015-a6de-e094e70a41bd",
+"log_date": "2026-01-09",
+"description": "gz sim air speed spoof",
+"feedback": "",
+"type": "flightreport",
+"wind_speed": -1,
+"rating": "",
+"video_url": "",
+"error_labels": [],
+"source": "webui",
+"duration_s": 21,
+"mav_type": "Quadrotor",
+"estimator": "EKF2",
+"sys_autostart_id": 4001,
+"sys_hw": "PX4_SITL",
+"ver_sw": "38b6a9abf3cf65906e229ba481b3ba1eb453f128",
+"ver_sw_release": "v1.17.0 64",
+"num_logged_errors": 0,
+"num_logged_warnings": 1,
+"flight_modes": [
+17,
+4
+],
+"vehicle_uuid": "",
+"flight_mode_durations": [
+[
+17,
+7
+],
+[
+4,
+14
+]
+],
+"vehicle_name": "",
+"airframe_name": "Generic Quadcopter",
+"airframe_type": "Quadrotor x",
+"download_url": "https://cdn.logs.px4.io/8a1a3e70-7481-4015-a6de-e094e70a41bd.ulg"
+},
+{
+"log_id": "f5d45711-dd6c-4fba-9667-2902c7814d53",
+"log_date": "2025-06-09",
+"description": "jamming dataset",
+"feedback": "",
+"type": "flightreport",
+"wind_speed": -1,
+"rating": "",
+"video_url": "",
+"error_labels": [],
+"source": "webui",
+"duration_s": 222,
+"mav_type": "Quadrotor",
+"estimator": "EKF2",
+"sys_autostart_id": 4001,
+"sys_hw": "PX4_FMU_V5",
+"ver_sw": "a6274bc5ed01e5c86af79f89890689c239b1d944",
+"ver_sw_release": "v1.11.3 255",
+"num_logged_errors": 0,
+"num_logged_warnings": 0,
+"flight_modes": [
+17,
+2
+],
+"vehicle_uuid": "0002000000003533383731385115003b0031",
+"flight_mode_durations": [
+[
+17,
+3
+],
+[
+2,
+218
+]
+],
+"vehicle_name": "",
+"airframe_name": "Generic Quadcopter",
+"airframe_type": "Quadrotor x",
+"download_url": "https://cdn.logs.px4.io/f5d45711-dd6c-4fba-9667-2902c7814d53.ulg"
+},
+{
+"log_id": "c27693b9-24b7-4ce9-980a-73e2dc8905d7",
+"log_date": "2025-06-05",
+"description": "Test hover flight to 15% battery",
+"feedback": "Relocated SiK radio to reduce GPS interference.\r\n\r\nOscillations observed in previous flight are gone.\r\n\r\nSplit-Second power drops every minute or so are gone.",
+"type": "flightreport",
+"wind_speed": -1,
+"rating": "",
+"video_url": "",
+"error_labels": [],
+"source": "webui",
+"duration_s": 766,
+"mav_type": "Quadrotor",
+"estimator": "EKF2",
+"sys_autostart_id": 4001,
+"sys_hw": "PX4_FMU_V6C",
+"ver_sw": "99c40407ffd7ac184e2d7b4b293f36f10fe561ef",
+"ver_sw_release": "v1.15.4 255",
+"num_logged_errors": 1,
+"num_logged_warnings": 1,
+"flight_modes": [
+2,
+18
+],
+"vehicle_uuid": "0006000000003832383630335110001c0041",
+"flight_mode_durations": [
+[
+2,
+757
+],
+[
+18,
+7
+],
+[
+2,
+2
+]
+],
+"vehicle_name": "",
+"airframe_name": "Generic Quadcopter",
+"airframe_type": "Quadrotor x",
+"download_url": "https://cdn.logs.px4.io/c27693b9-24b7-4ce9-980a-73e2dc8905d7.ulg"
+},
+{
+"log_id": "e13aa13f-0f2e-442f-8fc9-af8605f2ed1f",
+"log_date": "2025-04-11",
+"description": "uapishka 2025 april 11 - EW raster",
+"feedback": "",
+"type": "flightreport",
+"wind_speed": -1,
+"rating": "",
+"video_url": "",
+"error_labels": [],
+"source": "webui",
+"duration_s": 1414,
+"mav_type": "Hexarotor",
+"estimator": "EKF2",
+"sys_autostart_id": 6001,
+"sys_hw": "CUBEPILOT_CUBEORANGE",
+"ver_sw": "93eef0c78719a9ac972d46593262c76c978ed3c4",
+"ver_sw_release": "v1.15.1 255",
+"num_logged_errors": 0,
+"num_logged_warnings": 0,
+"flight_modes": [
+2,
+3
+],
+"vehicle_uuid": "00060000000031363832313151130044004a",
+"flight_mode_durations": [
+[
+2,
+0
+],
+[
+3,
+36
+],
+[
+2,
+11
+],
+[
+3,
+1362
+],
+[
+2,
+2
+]
+],
+"vehicle_name": "",
+"airframe_name": "Generic Hexarotor x geometry",
+"airframe_type": "Hexarotor x",
+"download_url": "https://cdn.logs.px4.io/e13aa13f-0f2e-442f-8fc9-af8605f2ed1f.ulg"
+},
+{
+"log_id": "43d6dc27-42b2-4a21-af4a-34f9bd21a720",
+"log_date": "2024-10-21",
+"description": "NEO_F9P_Jamming_UART",
+"feedback": "",
+"type": "flightreport",
+"wind_speed": -1,
+"rating": "",
+"video_url": "",
+"error_labels": [],
+"source": "webui",
+"duration_s": 1126,
+"mav_type": "Quadrotor",
+"estimator": "EKF2",
+"sys_autostart_id": 4050,
+"sys_hw": "HOLYBRO_DURANDAL_V1",
+"ver_sw": "93eef0c78719a9ac972d46593262c76c978ed3c4",
+"ver_sw_release": "v1.15.1 255",
+"num_logged_errors": 0,
+"num_logged_warnings": 148,
+"flight_modes": [
+4
+],
+"vehicle_uuid": "000600000000343434363038510300330031",
+"flight_mode_durations": [
+[
+4,
+1126
+]
+],
+"vehicle_name": "",
+"airframe_name": "Generic 250 Racer",
+"airframe_type": "Quadrotor x",
+"download_url": "https://cdn.logs.px4.io/43d6dc27-42b2-4a21-af4a-34f9bd21a720.ulg"
+},
+{
+"log_id": "55d17831-6384-4b18-85c5-0c640d818f13",
+"log_date": "2024-10-21",
+"description": "NEO_F9P_Jamming",
+"feedback": "",
+"type": "flightreport",
+"wind_speed": -1,
+"rating": "",
+"video_url": "",
+"error_labels": [],
+"source": "webui",
+"duration_s": 173,
+"mav_type": "Quadrotor",
+"estimator": "EKF2",
+"sys_autostart_id": 4050,
+"sys_hw": "HOLYBRO_DURANDAL_V1",
+"ver_sw": "93eef0c78719a9ac972d46593262c76c978ed3c4",
+"ver_sw_release": "v1.15.1 255",
+"num_logged_errors": 0,
+"num_logged_warnings": 24,
+"flight_modes": [
+4
+],
+"vehicle_uuid": "000600000000343434363038510300330031",
+"flight_mode_durations": [
+[
+4,
+173
+]
+],
+"vehicle_name": "",
+"airframe_name": "Generic 250 Racer",
+"airframe_type": "Quadrotor x",
+"download_url": "https://cdn.logs.px4.io/55d17831-6384-4b18-85c5-0c640d818f13.ulg"
+},
+{
+"log_id": "a052fe98-065c-4540-9fe4-3ecdb2332d7d",
+"log_date": "2024-07-29",
+"description": "first flight no spoofing",
+"feedback": "",
+"type": "flightreport",
+"wind_speed": -1,
+"rating": "",
+"video_url": "",
+"error_labels": [
+1,
+5,
+8
+],
+"source": "webui",
+"duration_s": 268,
+"mav_type": "Quadrotor",
+"estimator": "EKF2",
+"sys_autostart_id": 10015,
+"sys_hw": "PX4_SITL",
+"ver_sw": "1f33abb4e964d3e9c69bb71c0f84f456054a821b",
+"ver_sw_release": "v1.15.0 128",
+"num_logged_errors": 0,
+"num_logged_warnings": 0,
+"flight_modes": [
+3,
+5
+],
+"vehicle_uuid": "",
+"flight_mode_durations": [
+[
+3,
+215
+],
+[
+5,
+51
+],
+[
+3,
+1
+]
+],
+"vehicle_name": "",
+"airframe_name": "",
+"airframe_type": 10015,
+"download_url": "https://cdn.logs.px4.io/a052fe98-065c-4540-9fe4-3ecdb2332d7d.ulg"
+},
+{
+"log_id": "68553668-8e27-4d09-8fbb-5272b188be02",
+"log_date": "2024-06-03",
+"description": "ew",
+"feedback": "ew",
+"type": "flightreport",
+"wind_speed": -1,
+"rating": "",
+"video_url": "",
+"error_labels": [],
+"source": "webui",
+"duration_s": 1,
+"mav_type": "Quadrotor",
+"estimator": "EKF2",
+"sys_autostart_id": 5001,
+"sys_hw": "PX4_FMU_V3",
+"ver_sw": "1dacb4cdef2d7145754fc788fa8dc482eed74b40",
+"ver_sw_release": "v1.14.3 255",
+"num_logged_errors": 0,
+"num_logged_warnings": 0,
+"flight_modes": [
+15
+],
+"vehicle_uuid": "000100000000313437353033511800170033",
+"flight_mode_durations": [
+[
+15,
+1
+]
+],
+"vehicle_name": "",
+"airframe_name": "Generic Quad + geometry",
+"airframe_type": "Quadrotor +",
+"download_url": "https://cdn.logs.px4.io/68553668-8e27-4d09-8fbb-5272b188be02.ulg"
+},
+{
+"log_id": "c9a5b99c-c30f-40c2-871b-f2732b0811c3",
+"log_date": "2024-02-01",
+"description": "gps jamming ?",
+"feedback": "",
+"type": "flightreport",
+"wind_speed": -1,
+"rating": "",
+"video_url": "",
+"error_labels": [],
+"source": "webui",
+"duration_s": 10,
+"mav_type": "Hexarotor",
+"estimator": "EKF2",
+"sys_autostart_id": 6001,
+"sys_hw": "PX4_FMU_V3",
+"ver_sw": "b8c541dd7277ed735139d7d1bfb829d61fbe29fb",
+"ver_sw_release": "v1.14.0 255",
+"num_logged_errors": 0,
+"num_logged_warnings": 1,
+"flight_modes": [
+0
+],
+"vehicle_uuid": "000100000000313033373337510f0055002c",
+"flight_mode_durations": [
+[
+0,
+10
+]
+],
+"vehicle_name": "",
+"airframe_name": "Generic Hexarotor x geometry",
+"airframe_type": "Hexarotor x",
+"download_url": "https://cdn.logs.px4.io/c9a5b99c-c30f-40c2-871b-f2732b0811c3.ulg"
+}
+]

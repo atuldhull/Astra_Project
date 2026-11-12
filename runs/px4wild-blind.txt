@@ -1,0 +1,16 @@
+43d6dc27 [candidate] 'NEO_F9P_Jamming_UART' -> no GNSS anomaly found by the available checks. Note: a slow, consistent spoof is not observable without an ind
+      {"rf": [], "self": {"jamming": {"max_level_airborne": null, "level3_intervals_s": []}, "spoofing": {"max_level_airborne": null, "level3_intervals_s": []}}, "skipped": ["c3"]}
+55d17831 [candidate] 'NEO_F9P_Jamming' -> no GNSS anomaly found by the available checks. Note: a slow, consistent spoof is not observable without an ind
+      {"rf": [], "self": {"jamming": {"max_level_airborne": null, "level3_intervals_s": []}, "spoofing": {"max_level_airborne": null, "level3_intervals_s": []}}, "skipped": ["c3"]}
+5d07d813 [candidate] 'YAF 3_SPOOF' -> jamming-like: receiver lost fix or satellites 7 time(s), longest 95 s, total 153 s
+      {"rf": [], "self": {"jamming": {"max_level_airborne": 0, "level3_intervals_s": []}, "spoofing": {"max_level_airborne": 0, "level3_intervals_s": []}}, "skipped": ["c3"]}
+68020e0c [same-vehi] 'YAF 4.0A' -> no GNSS anomaly found by the available checks. Note: a slow, consistent spoof is not observable without an ind
+      {"rf": [], "self": {"jamming": {"max_level_airborne": 0, "level3_intervals_s": []}, "spoofing": {"max_level_airborne": 0, "level3_intervals_s": []}}, "skipped": ["c3"]}
+7394fae7 [same-vehi] 'YAF 4.0B' -> no GNSS anomaly found by the available checks. Note: a slow, consistent spoof is not observable without an ind
+      {"rf": [], "self": {"jamming": {"max_level_airborne": 0, "level3_intervals_s": []}, "spoofing": {"max_level_airborne": 0, "level3_intervals_s": []}}, "skipped": ["c3"]}
+bc381b71 [candidate] '' -> no GNSS anomaly found by the available checks. Note: a slow, consistent spoof is not observable without an ind
+      {"rf": [], "self": {"jamming": {"max_level_airborne": 1, "level3_intervals_s": []}, "spoofing": {"max_level_airborne": 1, "level3_intervals_s": []}}, "skipped": ["c3"]}
+c9a5b99c [candidate] 'gps jamming ?' -> no GNSS anomaly found by the available checks. Note: a slow, consistent spoof is not observable without an ind
+      {"rf": [], "self": {"jamming": {"max_level_airborne": 0, "level3_intervals_s": []}, "spoofing": {"max_level_airborne": 0, "level3_intervals_s": []}}, "skipped": []}
+edd4693c [same-vehi] 'YAF 4.15' -> no GNSS anomaly found by the available checks. Note: a slow, consistent spoof is not observable without an ind
+      {"rf": [], "self": {"jamming": {"max_level_airborne": 0, "level3_intervals_s": []}, "spoofing": {"max_level_airborne": 0, "level3_intervals_s": []}}, "skipped": ["c3"]}
