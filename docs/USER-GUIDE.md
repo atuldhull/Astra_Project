@@ -92,14 +92,32 @@ fielded airframe.
 ## 6. Diagnose a real flight (e.g. after a trial)
 
 ```bash
-astra calibrate <folder of your benign .BIN/.ulg logs> --out myframe-cal.json   # ≥ 30 min of flights
-astra diagnose trial_flight.BIN --cal myframe-cal.json
+astra calibrate <folder of your benign .BIN/.ulg logs> --out myframe-cal.json   # >= 30 min of flights
+astra diagnose trial_flight.ulg --cal myframe-cal.json --html trial.html       # readable report
+astra diagnose trial_flight.ulg --takeoff 28.6139,77.2090,10                   # + power-on spoof check
 ```
 
-Output: receiver-health timeline (fix loss, low satellites), stock autopilot alerts, ASTRA monitor
-alarm and channel, position-step evidence, and a verdict (`jamming-like` / `spoofing-like` /
-`mixed` / `no GNSS anomaly`). "No anomaly" does **not** prove no attack: a slow, velocity-consistent
-spoof is invisible without a witness sensor such as optical flow.
+Verdicts:
+
+| verdict | meaning |
+|---|---|
+| `RF-attack-like` | receiver noise rose >= 30% for 10 s **and** it lost satellites/fix: a transmitter on the GPS band (jammer or spoofer). PX4 logs only (needs `noise_per_ms`). |
+| `jamming-like` | receiver lost fix or satellites; the verdict gives count and length, isolated < 3 s dropouts are tagged `brief` |
+| `spoofing-like` | position moved in a way the drone's own motion doesn't explain while the fix looked healthy (or the receiver itself reported multiple spoofing indications) |
+| `mixed` | both of the above, separately |
+| `inconclusive` | weak evidence only; seen on a few % of normal flights. Not an accusation |
+| `no GNSS anomaly` | the checks found nothing. **Not** proof of no attack: a slow, velocity-consistent spoof is invisible without a witness sensor such as optical flow |
+
+`--takeoff LAT,LON[,RADIUS_M]`: the real take-off point (and how well you know it, default 15 m). Flags a spoof
+present from power-on that moved the GPS by more than ~25 m. Simulation-tested only.
+
+**Get the most from your logs (PX4):** log GPS at full rate (`SDLOG_PROFILE` with high-rate or estimator
+replay topics). At 1 Hz GPS logging (PX4 v1.11 default) the position/velocity consistency checks switch off
+and only receiver-level evidence remains; the report lists skipped checks.
+
+Measured: false `spoofing-like` on 1/345 fresh real benign PX4 flights. Real attacks: 2 live HackRF flights were
+missed by the first version (0/2) and led to the `RF-attack-like` check (`benchmarks/ieee-real-attacks-v1.md`);
+its detection rate on unseen real attacks is not yet known.
 
 ### Reproduce an incident
 
