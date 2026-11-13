@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ASTRA</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2212%22 fill=%22none%22 stroke=%22%23a3236f%22 stroke-width=%223%22 stroke-dasharray=%225 3%22/%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%224%22 fill=%22%2318283a%22/%3E%3C/svg%3E">
 <style>
 :root{
   --paper:#edf1f3;--sheet:#f8fafb;--ink:#18283a;--ink-2:#4d5d6e;--rule:#cfd8df;--grid:#dfe6eb;
@@ -27,16 +28,42 @@ header{border-bottom:2px solid var(--ink)}
 .mark{display:flex;align-items:baseline;gap:12px;padding-bottom:12px}
 .mark b{font-size:26px;font-weight:700;font-stretch:condensed;letter-spacing:.06em;color:var(--magenta)}
 .mark span{color:var(--ink-2);font-size:15px}
-nav{display:flex;gap:2px}
+nav{display:flex;gap:2px;max-width:100%;overflow-x:auto;scrollbar-width:none}
+nav button{white-space:nowrap;flex:0 0 auto}
 nav button{font:inherit;font-size:15px;color:var(--ink-2);background:none;border:0;padding:10px 14px 12px;cursor:pointer;border-bottom:4px solid transparent;margin-bottom:-2px}
 nav button:hover{color:var(--ink)}
 nav button[aria-selected=true]{color:var(--ink);font-weight:600;border-bottom-color:var(--magenta)}
 
 main.wrap{padding-top:40px;padding-bottom:64px}
-.intro{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px 48px;align-items:end;margin-bottom:28px}
-h1{font-size:40px;line-height:1.05;font-weight:700;font-stretch:condensed;margin:0;letter-spacing:-.01em}
-.intro p{margin:0;color:var(--ink-2);max-width:52ch}
-@media (max-width:720px){.intro{grid-template-columns:1fr}h1{font-size:32px}}
+.intro{margin-bottom:26px;max-width:780px}
+h1{font-size:42px;line-height:1.05;font-weight:700;font-stretch:condensed;margin:0 0 10px;letter-spacing:-.01em}
+.intro p{margin:0;color:var(--ink-2);font-size:17px;max-width:62ch}
+@media (max-width:720px){h1{font-size:32px}}
+.trust{margin:14px 0 0;font-size:15px;color:var(--ink-2)}
+.trust a{font-weight:600}
+
+/* evidence: an audit ledger */
+.ledger{width:100%;border-collapse:collapse;font-size:15px}
+.ledger caption{text-align:left;font-size:22px;font-weight:700;font-stretch:condensed;padding:0 0 8px}
+.ledger th{text-align:left;font-weight:600;color:var(--ink-2);font-size:14px;padding:8px 12px 8px 0;border-bottom:2px solid var(--ink);vertical-align:bottom}
+.ledger td{padding:11px 12px 11px 0;border-bottom:1px solid var(--rule);vertical-align:top}
+.ledger td.num{font-size:22px;font-weight:700;font-stretch:condensed;white-space:nowrap}
+.ledger .fail{color:var(--spoof)}.ledger .pass{color:var(--ok)}
+.ledger .sub{display:block;font-size:13px;color:var(--ink-2);font-weight:400}
+.section{margin-top:44px}
+.section>p{color:var(--ink-2);margin:0 0 14px;max-width:80ch}
+.section h2{font-size:22px;font-stretch:condensed;margin:0 0 6px}
+.tablewrap{overflow-x:auto}
+.ledger td:last-child a{white-space:nowrap}
+.mk{display:inline-block;width:18px;font-weight:700}
+svg.map{width:100%;height:auto;display:block;background:var(--sheet);border:1px solid var(--rule)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:14px;color:var(--ink-2);margin-top:8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+.browse .fields{margin-bottom:12px}
+.pager{display:flex;gap:10px;align-items:center;margin-top:12px;font-size:14px;color:var(--ink-2)}
+.c-none{color:var(--ok)}.c-jam,.c-inconclusive{color:var(--jam)}.c-spoof,.c-rf,.c-mixed{color:var(--spoof)}.c-notflown{color:var(--ink-2)}
+.linkbtn{font:inherit;font-size:14px;color:var(--magenta);background:none;border:0;padding:0;cursor:pointer;text-decoration:underline}
+tr.rc td{background:var(--sheet);font-size:14px}
 
 /* controls */
 .panel{background:var(--sheet);border:1px solid var(--rule);border-radius:4px;padding:20px}
@@ -116,6 +143,7 @@ pre{font:13px/1.55 "Cascadia Mono",Consolas,ui-monospace,monospace;background:va
     <button role="tab" aria-selected="true" aria-controls="analyse" data-tab="analyse">Check a flight log</button>
     <button role="tab" aria-selected="false" aria-controls="live" data-tab="live">Watch live</button>
     <button role="tab" aria-selected="false" aria-controls="sim" data-tab="sim">Simulate attacks</button>
+    <button role="tab" aria-selected="false" aria-controls="proof" data-tab="proof">How well it works</button>
   </nav>
 </div></header>
 
@@ -137,6 +165,7 @@ pre{font:13px/1.55 "Cascadia Mono",Consolas,ui-monospace,monospace;background:va
     <p class="hint">Giving the real take-off point is the only way to catch a spoof that was already running when the drone powered on.</p>
     <div id="aerr" class="err" role="alert"></div>
   </div>
+  <p class="trust" id="trustline">Tested on real flights and real attacks. <a href="#" data-goto="proof">See how well it works, failures included.</a></p>
   <div id="ares" class="verdict" hidden aria-live="polite"></div>
 </section>
 
@@ -203,6 +232,39 @@ pre{font:13px/1.55 "Cascadia Mono",Consolas,ui-monospace,monospace;background:va
     <pre id="slog">Nothing running. Choose a pack and press Run pack.</pre>
   </div>
 </section>
+<!-- HOW WELL IT WORKS -->
+<section id="proof" role="tabpanel" hidden>
+  <div class="intro">
+    <h1>What it has been tested on</h1>
+    <p>Each figure below comes from a test run once, on flights the checks had never seen, with the code frozen before the run. Failures stay in. Every normal flight is a public PX4 log you can open yourself or re-check here.</p>
+  </div>
+  <div class="tablewrap"><table class="ledger" id="claims"><caption>The record</caption>
+    <thead><tr><th>Question</th><th>Result</th><th>Worst case (95%)</th></tr></thead><tbody></tbody></table></div>
+
+  <div class="section"><div class="tablewrap"><table class="ledger" id="attacks"><caption>Every real attack it has seen</caption>
+    <thead><tr><th>Attack</th><th>First try, code frozen</th><th>After fixes</th><th>Data</th></tr></thead><tbody></tbody></table></div>
+    <p class="hint">After-fix results reuse the attacks the fixes were designed on, so they are not proof. Only the first-try column is.</p></div>
+
+  <div class="section"><div class="tablewrap"><table class="ledger" id="gates"><caption>Normal-flight test runs</caption>
+    <thead><tr><th>Run</th><th>Code</th><th>Flights</th><th>Spoofing-like</th><th>Radio attack</th><th>Jamming-like</th><th>Inconclusive</th><th>Files</th></tr></thead><tbody></tbody></table></div>
+    <p class="hint">Jamming-like on a normal flight is usually a real receiver outage rather than a false alarm. Inconclusive is a weak lead, never an accusation.</p></div>
+
+  <div class="section"><h2>Where the checked flights were</h2>
+    <p>Rounded to 1° (about 100 km) on purpose. Runs v8, v9 and the 1,000-flight scan; v6 and v7 did not keep locations.</p>
+    <svg class="map" id="map" viewBox="0 0 720 360" role="img" aria-label="Map of checked flights"></svg>
+    <div class="legend" id="maplegend"></div></div>
+
+  <div class="section browse"><h2>Every flight, one by one</h2>
+    <p>Open any flight in PX4's own log viewer, or download it again and re-check it here with today's version. Results can differ from the recorded ones where checks were improved since.</p>
+    <div class="fields">
+      <div style="flex:2 1 240px"><label for="q">Find a log id</label><input id="q" placeholder="first characters, e.g. 3a0a9878" autocomplete="off"></div>
+      <div><label for="fc">Verdict</label><select id="fc"><option value="">All</option><option value="spoof">Spoofing-like</option><option value="rf">Radio attack</option><option value="jam">Jamming-like</option><option value="inconclusive">Inconclusive</option><option value="none">No anomaly</option><option value="notflown">Never flew</option></select></div>
+      <div><label for="fg">Run</label><select id="fg"></select></div>
+    </div>
+    <div class="tablewrap"><table class="ledger" id="flights"><thead><tr><th>Log</th><th>Run</th><th>Recorded verdict</th><th>Check it</th></tr></thead><tbody></tbody></table></div>
+    <div class="pager"><button class="btn quiet" id="prev">Previous</button><span id="pageinfo"></span><button class="btn quiet" id="next">Next</button></div>
+  </div>
+</section>
 </main>
 
 <script>
@@ -210,7 +272,7 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const tabs=[...document.querySelectorAll("nav button")];
-function show(name){tabs.forEach(x=>x.setAttribute("aria-selected",x.dataset.tab===name));["analyse","live","sim"].forEach(t=>$(t).hidden=t!==name)}
+function show(name){tabs.forEach(x=>x.setAttribute("aria-selected",x.dataset.tab===name));["analyse","live","sim","proof"].forEach(t=>$(t).hidden=t!==name)}
 tabs.forEach((b,i)=>{b.onclick=()=>show(b.dataset.tab);b.onkeydown=e=>{if(e.key==="ArrowRight"||e.key==="ArrowLeft"){const n=tabs[(i+(e.key==="ArrowRight"?1:tabs.length-1))%tabs.length];n.focus();show(n.dataset.tab)}}});
 async function api(p,opt){const r=await fetch(p,opt);const j=await r.json().catch(()=>({error:"The server sent an unreadable reply."}));if(!r.ok)throw new Error(j.error||("Request failed ("+r.status+")"));return j}
 
@@ -310,6 +372,72 @@ async function simPoll(){let s;try{s=await api("/api/sim/status")}catch(e){retur
   $("slink").innerHTML=s.report?'<a href="/sim/report" target="_blank" rel="noopener">Open the report</a>':(s.running?"Running":"");
   if(!s.running&&spoll){clearInterval(spoll);spoll=null}}
 info();
+/* ---------- how well it works ---------- */
+document.addEventListener("click",e=>{const a=e.target.closest("[data-goto]");if(a){e.preventDefault();show(a.dataset.goto);window.scrollTo(0,0)}});
+const CN={none:"No anomaly",spoof:"Spoofing-like",rf:"Radio attack likely",jam:"Jamming-like",inconclusive:"Inconclusive",mixed:"Mixed",notflown:"Never flew",other:"Other"};
+const pct=x=>(x*100).toFixed(x<0.01?2:1)+"%";
+const nf=x=>x.toLocaleString("en");
+let EV=null,ALL=[],page=0;
+async function evidence(){
+  try{EV=await api("/api/evidence")}catch(e){return}
+  if(!EV.headline)return;
+  const H=EV.headline,R=EV.repo,lnk=(u,t)=>`<a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)}</a>`;
+  $("trustline").innerHTML=`Tested on ${nf(H.false_spoof.n)} real normal flights and ${H.attacks_blind.n} real attacks. <a href="#" data-goto="proof">See how well it works, failures included.</a>`;
+  const rows=[
+    ["How often does it wrongly say spoofing on a normal flight?",`${H.false_spoof.k} of ${nf(H.false_spoof.n)}`,pct(H.false_spoof.upper95),"Four fresh runs, v6 to v9","pass"],
+    ["How often does it wrongly say radio attack?",`${H.false_rf.k} of ${nf(H.false_rf.n)}`,pct(H.false_rf.upper95),"Fresh runs v7 to v9; the check exists since v7","pass"],
+    ["How often is the answer only inconclusive?",`${H.inconclusive.k} of ${nf(H.inconclusive.n)}`,"–","Mostly a few operators; see the runs below",""],
+    ["Real attacks noticed on the first try",`${H.attacks_blind.k} of ${H.attacks_blind.n}`,"–","Too few real attacks for a reliable rate","pass"],
+    ["Real spoofing named as spoofing on the first try",`${H.spoof_named_blind.k} of ${H.spoof_named_blind.n}`,"–","Noticed, but called jamming or radio attack","fail"],
+    ["Real attacks noticed after fixes",`${H.attacks_after.k} of ${H.attacks_after.n}`,"–","Same attacks the fixes were built on: not proof",""],
+  ];
+  $("claims").tBodies[0].innerHTML=rows.map(r=>`<tr><td>${esc(r[0])}<span class="sub">${esc(r[3])}</span></td><td class="num ${r[4]}">${esc(r[1])}</td><td>${esc(r[2])}</td></tr>`).join("")+`<tr><td colspan="3" class="sub">Method and every report: ${lnk(R+"benchmarks/RESULTS.md","all results on GitHub")}</td></tr>`;
+  const mark=ok=>ok?'<span class="mk pass" aria-label="noticed">✓</span>':'<span class="mk fail" aria-label="missed">✗</span>';
+  $("attacks").tBodies[0].innerHTML=EV.attacks.map(a=>`<tr><td><b>${esc(a.kind.charAt(0).toUpperCase()+a.kind.slice(1))}</b><span class="sub">${esc(a.source)}: ${esc(a.how)}</span></td>
+    <td>${mark(a.blind_ok)}${esc(a.blind)}</td><td>${mark(a.after_ok)}${esc(a.after)}</td><td>${lnk(a.report,"Report")}<br>${lnk(a.data,"Raw data")}</td></tr>`).join("");
+  const c=(g,k)=>g.counts[k]||0;
+  $("gates").tBodies[0].innerHTML=EV.gates.map(g=>`<tr><td><b>${esc(g.name)}</b><span class="sub">${esc(g.date)}</span></td><td>${lnk(R.replace("/blob/v4/","/commit/")+g.code,g.code)}</td><td>${g.n}</td>
+    <td class="${c(g,"spoof")?"fail":""}">${c(g,"spoof")}</td><td class="${c(g,"rf")?"fail":""}">${g.name==="Gate v6"?"–":c(g,"rf")}</td><td>${c(g,"jam")}</td><td>${c(g,"inconclusive")}</td>
+    <td>${lnk(g.report,"Report")}<br>${lnk(g.selection,"Flight list")}</td></tr>`).join("");
+  ALL=[...EV.gates.flatMap(g=>g.flights.map(f=>({...f,run:g.name}))),...EV.scan.flights.map(f=>({...f,run:"Scan (unlabelled)"}))];
+  $("fg").innerHTML='<option value="">All</option>'+[...EV.gates.map(g=>g.name),"Scan (unlabelled)"].map(n=>`<option>${esc(n)}</option>`).join("");
+  drawMap();renderFlights();
+}
+function drawMap(){
+  const W=720,H=360,X=lon=>(lon+180)/360*W,Y=lat=>(90-lat)/180*H;
+  let g="";for(let lon=-180;lon<=180;lon+=30)g+=`<line x1="${X(lon)}" x2="${X(lon)}" y1="0" y2="${H}" stroke="${css("--grid")}"/>`;
+  for(let lat=-60;lat<=60;lat+=30)g+=`<line x1="0" x2="${W}" y1="${Y(lat)}" y2="${Y(lat)}" stroke="${lat?css("--grid"):css("--rule")}"/>`;
+  [-120,-60,0,60,120].forEach(l=>g+=`<text x="${X(l)+3}" y="${H-5}" font-size="10" fill="${css("--ink-2")}">${Math.abs(l)}°${l<0?"W":l>0?"E":""}</text>`);
+  [60,30,-30].forEach(l=>g+=`<text x="3" y="${Y(l)-3}" font-size="10" fill="${css("--ink-2")}">${Math.abs(l)}°${l>0?"N":"S"}</text>`);
+  const cell={};ALL.forEach(f=>{if(!f.loc)return;const k=f.loc.join(",");const o=cell[k]||(cell[k]={n:0,bad:0,loc:f.loc});o.n++;if(["spoof","rf"].includes(f.c))o.bad=2;else if(f.c==="jam"&&o.bad<1)o.bad=1});
+  const col=[css("--ok"),css("--jam"),css("--spoof")];
+  Object.values(cell).sort((a,b)=>a.bad-b.bad).forEach(o=>{g+=`<circle cx="${X(o.loc[1]).toFixed(1)}" cy="${Y(o.loc[0]).toFixed(1)}" r="${Math.min(2.2+Math.sqrt(o.n)*1.1,9).toFixed(1)}" fill="${col[o.bad]}" fill-opacity=".75"><title>${o.loc[0]}°, ${o.loc[1]}°: ${o.n} flight(s)</title></circle>`});
+  $("map").innerHTML=g;
+  const n=ALL.filter(f=>f.loc).length;
+  $("maplegend").innerHTML=`<span><i style="background:${col[0]}"></i>no anomaly</span><span><i style="background:${col[1]}"></i>receiver outage (jamming-like)</span><span><i style="background:${col[2]}"></i>spoofing-like or radio attack</span><span>${nf(n)} flights; a bigger dot means more flights</span>`;
+}
+function filtered(){const q=$("q").value.trim().toLowerCase(),c=$("fc").value,g=$("fg").value;return ALL.filter(f=>(!q||f.id.startsWith(q))&&(!c||f.c===c)&&(!g||f.run===g))}
+function renderFlights(){
+  const L=filtered(),per=25,pages=Math.max(1,Math.ceil(L.length/per));page=Math.min(page,pages-1);
+  const rows=L.slice(page*per,page*per+per);
+  $("flights").tBodies[0].innerHTML=rows.length?rows.map(f=>`<tr><td><span title="${esc(f.id)}">${esc(f.id.slice(0,8))}</span></td><td>${esc(f.run)}</td>
+    <td class="c-${esc(f.c)}" title="${esc(f.v||"")}">${esc(CN[f.c]||f.c)}</td>
+    <td><a href="https://review.px4.io/plot_app?log=${esc(f.id)}" target="_blank" rel="noopener">PX4 log viewer</a> &nbsp; <button class="linkbtn" data-recheck="${esc(f.id)}">Re-check here</button></td></tr>`).join(""):'<tr><td colspan="4">No flights match.</td></tr>';
+  $("pageinfo").textContent=`${nf(L.length)} flights, page ${page+1} of ${pages}`;
+  $("prev").disabled=page===0;$("next").disabled=page>=pages-1;
+}
+["q","fc","fg"].forEach(id=>$(id).addEventListener("input",()=>{page=0;renderFlights()}));
+$("prev").onclick=()=>{page--;renderFlights()};$("next").onclick=()=>{page++;renderFlights()};
+document.addEventListener("click",async e=>{const b=e.target.closest("[data-recheck]");if(!b)return;
+  const tr=b.closest("tr"),id=b.dataset.recheck;let rc=tr.nextElementSibling;
+  if(!rc||!rc.classList.contains("rc")){rc=document.createElement("tr");rc.className="rc";tr.after(rc)}
+  rc.innerHTML=`<td colspan="4">Downloading ${esc(id)} from PX4's server and checking it. This takes up to a minute.</td>`;b.disabled=true;
+  try{const j=await api("/api/recheck",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({log_id:id})});
+    rc.innerHTML=`<td colspan="4"><b class="c-${esc(j.kind)}">Today: ${esc(NAMES[j.kind]||j.verdict.split(":")[0])}.</b> ${esc(j.verdict.split(":").slice(1).join(":").trim())} <a href="${j.report}" target="_blank" rel="noopener">Full report</a></td>`}
+  catch(err){rc.innerHTML=`<td colspan="4" class="err">${esc(err.message)}</td>`}
+  b.disabled=false});
+evidence();
+
 </script>
 </body>
 </html>

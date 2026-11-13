@@ -39,3 +39,19 @@ def test_rejects_unknown_file_type():
             assert e.code == 400
     finally:
         srv.shutdown()
+
+
+def test_evidence_matches_reports_and_recheck_validates():
+    srv, url = _server()
+    try:
+        ev = json.load(urllib.request.urlopen(url + "/api/evidence"))
+        assert ev["headline"]["false_spoof"]["n"] == sum(g["n"] for g in ev["gates"]) == 1387
+        assert len(ev["attacks"]) == 6
+        req = urllib.request.Request(url + "/api/recheck", b'{"log_id": "../../etc"}', {"Content-Type": "application/json"})
+        try:
+            urllib.request.urlopen(req)
+            raise AssertionError("expected 400")
+        except urllib.error.HTTPError as e:
+            assert e.code == 400
+    finally:
+        srv.shutdown()

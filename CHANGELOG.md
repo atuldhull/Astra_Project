@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.0 — 2026-11-13
+
+- `astra ui` redesign (aeronautical-chart look, satellite dial in Live).
+- New **How well it works** tab: the test record from committed files (`benchmarks/build_evidence.py`), every real
+  attack with first-try and after-fix results, every normal-flight run with its frozen code commit, a 1° map, and
+  every public flight with a PX4 log-viewer link and **Re-check here** (downloads the public log and runs today's
+  check).
+- Fresh-only radio-attack false-alarm figure is 1/1,042 (the earlier 1/1,273 included 231 design flights).
+
 ## 1.0.0 — 2026-11-13
 
 First release for outside users.

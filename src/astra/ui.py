@@ -68,6 +68,29 @@ def _analyse(data: bytes, filename: str, takeoff: str | None) -> dict:
         shutil.rmtree(tmp, ignore_errors=True)  # the uploaded log never stays on disk
 
 
+UUID = __import__("re").compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+EVIDENCE = Path(__file__).with_name("data") / "evidence.json"
+
+
+def _recheck(log_id: str) -> dict:
+    """Download one public PX4 log (review.px4.io) and run today's check on it, next to the recorded result."""
+    import urllib.request
+    log_id = (log_id or "").strip().lower()
+    if not UUID.match(log_id):
+        raise ValueError("give a full PX4 log id (36 characters, as in the review.px4.io link)")
+    req = urllib.request.Request(f"https://cdn.logs.px4.io/{log_id}.ulg", headers={"User-Agent": "astra-ui"})
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:
+            data = r.read(MAX_UPLOAD + 1)
+    except Exception as exc:  # noqa: BLE001
+        raise RuntimeError(f"could not download the log from PX4's server: {exc}") from exc
+    if len(data) > MAX_UPLOAD:
+        raise ValueError("log larger than 2 GB")
+    res = _analyse(data, f"{log_id}.ulg", None)
+    res["log_id"] = log_id
+    return res
+
+
 def _docker_ok() -> tuple[bool, list[str]]:
     try:
         r = subprocess.run(["docker", "images", "--format", "{{.Repository}}:{{.Tag}}"], capture_output=True,
@@ -154,6 +177,8 @@ class Handler(BaseHTTPRequestHandler):
                 ex = sorted(p.name for p in EXAMPLES.glob("*.npz")) if EXAMPLES.exists() else []
                 return self._send(200, {"packs": {k: len(v()) for k, v in PACKS.items()}, "docker": ok,
                                         "images": images, "examples": ex})
+            if path == "/api/evidence":
+                return self._send(200, EVIDENCE.read_bytes() if EVIDENCE.exists() else b"{}", "application/json")
             if path == "/api/live/status":
                 s = _live["session"]
                 return self._send(200, s.status() if s else {"state": "idle"})
@@ -175,6 +200,8 @@ class Handler(BaseHTTPRequestHandler):
                 data = self.rfile.read(n)
                 name = Path(self.headers.get("X-Filename") or "log.ulg").name
                 return self._send(200, _analyse(data, name, self.headers.get("X-Takeoff") or None))
+            if path == "/api/recheck":
+                return self._send(200, _recheck(self._json().get("log_id", "")))
             if path == "/api/live/start":
                 req = self._json()
                 src = (req.get("source") or "").strip()

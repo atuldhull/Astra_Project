@@ -23,6 +23,7 @@ astra ui                       # web app: http://127.0.0.1:8787
 | **Analyse a log** | drop a PX4 `.ulg` / ArduPilot `.bin`: verdict + full report (log deleted after) | nothing else |
 | **Live** | connect a drone, telemetry radio, Mission Planner / QGC forward or simulator over MAVLink; live GNSS health with alarms. No hardware? Replay an example flight | MAVLink link (optional) |
 | **Simulate** | fly attack scenario packs in ArduPilot / PX4 simulation, signed report | Docker + simulator images |
+| **How well it works** | the full test record: every real attack (failures included), every normal-flight run, and each of the 2,159 public flights with a link to PX4's log viewer and a one-click re-check | internet for re-checks |
 
 Putting it on a drone (ground station, companion computer, or inside ArduPilot): [docs/INTEGRATION.md](docs/INTEGRATION.md).
 
