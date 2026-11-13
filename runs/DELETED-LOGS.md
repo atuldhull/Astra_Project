@@ -13,3 +13,4 @@
 - `runs/px4wild` (8 in-the-wild candidates, scored once) <- `runs/px4_wild_sel.json`
 - `runs/wildscan_*` (1,000 in-the-wild logs, streamed: each deleted after diagnosis) <- `runs/px4_wildscan_sel.json`; rows in `runs/wildscan-v1.jsonl`
 - `runs/wildscan_*` for gate v8 (350 logs, streamed, deleted after diagnosis) <- `runs/px4_real8_sel.json`; rows in `runs/gate-v8.jsonl`
+- `runs/jammertest/*.iq` (3 Jammertest 2023 recordings, 152 GB streamed, 19 GB shrunk copies; analysed, receiver outputs kept) <- benchmarks/jammertest_fetch.py

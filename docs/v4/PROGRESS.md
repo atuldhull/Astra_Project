@@ -398,3 +398,11 @@ conclusion is possible (`benchmarks/realflow-v1.md`). Real flow validation needs
 - Fix 673b37d: receiver level-3 spoof flags inside fix-loss intervals now named in the jamming-like verdict.
   Fresh gate v8 (`real-gate-v8.md`, 347 flights): spoofing-like 1/347, RF 0/347; three fresh gates: 4/1,041.
   Data verdict: benign false-alarm rate is well measured; real-attack detection (3 attacks) is not.
+
+## 2026-11-13 — real field attacks (Jammertest 2023)
+- Streamed three FGI Jammertest 2023 raw recordings (152 GB in, never stored whole), GNSS-SDR in Docker, ASTRA bench
+  mode (`jammertest-v1.md`). Blind: 3/3 attacks detected as RF-attack-like; 0/2 spoofs identified as spoofing.
+- Fixes 1298454: every monitor/step alarm episode counts (an early glitch hid a later attack); impossible position
+  jump across an outage is spoofing evidence (found the 249 km capture). Fresh gate v9: spoofing-like 0/346.
+- Limit: the software receiver's positions wander 8–18 m, so GPS-vs-IMU checks cannot be tested on these recordings;
+  the coherent spoof's slow drag remains untested on real data.
