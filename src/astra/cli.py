@@ -11,6 +11,7 @@
   astra advise --params P.parm --out DIR   measured EKF-tuning trade-off (A6)
   astra html RUN_DIR                       self-contained HTML report
   astra invert LOG [--mission M.yaml]      estimate the attack and emit a reproducible scenario (A5)
+  astra ui [--port 8787]                   web app: analyse logs, live MAVLink monitor, simulate
 """
 
 from __future__ import annotations
@@ -172,10 +173,20 @@ def _cmd_html(a):
     print(render(Path(a.run_dir)))
 
 
+def _cmd_ui(a):
+    from astra.ui import serve
+    serve(a.host, a.port, open_browser=not a.no_browser)
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(prog="astra", description="ASTRA Proving Ground")
     sub = p.add_subparsers(dest="cmd", required=True)
     sub.add_parser("packs").set_defaults(fn=_cmd_packs)
+    u = sub.add_parser("ui", help="web app: analyse logs, live MAVLink GNSS monitor, simulate attacks")
+    u.add_argument("--host", default="127.0.0.1", help="0.0.0.0 to allow other devices (no login: trusted networks only)")
+    u.add_argument("--port", type=int, default=8787)
+    u.add_argument("--no-browser", action="store_true")
+    u.set_defaults(fn=_cmd_ui)
     r = sub.add_parser("run")
     r.add_argument("pack")
     r.add_argument("--out", required=True)

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "astra-proving-ground"
-version = "0.1.0.dev0"
+version = "1.0.0"
 description = "Software test lab for drone navigation under GPS jamming and spoofing"
 readme = "README.md"
 license = "Apache-2.0"
@@ -29,6 +29,9 @@ astra = "astra.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/astra"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"examples" = "astra/examples"  # example flights for `astra ui` (Live replay) after pip install
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

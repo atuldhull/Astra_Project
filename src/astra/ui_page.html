@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ASTRA</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--fg:#14171c;--muted:#5d6673;--line:#dde1e7;--accent:#1f5fbf;--ok:#1d7a46;--warn:#a86400;--bad:#b42318;--chip:#eef1f5}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1216;--card:#171b21;--fg:#e7eaee;--muted:#98a2ae;--line:#2a3039;--accent:#6ea0ff;--ok:#4cc38a;--warn:#e0a240;--bad:#ff6b5e;--chip:#202630}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{border-bottom:1px solid var(--line);background:var(--card)}
+.wrap{max-width:1040px;margin:0 auto;padding:0 16px}
+.top{display:flex;align-items:center;gap:24px;min-height:56px;flex-wrap:wrap}
+.brand{font-weight:700;letter-spacing:.04em}
+.brand small{font-weight:400;color:var(--muted);letter-spacing:0;margin-left:8px}
+nav{display:flex;gap:4px}
+nav button{background:none;border:0;color:var(--muted);font:inherit;padding:16px 12px;cursor:pointer;border-bottom:2px solid transparent}
+nav button[aria-selected=true]{color:var(--fg);border-bottom-color:var(--accent);font-weight:600}
+main{padding:24px 0 48px}
+h2{font-size:20px;margin:0 0 4px}
+.lead{color:var(--muted);margin:0 0 20px;max-width:70ch}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+input,select{width:100%;font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:end}
+.row>div{flex:1 1 180px}
+button.primary,button.ghost{font:inherit;border-radius:6px;padding:9px 16px;cursor:pointer;border:1px solid var(--accent)}
+button.primary{background:var(--accent);color:#fff}
+button.ghost{background:none;color:var(--accent)}
+button:disabled{opacity:.5;cursor:default}
+.drop{border:2px dashed var(--line);border-radius:10px;padding:36px 16px;text-align:center;color:var(--muted);cursor:pointer}
+.drop.over{border-color:var(--accent);color:var(--fg)}
+.verdict{border-left:6px solid var(--muted)}
+.verdict.none{border-left-color:var(--ok)}.verdict.jam,.verdict.inconclusive{border-left-color:var(--warn)}
+.verdict.spoof,.verdict.rf,.verdict.mixed{border-left-color:var(--bad)}
+.verdict b{display:block;font-size:18px;margin-bottom:4px}
+.state{font-size:28px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+.s-ok{color:var(--ok)}.s-degraded,.s-jamming-like{color:var(--warn)}.s-spoofing-like{color:var(--bad)}.s-waiting,.s-idle{color:var(--muted)}
+.stat b{display:block;font-size:22px;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--muted)}
+.ev{list-style:none;margin:0;padding:0;font-size:14px}
+.ev li{padding:6px 0;border-top:1px solid var(--line);display:flex;gap:10px}
+.ev li:first-child{border-top:0}
+.tag{font-size:11px;padding:1px 7px;border-radius:99px;background:var(--chip);white-space:nowrap}
+.tag.spoof{color:var(--bad)}.tag.jam,.tag.degraded{color:var(--warn)}
+pre{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:10px;font-size:12px;max-height:280px;overflow:auto;white-space:pre-wrap;margin:0}
+svg.spark{width:100%;height:70px;display:block}
+.muted{color:var(--muted)}.small{font-size:13px}
+a{color:var(--accent)}
+.hidden{display:none}
+.err{color:var(--bad);font-size:14px;margin-top:8px}
+</style>
+</head>
+<body>
+<header><div class="wrap top">
+  <div class="brand">ASTRA<small>GNSS jamming &amp; spoofing forensics</small></div>
+  <nav role="tablist">
+    <button role="tab" aria-selected="true" data-tab="analyse">Analyse a log</button>
+    <button role="tab" aria-selected="false" data-tab="live">Live</button>
+    <button role="tab" aria-selected="false" data-tab="sim">Simulate</button>
+  </nav>
+</div></header>
+
+<main class="wrap">
+<!-- ANALYSE -->
+<section id="analyse">
+  <h2>Analyse a flight log</h2>
+  <p class="lead">PX4 <code>.ulg</code> or ArduPilot <code>.bin</code>. The log is processed on this computer and deleted right after.</p>
+  <div class="card">
+    <div class="drop" id="drop" tabindex="0">Drop a log here or <u>choose a file</u></div>
+    <input type="file" id="file" accept=".ulg,.bin,.npz" class="hidden">
+    <div class="row" style="margin-top:12px">
+      <div><label for="takeoff">Real take-off point (optional): lat, lon[, radius m]</label><input id="takeoff" placeholder="e.g. 47.3977, 8.5456"></div>
+    </div>
+    <p class="small muted" style="margin:8px 0 0">The take-off point lets ASTRA catch a spoof that was already active at power-on.</p>
+    <div id="aerr" class="err"></div>
+  </div>
+  <div id="ares" class="card verdict hidden"></div>
+</section>
+
+<!-- LIVE -->
+<section id="live" class="hidden">
+  <h2>Live GNSS health</h2>
+  <p class="lead">Connect the drone, a simulator, or your ground station's MAVLink forward. Works with ArduPilot and PX4. No hardware? Replay an example flight.</p>
+  <div class="card">
+    <div class="row">
+      <div style="flex:2 1 260px"><label for="src">Connection</label>
+        <input id="src" list="srcs" placeholder="udp:0.0.0.0:14550">
+        <datalist id="srcs"><option value="udp:0.0.0.0:14550"><option value="udp:0.0.0.0:14551"><option value="tcp:127.0.0.1:5760"><option value="COM5"><option value="/dev/ttyACM0"></datalist></div>
+      <div><label for="ex">…or replay an example</label><select id="ex"><option value="">(none)</option></select></div>
+      <div style="flex:0 1 110px"><label for="speed">Replay speed</label><select id="speed"><option>1</option><option>5</option><option selected>10</option><option>30</option></select></div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <div><label for="cal">Shield calibration (optional, from <code>astra shield calibrate</code>)</label><input type="file" id="cal" accept=".json"></div>
+      <div style="flex:0 0 auto"><button class="primary" id="lstart">Connect</button> <button class="ghost" id="lstop">Stop</button></div>
+    </div>
+    <p class="small muted" style="margin:10px 0 0">USB: the autopilot's serial port at 115200/57600 baud (e.g. <code>COM5,57600</code>). Mission Planner / QGroundControl: enable MAVLink forwarding to UDP 14550 on this computer.</p>
+    <div id="lerr" class="err"></div>
+  </div>
+  <div class="card">
+    <div class="row" style="align-items:center">
+      <div style="flex:1 1 220px"><div class="small muted">GNSS state</div><div id="lstate" class="state s-idle">idle</div><div id="lsrc" class="small muted"></div></div>
+      <div style="flex:3 1 420px" class="grid">
+        <div class="stat"><b id="vfix">–</b><span>fix type</span></div>
+        <div class="stat"><b id="vsats">–</b><span>satellites</span></div>
+        <div class="stat"><b id="vacc">–</b><span>accuracy (m)</span></div>
+        <div class="stat"><b id="vhgt">–</b><span>height (m)</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
+    <div class="card"><div class="small muted">Satellites (last 2 min)</div><svg class="spark" id="csats" viewBox="0 0 300 70" preserveAspectRatio="none"></svg></div>
+    <div class="card"><div class="small muted">Receiver accuracy, m (last 2 min)</div><svg class="spark" id="cacc" viewBox="0 0 300 70" preserveAspectRatio="none"></svg></div>
+  </div>
+  <div class="card"><div class="small muted" style="margin-bottom:6px">Events</div><ul class="ev" id="lev"><li class="muted">None yet.</li></ul></div>
+  <p class="small muted">Live checks: fix loss / satellite drop in flight (jamming-like), position re-appearing impossibly far after an outage (spoofing-like), receiver accuracy worse than 5 m (degraded). A spoof that keeps a healthy fix (e.g. the <code>spoof-jump</code> example) is <b>not</b> visible to these receiver checks: add a Shield calibration made from at least 0.5 h of this drone's normal flights (<code>astra shield calibrate</code>), or run <b>Analyse</b> on the log afterwards, which also uses the IMU. On real field attacks the receiver checks caught 3/3 within ~10–20 s; telling spoofing from jamming is less reliable. See the docs for limits.</p>
+</section>
+
+<!-- SIMULATE -->
+<section id="sim" class="hidden">
+  <h2>Simulate attacks</h2>
+  <p class="lead">Fly a scenario pack in ArduPilot or PX4 software-in-the-loop with jamming and spoofing injected, then get a signed report. Needs Docker and the ASTRA simulator images.</p>
+  <div class="card">
+    <div id="dock" class="small muted">Checking Docker…</div>
+    <div class="row" style="margin-top:12px">
+      <div><label for="pack">Scenario pack</label><select id="pack"></select></div>
+      <div><label for="ap">Autopilot</label><select id="ap"><option value="ardupilot">ArduPilot</option><option value="px4">PX4</option></select></div>
+      <div><label for="only">Only scenarios containing (optional)</label><input id="only" placeholder="e.g. drag"></div>
+      <div style="flex:0 0 auto"><button class="primary" id="sstart">Run</button> <button class="ghost" id="sstop">Stop</button></div>
+    </div>
+    <div id="serr" class="err"></div>
+  </div>
+  <div class="card"><div class="row" style="align-items:center;margin-bottom:8px"><div class="small muted">Progress</div><div style="flex:0 0 auto" id="slink"></div></div><pre id="slog">Not started.</pre></div>
+</section>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("nav button").forEach(x=>x.setAttribute("aria-selected",x===b));
+  ["analyse","live","sim"].forEach(t=>$(t).classList.toggle("hidden",t!==b.dataset.tab));
+});
+async function api(p,opt){const r=await fetch(p,opt);const j=await r.json().catch(()=>({error:"bad response"}));if(!r.ok)throw new Error(j.error||r.status);return j}
+
+/* Analyse */
+const drop=$("drop"),file=$("file");
+drop.onclick=()=>file.click();drop.onkeydown=e=>{if(e.key==="Enter"||e.key===" ")file.click()};
+["dragover","dragenter"].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.add("over")}));
+["dragleave","drop"].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.remove("over")}));
+drop.addEventListener("drop",ev=>{if(ev.dataTransfer.files[0])analyse(ev.dataTransfer.files[0])});
+file.onchange=()=>file.files[0]&&analyse(file.files[0]);
+async function analyse(f){
+  $("aerr").textContent="";const res=$("ares");res.className="card verdict";res.innerHTML=`Analysing <b style="display:inline;font-size:inherit">${esc(f.name)}</b>… (large logs take up to a minute)`;
+  try{
+    const j=await api("/api/analyse",{method:"POST",body:f,headers:{"X-Filename":f.name,"X-Takeoff":$("takeoff").value.trim()}});
+    const [head,...rest]=j.verdict.split(":");
+    const ev=j.evidence, n=ev.spoofing_events.length+ev.jamming_intervals_s.length;
+    res.className="card verdict "+j.kind;
+    res.innerHTML=`<b>${esc(head)}</b>${esc(rest.join(":").trim())}
+      <p class="small muted" style="margin:10px 0">${n} piece(s) of evidence · lowest satellites with a fix: ${esc(j.receiver.min_sats_in_fix??"–")} · worst reported accuracy: ${esc(j.receiver.max_reported_hacc_m??"–")} m</p>
+      <a href="${j.report}" target="_blank" rel="noopener">Open the full report (timeline, evidence, what to do next)</a>`;
+  }catch(e){res.classList.add("hidden");$("aerr").textContent=e.message}
+}
+
+/* Live */
+let poll=null;
+$("lstart").onclick=async()=>{
+  $("lerr").textContent="";
+  let cal=null;if($("cal").files[0])cal=await $("cal").files[0].text();
+  try{await api("/api/live/start",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({source:$("src").value.trim(),example:$("ex").value,speed:$("speed").value,shield_cal:cal})});
+    clearInterval(poll);poll=setInterval(livePoll,1000);livePoll();}catch(e){$("lerr").textContent=e.message}
+};
+$("lstop").onclick=async()=>{await api("/api/live/stop",{method:"POST"});};
+function spark(svg,ys,lo,hiMin){
+  const v=ys.filter(y=>y!=null);if(v.length<2){svg.innerHTML="";return}
+  const hi=Math.max(hiMin,...v)*1.1,n=ys.length;
+  let d="",pen=false;ys.forEach((y,i)=>{if(y==null){pen=false;return}const x=i/(n-1)*300,yy=70-(y-lo)/(hi-lo)*66-2;d+=(pen?"L":"M")+x.toFixed(1)+","+yy.toFixed(1);pen=true});
+  svg.innerHTML=`<path d="${d}" fill="none" stroke="var(--accent)" stroke-width="1.6" vector-effect="non-scaling-stroke"/><text x="2" y="10" font-size="9" fill="var(--muted)">${hi.toFixed(0)}</text>`;
+}
+async function livePoll(){
+  let s;try{s=await api("/api/live/status")}catch(e){return}
+  const st=s.state||"idle";$("lstate").textContent=st.replace("-"," ");$("lstate").className="state s-"+st;
+  $("lsrc").textContent=s.source?(s.connected?"connected: ":"connecting: ")+s.source.replace(/^replay:.*[\\/]/,"replay: ")+(s.done?" (ended)":""):"";
+  if(s.error)$("lerr").textContent=s.error;
+  const L=s.last||{};$("vfix").textContent=L.fix_type??"–";$("vsats").textContent=L.sats??"–";$("vacc").textContent=L.hacc_m??"–";$("vhgt").textContent=L.height_m??"–";
+  if(s.series){const k=Math.max(0,s.series.t.length-600);spark($("csats"),s.series.sats.slice(k),0,12);spark($("cacc"),s.series.hacc.slice(k),0,5)}
+  const ev=(s.events||[]).slice().reverse();
+  $("lev").innerHTML=ev.length?ev.map(e=>`<li><span class="tag ${esc(e[1])}">${esc(e[1])}</span><span class="muted">${esc(e[0])} s</span><span>${esc(e[2])}</span></li>`).join(""):'<li class="muted">None yet.</li>';
+  if(s.done&&poll){clearInterval(poll);poll=null}
+}
+
+/* Simulate */
+let spoll=null;
+async function info(){
+  try{const j=await api("/api/info");
+    $("pack").innerHTML=Object.entries(j.packs).map(([k,n])=>`<option value="${esc(k)}">${esc(k)} (${n} scenarios)</option>`).join("");
+    $("ex").innerHTML='<option value="">(none)</option>'+j.examples.map(x=>`<option>${esc(x)}</option>`).join("");
+    $("dock").innerHTML=j.docker?(j.images.length?`Docker ready · simulator images: ${j.images.map(esc).join(", ")}`:'Docker is running but no ASTRA simulator images were found. Build them first (see <code>sim/README</code>).'):'Docker is not running or not installed. Start Docker Desktop to simulate; Analyse and Live work without it.';
+    $("sstart").disabled=!j.docker||!j.images.length;
+  }catch(e){$("dock").textContent="Could not reach the server: "+e.message}
+}
+$("sstart").onclick=async()=>{$("serr").textContent="";
+  try{await api("/api/sim/start",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({pack:$("pack").value,autopilot:$("ap").value,only:$("only").value.trim()})});
+    clearInterval(spoll);spoll=setInterval(simPoll,2000);simPoll()}catch(e){$("serr").textContent=e.message}};
+$("sstop").onclick=()=>api("/api/sim/stop",{method:"POST"});
+async function simPoll(){const s=await api("/api/sim/status");$("slog").textContent=s.log.join("\n")||"Starting…";$("slog").scrollTop=1e9;
+  $("slink").innerHTML=s.report?'<a href="/sim/report" target="_blank" rel="noopener">Open report</a>':(s.running?'<span class="muted small">running…</span>':"");
+  if(!s.running&&spoll){clearInterval(spoll);spoll=null}}
+info();
+</script>
+</body>
+</html>

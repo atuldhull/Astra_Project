@@ -4,6 +4,9 @@ This guide takes you from "we have an ArduCopter airframe" to a signed EW pre-qu
 a measured tuning recommendation, and a calibrated onboard monitor. Everything runs on your machine;
 nothing is uploaded anywhere.
 
+> Prefer clicking to typing? `astra ui` opens a web app with the same analysis, a live MAVLink monitor and the
+> simulator. To put ASTRA on a drone, see [INTEGRATION.md](INTEGRATION.md).
+
 ## 0. Install (once)
 
 Needs Docker Desktop (or Docker Engine on Linux) and Python ≥ 3.11.

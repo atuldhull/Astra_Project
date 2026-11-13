@@ -406,3 +406,9 @@ conclusion is possible (`benchmarks/realflow-v1.md`). Real flow validation needs
   jump across an outage is spoofing evidence (found the 249 km capture). Fresh gate v9: spoofing-like 0/346.
 - Limit: the software receiver's positions wander 8–18 m, so GPS-vs-IMU checks cannot be tested on these recordings;
   the coherent spoof's slow drag remains untested on real data.
+
+## 2026-11-13 — v1.0.0
+- `astra ui` web app (Analyse / Live / Simulate), `astra.live` receiver-health monitor (+ Shield window reset after
+  outages: found when a replayed jamming flight raised a false Shield alarm), Docker image, examples in the wheel,
+  `docs/INTEGRATION.md`, CHANGELOG. Demo Shield calibration from one simulated flight rejected (false alarm at
+  68.8 s on the jamming example before any jamming). 80 tests.
