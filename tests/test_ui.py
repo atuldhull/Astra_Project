@@ -16,7 +16,7 @@ def _server():
 def test_page_info_and_analyse_example():
     srv, url = _server()
     try:
-        assert b"Analyse a flight log" in urllib.request.urlopen(url + "/").read()
+        assert b"Was this flight jammed or spoofed?" in urllib.request.urlopen(url + "/").read()
         info = json.load(urllib.request.urlopen(url + "/api/info"))
         assert "baseline-v1" in info["packs"] and "spoof-jump.npz" in info["examples"]
         data = Path("examples/jamming-denial.npz").read_bytes()
