@@ -23,7 +23,7 @@ off for ~4 min, then **dragged around a ~1 km loop at up to 25 m/s (altitude to 
 
 ## Scores
 
-**Blind (frozen 673b37d, harness v1, scored once):**
+**Blind (frozen 81fcb9d, harness v1, scored once):**
 
 | test | verdict | right? |
 |---|---|---|
@@ -33,7 +33,7 @@ off for ~4 min, then **dragged around a ~1 km loop at up to 25 m/s (altitude to 
 
 **Real attacks detected blind: 3/3. Spoofing identified as spoofing: 0/2.**
 
-**Why, and what changed (1298454; these recordings are now design data):**
+**Why, and what changed (63c4b40; these recordings are now design data):**
 1. Evidence near an outage was discarded as a "jamming artefact", including the 249 km re-acquisition jump.
    New physical check: re-acquired position farther than 100 m + 60 m/s × outage → spoofing evidence
    ("position jumped 248.6 km across a 43 s outage"). Not fitted to these data.

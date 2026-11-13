@@ -91,10 +91,10 @@ ATTACKS = [
 
 def main():
     gates = [
-        from_md("Gate v6", "runs/px4_real6_sel.json", "benchmarks/real-gate-v6.md", "b653c34", "2026-11-11"),
-        from_md("Gate v7", "runs/px4_real7_sel.json", "benchmarks/real-gate-v7.md", "cd201fd", "2026-11-12"),
-        from_rows("Gate v8", "runs/px4_real8_sel.json", "runs/gate-v8.jsonl", "benchmarks/real-gate-v8.md", "673b37d", "2026-11-12"),
-        from_rows("Gate v9", "runs/px4_real9_sel.json", "runs/gate-v9.jsonl", "benchmarks/real-gate-v9.md", "1298454", "2026-11-13"),
+        from_md("Gate v6", "runs/px4_real6_sel.json", "benchmarks/real-gate-v6.md", "1671b8b", "2026-11-11"),
+        from_md("Gate v7", "runs/px4_real7_sel.json", "benchmarks/real-gate-v7.md", "4e28629", "2026-11-12"),
+        from_rows("Gate v8", "runs/px4_real8_sel.json", "runs/gate-v8.jsonl", "benchmarks/real-gate-v8.md", "81fcb9d", "2026-11-12"),
+        from_rows("Gate v9", "runs/px4_real9_sel.json", "runs/gate-v9.jsonl", "benchmarks/real-gate-v9.md", "63c4b40", "2026-11-13"),
     ]
     for g in gates:
         g["counts"] = counts(g["flights"])
@@ -103,7 +103,7 @@ def main():
     for g in gates:
         assert g["n"] == expected[g["name"]], (g["name"], g["n"])
     scan = from_rows("In-the-wild scan", "runs/px4_wildscan_sel.json", "runs/wildscan-v1.jsonl",
-                     "benchmarks/wildscan-v1.md", "f8099fa", "2026-11-12")
+                     "benchmarks/wildscan-v1.md", "63cdc14", "2026-11-12")
     scan["counts"] = counts(scan["flights"])
     scan["n"] = len(scan["flights"])
     n = sum(g["n"] for g in gates)

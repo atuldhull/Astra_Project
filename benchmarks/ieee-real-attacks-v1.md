@@ -4,7 +4,7 @@ Source: https://ieee-dataport.org/open-access/uav-attack-dataset (CC BY 4.0). Li
 Holybro S500, HackRF (GPS-SDR-SIM spoofing; white-noise jamming), RF-denied facility. 3 real flights: benign,
 jamming, spoofing. The simulated part (SITL, Ping DoS) is not used here.
 
-Frozen `astra diagnose` (commit 8e5b590), run once before looking at the logs:
+Frozen `astra diagnose` (commit d995ff1), run once before looking at the logs:
 
 | flight | truth | verdict |
 |---|---|---|

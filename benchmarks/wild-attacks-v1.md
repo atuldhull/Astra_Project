@@ -2,7 +2,7 @@
 
 Search: 488,578 public PX4 logs, pilot description/feedback mentioning spoof/jam/EW/interference → 11 hits.
 Excluded: simulation (Gazebo / SITL vehicle id), "EW raster" (east-west survey), a re-upload of the IEEE flights,
-a 1 s log. Kept 5 candidates + 3 same-vehicle benign flights (`runs/px4_wild_sel.json`). Frozen code e569a35, run
+a 1 s log. Kept 5 candidates + 3 same-vehicle benign flights (`runs/px4_wild_sel.json`). Frozen code 0d5945c, run
 once before inspecting the logs (`runs/px4wild-blind.txt`).
 
 | log | pilot label | what the receiver shows (read after scoring) | blind verdict | assessment |

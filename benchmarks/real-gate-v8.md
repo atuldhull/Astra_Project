@@ -1,4 +1,4 @@
-# Real-flight gate v8 (fresh public PX4 flights, frozen `astra diagnose` at 673b37d)
+# Real-flight gate v8 (fresh public PX4 flights, frozen `astra diagnose` at 81fcb9d)
 
 350 flights selected with the gate v7 rules (quadrotor, real hardware, 300–1800 s, no logged errors, >= 120 s
 position mode), seed `astra-real-v8`, excluding every earlier selection (2,753 logs) → `runs/px4_real8_sel.json`.
@@ -24,6 +24,6 @@ Streamed: each log downloaded, diagnosed once, deleted. Rows in `runs/gate-v8.js
   airframe; per-airframe calibration (`astra calibrate`) is the intended fix.
 - Jamming-like 4/347: real receiver outages (2–417 s). One (f825bf14, ~33° N 35° E, 7 outages, longest 95 s) is in
   a region with widely reported GNSS interference; unverified.
-- The 673b37d change (receiver spoof flags inside outages) did not trigger on any of these flights, so it added
+- The 81fcb9d change (receiver spoof flags inside outages) did not trigger on any of these flights, so it added
   no false alarms; its value on real attacks is untested.
 - Unchanged limit: real-attack detection rests on 3 real attacks only.

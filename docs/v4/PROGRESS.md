@@ -299,12 +299,12 @@ thread-spin bug (companion threads now always stop; monitors exit when the link 
     detection cost.
   - C3 between the simulation threshold and the real-flight level (h 1060) is now reported as
     **'inconclusive'**, never 'spoofing'.
-- **Fresh set v3** (143 flights, frozen a7906f0): 2/143 false accusations, plus 4 'jamming-like' from fix
+- **Fresh set v3** (143 flights, frozen 5b40bf7): 2/143 false accusations, plus 4 'jamming-like' from fix
   acquisition on the ground after boot. Fixes:
   - receiver events count only when airborne;
   - evidence during receiver-reported degradation (hAcc > 5 m; real p95 3.6 m, simulated spoofs ≤ 2.2 m)
     is downgraded to inconclusive.
-- **Fresh set v4** (195 flights, 27 h, frozen 278110e, scored once): **3/195 false spoofing accusations
+- **Fresh set v4** (195 flights, 27 h, frozen 655f4a1, scored once): **3/195 false spoofing accusations
   (1.5%, UB 4.5%)**, 4 inconclusive, 2 airborne fix-loss 'jamming' (`real-gate-v4.md`).
 - Simulation A3 after the changes: jamming 32/32 (was 29/32), spoofing 90/111 + 10 inconclusive (was
   100/111), benign 80/80 (`a3-final-v4.md`).
@@ -317,7 +317,7 @@ thread-spin bug (companion threads now always stop; monitors exit when the link 
   but size did: real steps ≤ 4.0 m vs simulated jumps/meaconing ≥ 18 m.
 - 'Spoofing-like' now needs C3 > 1538 or a step > 5 m (1.25 × worst of 499 real flights). Weaker evidence
   gives 'inconclusive'. Simulation A3: spoofing 89/111 + 11 inconclusive, jamming 32/32, benign 80/80.
-- **Fresh set v5** (339 flights, 47.7 h, frozen a5f9657, scored once): **1/339 false spoofing (0.3%, UB 1.6%)**,
+- **Fresh set v5** (339 flights, 47.7 h, frozen 9607fe9, scored once): **1/339 false spoofing (0.3%, UB 1.6%)**,
   10 inconclusive, 4 jamming-like (2 genuine airborne fix losses, 2 brief satellite dips) (`real-gate-v5.md`).
 - Real-flight corpus is now 836 usable public PX4 flights (118.5 airborne h), all local in `runs/px4real*`.
 - Download tip: write curl output to `.part` and `mv` on success (an `rm` inside `sh -c` is blocked by the
@@ -355,7 +355,7 @@ conclusion is possible (`benchmarks/realflow-v1.md`). Real flow validation needs
 ## 2026-11-11 (cont.) — jamming false label, power-on spoofing check, disk cleanup
 - `diagnose`: a satellite dip with the fix kept must last ≥ 3 s to be 'jamming-like' (2 of the 4 'jamming-like'
   verdicts in real-gate-v5 were 1–2 s dips; the other 2 were real 17 s and 95 s airborne fix losses, correctly
-  reported). Sim A3 unchanged (`a3-final-v6.md`). Frozen at b653c34; fresh set v6 (350 flights) being scored.
+  reported). Sim A3 unchanged (`a3-final-v6.md`). Frozen at 1671b8b; fresh set v6 (350 flights) being scored.
 - New power-on spoofing check `diagnose --takeoff LAT,LON[,R]` (`takeoff-v1.md`): 0/299 false alarms on
   simulated benign flights incl. harsh GNSS; boot spoofs > ~25 m flagged. Simulation only.
 - Disk: deleted 43 GB of raw simulated ULogs (each run keeps `flight.npz` + results) and 7.5 GB of finished
@@ -392,17 +392,17 @@ conclusion is possible (`benchmarks/realflow-v1.md`). Real flow validation needs
 - Searched 488k public PX4 log descriptions for jamming/spoofing: 1 real airborne attack with receiver evidence
   ("YAF 3_SPOOF", 150 s satellite loss) → detected blind; 4 other labelled logs show no GNSS evidence
   (`wild-attacks-v1.md`). Never-flown logs now say 'not analysed'.
-- In-the-wild scan (`wildscan-v1.md`): 1,000 recent public PX4 flights, frozen f8099fa, streamed and deleted.
+- In-the-wild scan (`wildscan-v1.md`): 1,000 recent public PX4 flights, frozen 63cdc14, streamed and deleted.
   732 analysed: 1 RF-attack-like (54° N 28° E), 2 spoofing-like, 17 jamming-like; rates equal the benign gate, so
   candidates only. Gap noted: receiver level-3 spoof flags inside fix-loss intervals read as jamming-like.
-- Fix 673b37d: receiver level-3 spoof flags inside fix-loss intervals now named in the jamming-like verdict.
+- Fix 81fcb9d: receiver level-3 spoof flags inside fix-loss intervals now named in the jamming-like verdict.
   Fresh gate v8 (`real-gate-v8.md`, 347 flights): spoofing-like 1/347, RF 0/347; three fresh gates: 4/1,041.
   Data verdict: benign false-alarm rate is well measured; real-attack detection (3 attacks) is not.
 
 ## 2026-11-13 — real field attacks (Jammertest 2023)
 - Streamed three FGI Jammertest 2023 raw recordings (152 GB in, never stored whole), GNSS-SDR in Docker, ASTRA bench
   mode (`jammertest-v1.md`). Blind: 3/3 attacks detected as RF-attack-like; 0/2 spoofs identified as spoofing.
-- Fixes 1298454: every monitor/step alarm episode counts (an early glitch hid a later attack); impossible position
+- Fixes 63c4b40: every monitor/step alarm episode counts (an early glitch hid a later attack); impossible position
   jump across an outage is spoofing evidence (found the 249 km capture). Fresh gate v9: spoofing-like 0/346.
 - Limit: the software receiver's positions wander 8–18 m, so GPS-vs-IMU checks cannot be tested on these recordings;
   the coherent spoof's slow drag remains untested on real data.

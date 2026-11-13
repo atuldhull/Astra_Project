@@ -1,6 +1,6 @@
 # Real-flight gate (runs/px4real4: fresh public PX4 flights, frozen `astra diagnose`)
 
-195 usable flights, 27.0 airborne h; 2 unusable. Design set: 302 other flights (real-far-v2.md, real-gate-v3.md); code frozen at 278110e. Scored once.
+195 usable flights, 27.0 airborne h; 2 unusable. Design set: 302 other flights (real-far-v2.md, real-gate-v3.md); code frozen at 655f4a1. Scored once.
 
 | verdict on real benign flight | flights |
 |---|---|

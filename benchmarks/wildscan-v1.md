@@ -1,7 +1,7 @@
 # In-the-wild scan: 1,000 recent public PX4 flights (frozen `astra diagnose`, 2026-11-12)
 
 Selection: 1,000 logs from the public PX4 database (v1.15–v1.17, real hardware, 180–3600 s, seed
-`astra-wild-scan-v1`, all earlier selections excluded) → `runs/px4_wildscan_sel.json`. Code frozen at f8099fa.
+`astra-wild-scan-v1`, all earlier selections excluded) → `runs/px4_wildscan_sel.json`. Code frozen at 63cdc14.
 Each log was downloaded, diagnosed once and deleted (`benchmarks/wild_scan.py`); one row per log in
 `runs/wildscan-v1.jsonl` (verdict, 1° location, receiver flags, RF events, fix losses). No labels exist: these are
 unlabelled flights, so every hit below is a **candidate, not a confirmed attack**.

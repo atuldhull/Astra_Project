@@ -1,6 +1,6 @@
 # Real-flight gate (runs/px4real7: fresh public PX4 flights, frozen `astra diagnose`)
 
-349 usable flights, 51.7 airborne h; 1 unusable. Design set: 835 earlier flights + 231 rf design flights; code frozen at cd201fd (land-detector airborne, RF-attack-like). Scored once.
+349 usable flights, 51.7 airborne h; 1 unusable. Design set: 835 earlier flights + 231 rf design flights; code frozen at 4e28629 (land-detector airborne, RF-attack-like). Scored once.
 
 | verdict on real benign flight | flights |
 |---|---|

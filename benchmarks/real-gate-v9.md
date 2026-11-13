@@ -1,4 +1,4 @@
-# Real-flight gate v9 (fresh public PX4 flights, frozen `astra diagnose` at 1298454)
+# Real-flight gate v9 (fresh public PX4 flights, frozen `astra diagnose` at 63c4b40)
 
 Checks the Jammertest-driven changes (every alarm episode counts; position jump across an outage) for false alarms.
 350 flights, gate v7 rules, seed `astra-real-v9`, excluding every earlier selection (3,103 logs) →
