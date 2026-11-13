@@ -31,6 +31,10 @@ TAKEOFF_RADIUS_M = 15.0
 RF_NOISE_RATIO = 1.30
 RF_NOISE_HOLD_S = 10.0
 RF_SAT_FRAC = 0.6
+# Re-acquired position farther than any drone could have flown during the outage: a spoofer captured the receiver.
+# Physical bound, not fitted: 60 m/s (above multirotor and small fixed-wing speeds) plus 100 m.
+JUMP_MAX_SPEED_MS = 60.0
+JUMP_MARGIN_M = 100.0
 
 
 def _load(path: Path) -> logs.FlightLog:
@@ -128,6 +132,25 @@ def rf_events(fl: logs.FlightLog, ratio: float = RF_NOISE_RATIO, hold_s: float =
     return out
 
 
+def outage_jumps(fl: logs.FlightLog, intervals, max_speed=JUMP_MAX_SPEED_MS, margin=JUMP_MARGIN_M) -> list[dict]:
+    """Fix-loss intervals after which the position re-appears impossibly far away."""
+    g = fl["GPS"]
+    ok = (g["Status"] >= 3) & np.isfinite(g["Lat"]) & (np.abs(g["Lat"]) > 1e-6)
+    out = []
+    for a, b in intervals:
+        before = np.nonzero(ok & (g["t"] <= a))[0]
+        after = np.nonzero(ok & (g["t"] >= b))[0]
+        if not len(before) or not len(after):
+            continue
+        i, j = before[-1], after[0]
+        dn = (g["Lat"][j] - g["Lat"][i]) * 111_320.0
+        de = (g["Lng"][j] - g["Lng"][i]) * 111_320.0 * np.cos(np.radians(g["Lat"][i]))
+        d, gap = float(np.hypot(dn, de)), float(g["t"][j] - g["t"][i])
+        if d > margin + max_speed * gap:
+            out.append({"t": round(float(g["t"][j]), 1), "jump_m": round(d), "gap_s": round(gap, 1)})
+    return out
+
+
 def takeoff_check(fl: logs.FlightLog, lat: float, lon: float, radius_m: float = TAKEOFF_RADIUS_M) -> dict | None:
     """Power-on spoofing check: GPS position just before take-off vs the operator-declared take-off point.
 
@@ -220,6 +243,7 @@ def diagnose(path: Path, cal_file: Path | None = None, takeoff: tuple | None = N
                   "alarm_t": None if det.t_alarm is None else round(det.t_alarm, 1),
                   "first_channel": det.channel,
                   "first_by_channel": {k: (None if v is None else round(v, 1)) for k, v in det.first_by_channel.items()},
+                  "episodes": {k: [(round(a, 1), round(b, 1), round(pk, 2)) for a, b, pk in v] for k, v in det.episodes.items()},
                   "peak_over_threshold": {k: round(float(np.nanmax(s)) / cal.h[k], 2) for k, s in stats.items()}}
         except ValueError as exc:
             a2 = {"available": False, "reason": str(exc)}
@@ -234,15 +258,16 @@ def diagnose(path: Path, cal_file: Path | None = None, takeoff: tuple | None = N
     weak_ev: list[tuple[float, str]] = []
     strong_h = (cal_all or {}).get("real_gate", {}).get("c3_strong_h")
     if a2.get("alarm"):
-        for ch_name, t_ch in a2["first_by_channel"].items():
-            if t_ch is None:
-                continue
-            # C3 has heavier real-world tails than simulation: below the real-flight threshold it is
-            # reported as weak evidence only, never as spoofing (benchmarks/real-gate-v3.md).
-            if ch_name == "c3" and strong_h and a2["peak_over_threshold"]["c3"] * cal_all[a2["config"]]["h"]["c3"] < strong_h:
-                weak_ev.append((t_ch, "A2 c3 (weak)"))
-            else:
-                spoof_ev.append((t_ch, f"A2 {ch_name}"))
+        # Every alarm episode counts, not only the first: an early benign glitch must not hide a later attack
+        # (Jammertest coherent spoof, jammertest-v1.md).
+        for ch_name, eps in a2["episodes"].items():
+            for t_ch, _t_end, peak in eps:
+                # C3 has heavier real-world tails than simulation: below the real-flight threshold it is
+                # reported as weak evidence only, never as spoofing (benchmarks/real-gate-v3.md).
+                if ch_name == "c3" and strong_h and peak * cal_all[a2["config"]]["h"]["c3"] < strong_h:
+                    weak_ev.append((t_ch, "A2 c3 (weak)"))
+                else:
+                    spoof_ev.append((t_ch, f"A2 {ch_name}"))
     step_thr = (cal_all or {}).get("step", {}).get("thresh_m")
     if step_thr:
         st, ss = _step_residual(fl)
@@ -254,8 +279,9 @@ def diagnose(path: Path, cal_file: Path | None = None, takeoff: tuple | None = N
         # meaconing in simulation are >= 18 m. Steps below the strong level are weak evidence only.
         step_strong = (cal_all or {}).get("real_gate", {}).get("step_strong_m", 0.0)
         strong = st[ss > max(step_thr, step_strong)]
-        if len(strong):
-            spoof_ev.append((float(strong[0]), "position step"))
+        if len(strong):  # first step of each burst (>= 10 s apart), so a later attack is not hidden
+            for t_s in strong[np.r_[True, np.diff(strong) > 10.0]]:
+                spoof_ev.append((float(t_s), "position step"))
         elif len(hits):
             weak_ev.append((float(hits[0]), "position step (small)"))
     for t, m in rep["stock_alerts"]:
@@ -282,6 +308,14 @@ def diagnose(path: Path, cal_file: Path | None = None, takeoff: tuple | None = N
         spoof_ev.remove((t, why))
         weak_ev.append((t, why + " (receiver reported degraded accuracy)"))
     spoof_outside = [(t, why) for t, why in spoof_ev if not _in_jam(t)]
+    # A position jump across an outage is spoofing evidence even though it sits at the end of a jamming interval.
+    jumps = outage_jumps(fl, rep["receiver"]["fix_lost_intervals_s"])
+    rep["receiver"]["outage_jumps"] = jumps
+    for jp in jumps:
+        why = f"position jumped {jp['jump_m'] / 1000:.1f} km across a {jp['gap_s']:.0f} s outage"
+        spoof_ev.append((jp["t"], why))
+        spoof_outside.append((jp["t"], why))
+    spoof_outside.sort()
     rep["evidence"] = {"jamming_intervals_s": jam_iv,
                        "spoofing_events": [[round(t, 1), w] for t, w in spoof_ev],
                        "spoofing_events_outside_jamming": [[round(t, 1), w] for t, w in spoof_outside],

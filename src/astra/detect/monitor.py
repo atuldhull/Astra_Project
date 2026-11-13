@@ -159,11 +159,13 @@ class Detection:
     t_alarm: float | None
     channel: str | None
     first_by_channel: dict
+    # every alarm episode, not only the first: an early benign glitch must not hide a later attack
+    episodes: dict = field(default_factory=dict)  # name -> [(t_start, t_end, peak_over_h), ...]
 
 
 def run(ch: Channels, cal: Calibration, channels=None) -> tuple[Detection, dict]:
     channels = list(cal.sigma_inv) if channels is None else channels
-    first, stats = {}, {}
+    first, stats, eps = {}, {}, {}
     for name in channels:
         if name not in cal.sigma_inv:
             continue
@@ -173,10 +175,16 @@ def run(ch: Channels, cal: Calibration, channels=None) -> tuple[Detection, dict]
         T, Rm, ok = b
         S = cusum(_q(Rm, np.asarray(cal.sigma_inv[name])), cal.k[name], ok)
         stats[name] = S
-        idx = np.nonzero(S > cal.h[name])[0]
+        above = S > cal.h[name]
+        idx = np.nonzero(above)[0]
         first[name] = float(T[idx[0]]) if len(idx) else None
+        eps[name] = []
+        if len(idx):
+            edges = np.diff(np.r_[0, above.astype(int), 0])
+            for a, b in zip(np.nonzero(edges == 1)[0], np.nonzero(edges == -1)[0]):
+                eps[name].append((float(T[a]), float(T[b - 1]), float(np.nanmax(S[a:b])) / cal.h[name]))
     hits = {k: v for k, v in first.items() if v is not None}
     if not hits:
-        return Detection(False, None, None, first), stats
+        return Detection(False, None, None, first, eps), stats
     c = min(hits, key=hits.get)
-    return Detection(True, hits[c], c, first), stats
+    return Detection(True, hits[c], c, first, eps), stats
