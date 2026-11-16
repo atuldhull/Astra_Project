@@ -61,7 +61,8 @@ class LiveHealth:
              spd: float, cog_deg: float, rel_alt_m: float) -> None:
         air = rel_alt_m > AIRBORNE_M
         fix = fix_type >= 3 and abs(lat) > 1e-6
-        self.hist.append((t, sats, hacc_m if hacc_m is not None else float("nan"), int(fix)))
+        self.hist.append((t, sats, hacc_m if hacc_m is not None else float("nan"), int(fix),
+                          lat if fix else None, lon if fix else None))
         self.last = {"t": round(t, 1), "fix_type": int(fix_type), "sats": int(sats), "airborne": air,
                      "hacc_m": None if hacc_m is None else round(hacc_m, 1), "speed_ms": round(spd, 1),
                      "lat": round(lat, 6) if fix else None, "lon": round(lon, 6) if fix else None,
@@ -120,7 +121,8 @@ class LiveHealth:
                 "shield": None if self._shield is None else {"cusum": round(self._shield.cusum, 2),
                                                              "h": self._shield.h},
                 "series": {"t": [r[0] for r in h], "sats": [r[1] for r in h],
-                           "hacc": [None if r[2] != r[2] else r[2] for r in h], "fix": [r[3] for r in h]}}
+                           "hacc": [None if r[2] != r[2] else r[2] for r in h], "fix": [r[3] for r in h],
+                           "lat": [r[4] for r in h], "lon": [r[5] for r in h]}}
 
 
 class LiveSession:

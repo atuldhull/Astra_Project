@@ -31,6 +31,9 @@ EXAMPLES = next((p for p in (Path(__file__).resolve().parent / "examples", Path(
                  if p.exists()), Path("examples"))
 
 _reports: dict[str, str] = {}
+_tracks: dict[str, dict] = {}
+STATIC = Path(__file__).with_name("static")
+SIM_ROOT = Path("runs") / "ui"
 _live = {"session": None}
 _sim = {"proc": None, "out": None, "log": [], "pack": None, "html": None}
 _lock = threading.Lock()
@@ -55,13 +58,19 @@ def _analyse(data: bytes, filename: str, takeoff: str | None) -> dict:
             rep = diagnose(log, takeoff=tk)
             rep["log"] = str(log)
             page = render(rep, tmp / "report.html").read_text(encoding="utf-8")
+            from astra.forensics import _load
+            from astra.replay import track
+            tr = track(_load(log), rep)
         rid = uuid.uuid4().hex[:12]
         page = page.replace(str(log), filename)
         with _lock:
             _reports[rid] = page
+            _tracks[rid] = tr
             while len(_reports) > 20:
+                _tracks.pop(next(iter(_reports)), None)
                 _reports.pop(next(iter(_reports)))
         return {"verdict": rep["verdict"], "kind": _kind(rep["verdict"]), "report": f"/report/{rid}",
+                "replay": f"/api/replay/report/{rid}",
                 "evidence": rep["evidence"], "receiver": {k: rep["receiver"].get(k) for k in
                                                          ("min_sats_in_fix", "max_reported_hacc_m", "outage_jumps")}}
     finally:
@@ -91,6 +100,38 @@ def _recheck(log_id: str) -> dict:
     return res
 
 
+def _replay_file(npz: Path, result: dict | None = None) -> dict:
+    from astra.forensics import _load, diagnose
+    from astra.replay import track
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        fl = _load(npz)
+        tr = track(fl, diagnose(npz))
+    if result:
+        m = result.get("metrics", {})
+        tr["outcome"] = {"outcome": result.get("outcome"), "passed": result.get("passed"), "reason": result.get("reason"),
+                         "max_nav_error_m": m.get("max_nav_error_m"), "first_stock_alert_s": m.get("first_alert_t"),
+                         "goal_n_m": m.get("goal_n_m"), "goal_e_m": m.get("goal_e_m")}
+    return tr
+
+
+def _sim_runs() -> list[dict]:
+    """Finished simulated flights from `astra ui` runs, newest first."""
+    out = []
+    if not SIM_ROOT.exists():
+        return out
+    for run in sorted((d for d in SIM_ROOT.iterdir() if d.is_dir()), reverse=True)[:10]:
+        for res in sorted(run.glob("*/result.json")):
+            try:
+                r = json.loads(res.read_text())
+            except (OSError, ValueError):
+                continue
+            if (res.parent / "flight.npz").exists():
+                out.append({"run": run.name, "dir": res.parent.name, "scenario": r.get("scenario_id"),
+                            "outcome": r.get("outcome"), "passed": r.get("passed"), "reason": r.get("reason")})
+    return out
+
+
 def _docker_ok() -> tuple[bool, list[str]]:
     try:
         r = subprocess.run(["docker", "images", "--format", "{{.Repository}}:{{.Tag}}"], capture_output=True,
@@ -109,7 +150,7 @@ def _sim_start(pack: str, only: str, autopilot: str) -> dict:
     with _lock:
         if _sim["proc"] is not None and _sim["proc"].poll() is None:
             raise RuntimeError("a simulation is already running")
-        out = Path("runs") / "ui" / time.strftime("%Y%m%d-%H%M%S")
+        out = SIM_ROOT / time.strftime("%Y%m%d-%H%M%S")
         out.parent.mkdir(parents=True, exist_ok=True)
         cmd = [sys.executable, "-m", "astra.cli", "run", pack, "--out", str(out), "--seeds", "1",
                "--parallel", "1", "--autopilot", autopilot]
@@ -177,6 +218,28 @@ class Handler(BaseHTTPRequestHandler):
                 ex = sorted(p.name for p in EXAMPLES.glob("*.npz")) if EXAMPLES.exists() else []
                 return self._send(200, {"packs": {k: len(v()) for k, v in PACKS.items()}, "docker": ok,
                                         "images": images, "examples": ex})
+            if path.startswith("/static/"):
+                f = STATIC / Path(path).name
+                ctype = {".js": "text/javascript", ".css": "text/css"}.get(f.suffix, "application/octet-stream")
+                return self._send(200, f.read_bytes(), ctype) if f.exists() else self._send(404, {"error": "not found"})
+            if path.startswith("/api/replay/report/"):
+                tr = _tracks.get(path.rsplit("/", 1)[1])
+                return self._send(200, tr) if tr else self._send(404, {"error": "replay expired; check the log again"})
+            if path.startswith("/api/replay/example/"):
+                f = EXAMPLES / Path(path).name
+                if f.suffix != ".npz" or not f.exists():
+                    return self._send(404, {"error": "unknown example"})
+                return self._send(200, _replay_file(f))
+            if path.startswith("/api/replay/sim/"):
+                parts = path.split("/")
+                run, scen = Path(parts[-2]).name, Path(parts[-1]).name
+                d = SIM_ROOT / run / scen
+                if not (d / "flight.npz").exists():
+                    return self._send(404, {"error": "simulated flight not found"})
+                res = json.loads((d / "result.json").read_text()) if (d / "result.json").exists() else None
+                return self._send(200, _replay_file(d / "flight.npz", res))
+            if path == "/api/sim/runs":
+                return self._send(200, _sim_runs())
             if path == "/api/evidence":
                 return self._send(200, EVIDENCE.read_bytes() if EVIDENCE.exists() else b"{}", "application/json")
             if path == "/api/live/status":

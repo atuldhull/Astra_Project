@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.2.0 — 2026-11-16
+
+- **Flight replay** on a map, in every tab: where the drone really was (simulation), where GPS said it was and where
+  the autopilot thought it was, with play/pause, speed, a timeline showing the attack window, ASTRA's alarm and its
+  evidence (click to jump), and live distances between the tracks.
+- **Simulations** tab: four example attacks play straight away (no Docker needed); every flight you simulate is
+  listed and can be replayed, with its mission outcome and when the stock autopilot first noticed.
+- Live tab draws the drone's track on a map; the test-record map is now a real world map.
+- Calmer palette (mist, slate, steel-teal, sage, ochre, dusty rose) with a matching night version; street map from
+  OpenStreetMap, softened to the palette. For uploaded logs the street map is off by default, so the flight's
+  location is not sent to the map server unless you switch it on.
+
 ## 1.1.0 — 2026-11-13
 
 - `astra ui` redesign (aeronautical-chart look, satellite dial in Live).

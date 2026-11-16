@@ -55,3 +55,15 @@ def test_evidence_matches_reports_and_recheck_validates():
             assert e.code == 400
     finally:
         srv.shutdown()
+
+
+def test_example_replay_has_three_tracks_and_alarm():
+    srv, url = _server()
+    try:
+        tr = json.load(urllib.request.urlopen(url + "/api/replay/example/spoof-jump.npz", timeout=120))
+        assert tr["truth"] and tr["gps"] and tr["est"]
+        assert tr["attacks"] and tr["alarm"] is not None
+        assert tr["attacks"][0]["start"] <= tr["alarm"] <= tr["attacks"][0]["end"]
+        assert b"leaflet" in urllib.request.urlopen(url + "/static/leaflet.js").read(200).lower()
+    finally:
+        srv.shutdown()
