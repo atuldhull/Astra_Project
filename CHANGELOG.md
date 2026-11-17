@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.0 — 2026-11-17
+
+- **Home page** that tells the story by itself: "GPS can lie. ASTRA notices." beside a looping replay of a spoofing
+  attack, with captions taken from the replay data (attack start, ASTRA's alarm time, how far the autopilot's belief
+  drifts, when the stock autopilot warned), a live gap counter, the measured record in one sentence, and three
+  doors: check your flight, watch an attack, connect a drone. The replay slows down around the attack and respects
+  reduced-motion settings.
+
 ## 1.2.0 — 2026-11-16
 
 - **Flight replay** on a map, in every tab: where the drone really was (simulation), where GPS said it was and where

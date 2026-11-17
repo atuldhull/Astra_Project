@@ -133,6 +133,38 @@ svg.dial{width:100%;max-width:260px;display:block;margin:0 auto}
 .src{font-size:14px;color:var(--ink-2);text-align:center;min-height:21px}
 svg.chart{width:100%;height:70px;display:block}
 
+/* home */
+.hero{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:28px;align-items:stretch;margin-top:8px}
+@media (max-width:900px){.hero{grid-template-columns:1fr}}
+.hero h1{font-size:56px;line-height:1.02;margin:0 0 18px;letter-spacing:-.01em}
+@media (max-width:600px){.hero h1{font-size:40px}}
+.story{min-height:132px}
+.story .clockline{font-family:var(--head);font-size:15px;color:var(--ink-2);margin-bottom:6px}
+.story p{font-size:21px;line-height:1.4;margin:0;max-width:30ch;transition:opacity .35s}
+.story p.alarm{color:var(--spoof-ink)}
+.storybar{display:flex;gap:6px;margin:18px 0 22px}
+.storybar span{flex:1;height:4px;border-radius:2px;background:var(--rule)}
+.storybar span.on{background:var(--accent)}
+.heromap{height:460px;border-radius:var(--R);overflow:hidden;border:1px solid var(--rule);position:relative;
+  background:var(--panel-2) repeating-linear-gradient(0deg,transparent 0 39px,var(--grid) 39px 40px),repeating-linear-gradient(90deg,transparent 0 39px,var(--grid) 39px 40px)}
+@media (max-width:600px){.heromap{height:320px}}
+.heromap .leaflet-container{background:transparent}
+.herokey{position:absolute;z-index:500;left:12px;bottom:12px;background:var(--panel);border:1px solid var(--rule);border-radius:var(--r);padding:8px 12px;font-size:13px;display:grid;gap:3px}
+.herokey i{display:inline-block;width:18px;height:3px;border-radius:2px;margin-right:8px;vertical-align:middle}
+.gap{position:absolute;z-index:500;right:12px;top:12px;background:var(--panel);border:1px solid var(--rule);border-radius:var(--r);padding:8px 14px;text-align:right}
+.gap b{display:block;font-family:var(--head);font-size:30px;line-height:1}
+.gap span{font-size:13px;color:var(--ink-2)}
+.proofline{margin:30px 0 0;font-size:17px;color:var(--ink-2)}
+.proofline b{color:var(--ink);font-weight:600}
+.doors{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:22px}
+@media (max-width:900px){.doors{grid-template-columns:1fr}}
+.door{display:grid;grid-template-columns:56px 1fr;gap:4px 16px;align-items:start;text-align:left;font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--rule);border-radius:var(--R);padding:20px;cursor:pointer}
+.door:hover{border-color:var(--accent);background:var(--accent-soft)}
+.door svg{grid-row:span 2;width:56px;height:56px}
+.door b{font-family:var(--head);font-size:20px;font-weight:600}
+.door span{color:var(--ink-2);font-size:15px}
+.brandlink{background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:left}
+
 /* evidence */
 .ledger{width:100%;border-collapse:collapse;font-size:15px}
 .ledger caption{text-align:left;font-family:var(--head);font-size:22px;font-weight:600;padding:0 0 8px}
@@ -157,12 +189,12 @@ tr.rc td{background:var(--panel-2);font-size:14px}
 </head>
 <body>
 <header><div class="wrap">
-  <div class="brand">
+  <button class="brand brandlink" id="home-btn" aria-label="ASTRA home">
     <svg viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="14" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-dasharray="5 3.4"/><circle cx="17" cy="17" r="4.5" fill="var(--ink)"/></svg>
     <div><b>ASTRA</b><span>GPS jamming and spoofing checks for drones</span></div>
-  </div>
+  </button>
   <nav role="tablist" aria-label="Mode">
-    <button role="tab" aria-selected="true" aria-controls="analyse" data-tab="analyse">Check a flight</button>
+    <button role="tab" aria-selected="false" aria-controls="analyse" data-tab="analyse">Check a flight</button>
     <button role="tab" aria-selected="false" aria-controls="sim" data-tab="sim">Simulations</button>
     <button role="tab" aria-selected="false" aria-controls="live" data-tab="live">Watch live</button>
     <button role="tab" aria-selected="false" aria-controls="proof" data-tab="proof">How well it works</button>
@@ -171,8 +203,34 @@ tr.rc td{background:var(--panel-2);font-size:14px}
 
 <main class="wrap">
 
+<!-- ===== HOME ===== -->
+<section id="home">
+  <div class="hero">
+    <div>
+      <h1>GPS can lie. ASTRA notices.</h1>
+      <div class="story" aria-live="polite"><div class="clockline" id="hclock">Simulated flight, replayed</div><p id="hstory">A drone flies its mission. GPS, the autopilot and reality agree.</p></div>
+      <div class="storybar" id="hbar"><span></span><span></span><span></span><span></span></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn go" data-goto="analyse">Check your own flight</button><button class="btn quiet" data-goto="sim">Watch the full replay</button></div>
+    </div>
+    <div class="heromap" id="heromap">
+      <div class="gap"><b id="hgap">0 m</b><span>between the truth and<br>what the autopilot believes</span></div>
+      <div class="herokey"><span><i style="background:var(--truth)"></i>where the drone really is</span><span><i style="background:var(--gps)"></i>where GPS says it is</span><span><i style="background:var(--est)"></i>where the autopilot thinks it is</span></div>
+    </div>
+  </div>
+  <p class="proofline" id="hproof">Checked against <b>real flights</b> and <b>real attacks</b>, with every failure published. <a href="#" data-goto="proof">See the record.</a></p>
+  <div class="doors">
+    <button class="door" data-goto="analyse"><svg viewBox="0 0 56 56" aria-hidden="true"><rect x="8" y="8" width="40" height="40" rx="9" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-dasharray="5 4"/><path d="M28 18v18M20 28l8 8 8-8" fill="none" stroke="var(--ink)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <b>Check your flight</b><span>Drop a PX4 or ArduPilot log. Get a verdict and replay it on a map.</span></button>
+    <button class="door" data-goto="sim"><svg viewBox="0 0 56 56" aria-hidden="true"><path d="M10 46L22 28l8 6 14-22" fill="none" stroke="var(--truth)" stroke-width="2.5" stroke-linecap="round"/><path d="M22 28l10 12 14-6" fill="none" stroke="var(--spoof)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="4 4"/></svg>
+      <b>Watch an attack</b><span>Jamming and spoofing in simulation, from the start of the attack to the alarm.</span></button>
+    <button class="door" data-goto="live"><svg viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="19" fill="none" stroke="var(--rule)" stroke-width="2"/><circle cx="28.0" cy="9.0" r="3.6" fill="var(--ok)" stroke="var(--ok)" stroke-width="1.5"/><circle cx="41.4" cy="14.6" r="3.6" fill="var(--ok)" stroke="var(--ok)" stroke-width="1.5"/><circle cx="47.0" cy="28.0" r="3.6" fill="var(--ok)" stroke="var(--ok)" stroke-width="1.5"/><circle cx="41.4" cy="41.4" r="3.6" fill="var(--ok)" stroke="var(--ok)" stroke-width="1.5"/><circle cx="28.0" cy="47.0" r="3.6" fill="var(--ok)" stroke="var(--ok)" stroke-width="1.5"/><circle cx="14.6" cy="41.4" r="3.6" fill="var(--ok)" stroke="var(--ok)" stroke-width="1.5"/><circle cx="9.0" cy="28.0" r="3.6" fill="var(--panel)" stroke="var(--rule)" stroke-width="1.5"/><circle cx="14.6" cy="14.6" r="3.6" fill="var(--panel)" stroke="var(--rule)" stroke-width="1.5"/></svg>
+      <b>Connect a drone</b><span>Watch GPS health live over MAVLink, from a radio, a ground station or a simulator.</span></button>
+  </div>
+</section>
+
+
 <!-- ===== CHECK A FLIGHT ===== -->
-<section id="analyse" role="tabpanel">
+<section id="analyse" role="tabpanel" hidden>
   <div class="intro"><h1>Was this flight jammed or spoofed?</h1>
     <p>Load a PX4 <code>.ulg</code> or ArduPilot <code>.bin</code> log and replay the flight with ASTRA's findings on it. The log is checked on this computer and deleted as soon as the check finishes.</p></div>
   <div class="panel">
@@ -296,7 +354,7 @@ const NAMES={none:"No GPS attack found",jam:"Jamming-like",spoof:"Spoofing-like"
 const cap=s=>s?s.charAt(0).toUpperCase()+s.slice(1):"";
 const tabs=[...document.querySelectorAll("nav button")];
 const onShow={};
-function show(name){tabs.forEach(x=>x.setAttribute("aria-selected",x.dataset.tab===name));["analyse","sim","live","proof"].forEach(t=>$(t).hidden=t!==name);(onShow[name]||(()=>{}))()}
+function show(name){tabs.forEach(x=>x.setAttribute("aria-selected",x.dataset.tab===name));["home","analyse","sim","live","proof"].forEach(t=>$(t).hidden=t!==name);(onShow[name]||(()=>{}))()}
 tabs.forEach((b,i)=>{b.onclick=()=>show(b.dataset.tab);b.onkeydown=e=>{if(e.key==="ArrowRight"||e.key==="ArrowLeft"){const n=tabs[(i+(e.key==="ArrowRight"?1:tabs.length-1))%tabs.length];n.focus();show(n.dataset.tab)}}});
 document.addEventListener("click",e=>{const a=e.target.closest("[data-goto]");if(a){e.preventDefault();show(a.dataset.goto);window.scrollTo(0,0)}});
 async function api(p,opt){const r=await fetch(p,opt);const j=await r.json().catch(()=>({error:"The server sent an unreadable reply."}));if(!r.ok)throw new Error(j.error||("Request failed ("+r.status+")"));return j}
@@ -489,6 +547,7 @@ let EV=null,ALL=[],page=0,wmap=null;
 async function evidence(){
   try{EV=await api("/api/evidence")}catch(e){return}if(!EV.headline)return;
   const H=EV.headline,R=EV.repo,lnk=(u,t)=>`<a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)}</a>`;
+  $("hproof").innerHTML=`Checked against <b>${nf(H.false_spoof.n)} real flights</b>, where it wrongly cried spoofing ${H.false_spoof.k} times, and <b>${H.attacks_blind.n} real attacks</b>, ${H.attacks_blind.k} of them noticed on the first try. Every failure is published. <a href="#" data-goto="proof">See the record.</a>`;
   $("trustline").innerHTML=`Tested on ${nf(H.false_spoof.n)} real normal flights and ${H.attacks_blind.n} real attacks. <a href="#" data-goto="proof">See how well it works, failures included.</a>`;
   const rows=[["How often does it wrongly say spoofing on a normal flight?",`${H.false_spoof.k} of ${nf(H.false_spoof.n)}`,pct(H.false_spoof.upper95),"Four fresh runs, v6 to v9","pass"],
     ["How often does it wrongly say radio attack?",`${H.false_rf.k} of ${nf(H.false_rf.n)}`,pct(H.false_rf.upper95),"Fresh runs v7 to v9; the check exists since v7","pass"],
@@ -524,7 +583,41 @@ document.addEventListener("click",async e=>{const b=e.target.closest("[data-rech
     rc.innerHTML=`<td colspan="4"><b class="c-${esc(j.kind)}">Today: ${esc(NAMES[j.kind]||j.verdict.split(":")[0])}.</b> ${esc(j.verdict.split(":").slice(1).join(":").trim())} <a href="${j.report}" target="_blank" rel="noopener">Full report</a></td>`}
   catch(err){rc.innerHTML=`<td colspan="4" class="err">${esc(err.message)}</td>`}b.disabled=false});
 
-info();evidence();
+
+/* ================= home: the story ================= */
+$("home-btn").onclick=()=>{show("home");window.scrollTo(0,0)};
+async function hero(){
+  let D;try{D=await api("/api/replay/example/spoof-jump.npz")}catch(e){return}
+  const m=L.map($("heromap"),{zoomControl:false,attributionControl:false,dragging:false,scrollWheelZoom:false,doubleClickZoom:false,boxZoom:false,keyboard:false,touchZoom:false,preferCanvas:true});
+  const all=[];["truth","gps","est"].forEach(k=>D[k]&&D[k].lat.forEach((a,j)=>a!=null&&all.push([a,D[k].lon[j]])));
+  m.fitBounds(L.latLngBounds(all).pad(.12));
+  const mk=(k,c,w,dash)=>({line:L.polyline([],{color:c,weight:w,opacity:.95,dashArray:dash}).addTo(m),dot:L.circleMarker(all[0],{radius:k==="truth"?8:6,color:c,weight:2,fillColor:k==="truth"?css("--panel"):c,fillOpacity:1}).addTo(m)});
+  const T={truth:mk("truth",css("--truth"),3.5),gps:mk("gps",css("--gps"),3),est:mk("est",css("--est"),3,"6 6")};
+  const A=D.attacks[0],al=D.alarm,stock=(D.events.find(e=>e[2].startsWith("stock"))||[])[0];
+  const off=j=>D.truth.lat[j]!=null&&D.est.lat[j]!=null?distM(D.truth.lat[j],D.truth.lon[j],D.est.lat[j],D.est.lon[j]):0;
+  let peak=0;D.t.forEach((t,j)=>{if(A&&t>=A.start&&t<=A.end)peak=Math.max(peak,off(j))});
+  const lines=[
+    [0,"A drone flies its mission. GPS, the autopilot and reality agree."],
+    [A.start,"A spoofer starts broadcasting fake GPS signals."],
+    [al,`ASTRA raised the alarm ${(al-A.start).toFixed(1)} s after the attack began.`],
+    [al+12,`The autopilot now believes it is up to ${Math.round(peak)} m from where it really is.`],
+    [A.end,stock!=null?`The stock autopilot's first GPS warning came ${(stock-A.start).toFixed(1)} s in. ASTRA also says which kind of attack it was.`:"The stock autopilot never warned."]];
+  const bar=[...$("hbar").children];let shown=-1;
+  const story=t=>{let k=0;lines.forEach((l,j)=>{if(t>=l[0])k=j});if(k!==shown){shown=k;const p=$("hstory");p.style.opacity=0;setTimeout(()=>{p.textContent=lines[k][1];p.className=k===2?"alarm":"";p.style.opacity=1},180)}
+    bar.forEach((b,j)=>b.classList.toggle("on",j<Math.min(k,4)))};
+  const draw=j=>{for(const k in T){const s=D[k],pts=[];for(let n=0;n<=j;n++)if(s.lat[n]!=null)pts.push([s.lat[n],s.lon[n]]);T[k].line.setLatLngs(pts);if(pts.length)T[k].dot.setLatLng(pts[pts.length-1])}
+    $("hgap").textContent=Math.round(off(j))+" m";$("hclock").textContent="Simulated flight, replayed, "+fmtT(D.t[j]);story(D.t[j])};
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches){draw(D.t.length-1);return}
+  const SPEED=9;let ct=0,i=0,last=0,pause=0;
+  const loop=ts=>{const dt=last?Math.min((ts-last)/1000,.1):0;last=ts;
+    if($("home").hidden){requestAnimationFrame(loop);return}
+    if(pause>0){pause-=dt;if(pause<=0){ct=0;i=0}requestAnimationFrame(loop);return}
+    const slow=(D.t[i]>=A.start-3&&D.t[i]<=al+6)?.25:1;ct+=dt*SPEED*slow;
+    while(i<D.t.length-1&&D.t[i+1]<=ct)i++;draw(i);if(i>=D.t.length-1)pause=4;requestAnimationFrame(loop)};
+  requestAnimationFrame(loop);
+}
+
+show("home");hero();info();evidence();
 </script>
 </body>
 </html>
